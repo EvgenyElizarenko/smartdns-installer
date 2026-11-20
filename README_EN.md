@@ -187,30 +187,29 @@ On every interactive launch, the script prompts for the user interface language 
 
 ## 6. CLI Command Reference
 
-```text
-Usage: sudo ./smartdns-installer.sh <COMMAND>
-```
+Usage: `sudo ./smartdns-installer-v3.0-stealth.sh [COMMAND]` (running without arguments in an interactive terminal opens the main launcher menu).
 
 | Command | Description |
 | :--- | :--- |
-| `--help`, `-h` | Display help message listing all supported commands and exit |
+| `--help`, `-h` | Display help for all supported options and exit |
 | `--preflight` | Check OS, kernel, RAM, disk, network, ports, and engine compatibility (read-only) |
-  --initial-setup                  Interactive Initial Server Setup & SSH Security Hardening
-| `--install` | Run interactive transactional installation of the full stack |
-| `--status` | Display active DNS engine, `systemd` services/timers state, and `ipset` entries |
-| `--test` | Execute 25 functional and negative self-tests across the entire proxy pipeline |
-| `--switch-engine [oxidns\|adguardhome]` | Transactionally switch the active DNS engine on a live server |
+| `--initial-setup` | Interactive initial server setup and SSH hardening (`10` steps + `16`-point security audit, state saved to `initial-setup.env`) |
+| `--install` | Run interactive transactional installation of the full stack (including `Initial Server Setup` when needed) |
+| `--status` | Show active DNS engine, `systemd` service/timer states, and `ipset` sets |
+| `--test` | Run functional and negative self-tests across the proxy and DNS chain |
+| `--switch-engine [oxidns\|adguardhome]` | Transactionally switch the active DNS backend on a running server |
+| `--domain-groups` | Interactively manage GeoHideDNS proxied domain groups and custom domain list imports |
 | `--regenerate-cover` | Generate a new unique Cover Site while backing up the previous one |
-| `--sync-ip` | Auto-detect a new server IPv4/IPv6 and sync configs, firewall, and Cloudflare records |
-| `--change-domain [NEW_DOMAIN]` | Change the primary domain (`ROOT_DOMAIN`) and reissue TLS certificates preserving secrets |
-| `--update` | Safely update Xray/DNS binaries and domain lists (preserving the existing Cover Site) |
-| `--backup` | Create an on-demand full backup of configurations, TLS keys, and firewall rules |
+| `--sync-ip` | Detect updated server IPv4/IPv6 and sync configs, firewall rules, and Cloudflare DNS records |
+| `--change-domain [NEW_DOMAIN]` | Change root domain (`ROOT_DOMAIN`) and reissue TLS certificate while preserving secrets |
+| `--update` | Safely update Xray/DNS binaries and domain lists without touching the Cover Site |
+| `--backup` | Create a full backup of configurations, TLS keys, and firewall rules |
 | `--rollback [PATH]` | Roll back system state to the latest (or specified) backup snapshot |
-| `--uninstall` | Stop and disable all stack services and remove `SMARTDNS_*` firewall chains |
-| `--whitelist-status` | Show DoT IP whitelist (`853/TCP`) state, set mode, and authorized IPs with remaining TTL |
+| `--uninstall` | Run interactive selective or full component removal with dependency checks and `initial-backup` restore |
+| `--whitelist-status` | Show DoT IP-whitelist (`853/TCP`) state, set mode, and active IPs with remaining TTL |
 | `--whitelist-toggle [on\|off]` | Enable, disable, or toggle IP filtering on DoT port `853/TCP` |
-| `--whitelist-mode [shared\|separate]` | Switch DoT whitelist set mode (`shared` with DoH or `separate` isolated sets) |
-| `--whitelist-add <IP>` | Manually add a single IPv4 or IPv6 address to the whitelist (24-hour TTL) |
+| `--whitelist-mode [shared\|separate]` | Switch DoT whitelist set mode (`shared` with DoH or `separate`) |
+| `--whitelist-add <IP>` | Manually add a single IPv4 or IPv6 address to the whitelist (24h TTL) |
 | `--whitelist-remove <IP>` | Immediately remove a single IPv4 or IPv6 address from the whitelist |
 | `--whitelist-flush` | Flush all authorized IPv4/IPv6 addresses from the DoT whitelist |
 
