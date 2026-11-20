@@ -818,6 +818,28 @@ MSG_RU[M_0374]='Загрузка базы geosite.dat с GitHub (может за
 MSG_EN[M_0374]='Downloading geosite.dat from GitHub (may take 1-2 minutes)...'
 MSG_RU[M_0375]='Загрузка GeoHideDNS и генерация правил маршрутизации Xray/DNS...'
 MSG_EN[M_0375]='Downloading GeoHideDNS and generating Xray/DNS routing rules...'
+MSG_RU[M_0376]='Активирован запрет перезагрузки (reboot-lock) до успешной установки и проверки SmartDNS (%s).'
+MSG_EN[M_0376]='Reboot lock activated until SmartDNS is installed and verified (%s).'
+MSG_RU[M_0377]='\n==============================================================================\nВНИМАНИЕ!\n\nДля применения некоторых системных обновлений\nтребуется перезагрузка сервера.\n\nПричина / пакеты: %s\n\nПерезагрузка автоматически НЕ выполняется.\nУстановка будет продолжена без перезагрузки,\nесли это безопасно и технически возможно.\n\nПерезагрузка будет разрешена только после\nуспешного завершения установки и проверки SmartDNS.\n==============================================================================\n'
+MSG_EN[M_0377]='\n==============================================================================\nWARNING!\n\nA server reboot is required to apply some system updates.\n\nReason / packages: %s\n\nAutomatic reboot is NOT performed.\nInstallation will continue without rebooting\nif it is safe and technically possible.\n\nReboot will only be permitted after SmartDNS\ninstallation and verification succeed.\n==============================================================================\n'
+MSG_RU[M_0378]='ВНИМАНИЕ: Обнаружены сторонние механизмы автоперезагрузки: %s. Установщик заблокирует автоматический reboot на время своей работы.'
+MSG_EN[M_0378]='WARNING: External auto-reboot triggers detected: %s. The installer will suppress automatic reboot during execution.'
+MSG_RU[M_0379]='Невозможно безопасно продолжить установку без устранения системного состояния: %s'
+MSG_EN[M_0379]='Cannot safely continue installation without resolving system state: %s'
+MSG_RU[M_0380]='\n==============================================================================\nУСТАНОВКА ПРИОСТАНОВЛЕНА ДЛЯ БЕЗОПАСНОГО ВОССТАНОВЛЕНИЯ\n==============================================================================\nЭтап           : %s\nПричина        : %s\nСостояние      : %s\nЖурнал         : %s/installation.log\n\nЗапрет автоматической перезагрузки (REBOOT_LOCKED=true) СОХРАНЁН.\nПосле устранения причины повторите запуск:\n  sudo ./%s --install\n==============================================================================\n'
+MSG_EN[M_0380]='\n==============================================================================\nINSTALLATION PAUSED FOR SAFE RECOVERY\n==============================================================================\nStage          : %s\nReason         : %s\nState file     : %s\nLog file       : %s/installation.log\n\nReboot lock (REBOOT_LOCKED=true) remains ACTIVE.\nAfter resolving the issue, resume installation with:\n  sudo ./%s --install\n==============================================================================\n'
+MSG_RU[M_0381]='Запрет перезагрузки НЕ снят: не выполнены обязательные условия проверки SmartDNS (%s).'
+MSG_EN[M_0381]='Reboot lock NOT released: mandatory SmartDNS verification conditions not met (%s).'
+MSG_RU[M_0382]='SmartDNS установлен, проверен и активен (%s). Запрет перезагрузки (reboot-lock) снят.'
+MSG_EN[M_0382]='SmartDNS installed, verified, and active (%s). Reboot lock has been released.'
+MSG_RU[M_0383]='\n==============================================================================\nВНИМАНИЕ: ТРЕБУЕТСЯ ПЕРЕЗАГРУЗКА СЕРВЕРА (SmartDNS УСПЕШНО УСТАНОВЛЕН)\n==============================================================================\nУстановка и проверка SmartDNS успешно завершены, запрет перезагрузки снят.\nДля применения отложенных системных обновлений рекомендуется перезагрузить сервер.\n\nПричины / пакеты : %s\n\nПерезагрузка НЕ выполняется автоматически.\nВыполнить перезагрузку сервера прямо сейчас? Введите YES для подтверждения [N]: '
+MSG_EN[M_0383]='\n==============================================================================\nNOTICE: SERVER REBOOT REQUIRED (SmartDNS SUCCESSFULLY INSTALLED)\n==============================================================================\nSmartDNS installation and verification succeeded; reboot lock is released.\nA reboot is recommended to apply deferred system updates.\n\nReasons / packages: %s\n\nReboot is NOT performed automatically.\nReboot the server right now? Type YES to confirm [N]: '
+MSG_RU[M_0384]='Перезагрузка отложена пользователем. Вы можете выполнить её позже командой: sudo systemctl reboot\n'
+MSG_EN[M_0384]='Reboot deferred by user. You may reboot later using: sudo systemctl reboot\n'
+MSG_RU[M_0385]='Пользователь подтвердил перезагрузку после успешной проверки SmartDNS. Выполняется systemctl reboot...'
+MSG_EN[M_0385]='User confirmed reboot after SmartDNS verification. Executing systemctl reboot...'
+MSG_RU[M_0386]='ОШИБКА: Попытка перезагрузки заблокирована — SmartDNS не прошёл обязательную проверку.'
+MSG_EN[M_0386]='ERROR: Reboot attempt blocked — SmartDNS has not passed mandatory verification.'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -928,6 +950,8 @@ echo_err_tr() {
     printf '%s\n' "$(tr_msg "${__i18n_key}" "$@")" >&2
 }
 
+LAST_READ_EOF=0
+
 read_tr() {
     local __i18n_key="$1" __i18n_var="$2"
     shift 2 || true
@@ -941,7 +965,12 @@ read_tr() {
     fi
     # shellcheck disable=SC2059
     printf -v __i18n_prompt -- "${__i18n_tpl}" "$@"
-    IFS= read -r -p "${__i18n_prompt}" __i18n_ans || true
+    LAST_READ_EOF=0
+    if ! IFS= read -r -p "${__i18n_prompt}" __i18n_ans; then
+        LAST_READ_EOF=1
+        printf '\n'
+    fi
+    __i18n_ans="${__i18n_ans//$'\r'/}"
     printf -v "${__i18n_var}" '%s' "${__i18n_ans}"
 }
 
@@ -952,6 +981,9 @@ readonly INITIAL_BACKUP_DIR="${STATE_DIR}/initial-backup"
 readonly INITIAL_BACKUP_MANIFEST="${INITIAL_BACKUP_DIR}/backup-manifest.tsv"
 readonly INITIAL_BACKUP_SEAL="${INITIAL_BACKUP_DIR}/.sealed"
 readonly INSTALL_MANIFEST_FILE="${STATE_DIR}/install-manifest.tsv"
+readonly REBOOT_LOCK_FILE="${STATE_DIR}/reboot-lock.env"
+readonly INITIAL_SETUP_STATE_FILE="${STATE_DIR}/initial-setup.env"
+readonly SSH_BACKUP_ROOT="${STATE_DIR}/ssh-backup"
 readonly SETTINGS_FILE="${STATE_DIR}/settings"
 readonly VERSIONS_FILE="${STATE_DIR}/versions.env"
 readonly SECRETS_FILE="${STATE_DIR}/secrets.env"
@@ -991,6 +1023,16 @@ TRANSACTION_ACTIVE=0
 CURRENT_BACKUP_DIR=""
 DOT_WHITELIST_ENABLED="false"
 DOT_WHITELIST_MODE="shared"
+REBOOT_LOCKED="true"
+SMARTDNS_VERIFIED="false"
+REBOOT_ALLOWED="false"
+REBOOT_REQUIRED="false"
+REBOOT_REASONS=""
+INSTALL_PAUSED="false"
+INSTALL_PAUSED_STAGE=""
+INSTALL_PAUSED_REASON=""
+EXTERNAL_REBOOT_TRIGGERS=""
+UNSAFE_CONTINUE_REASON=""
 SELECTED_DOMAIN_GROUPS="ALL"
 PENDING_CUSTOM_DOMAINS_FILE=""
 PENDING_CUSTOM_DOMAINS_COUNT=0
@@ -1056,6 +1098,11 @@ on_error_trap() {
         exit "${exit_code}"
     fi
     log_error_tr "installation.log" "M_0001" "${line_no}" "${exit_code}"
+    if [[ "${SMARTDNS_VERIFIED:-false}" != "true" && -d "${STATE_DIR}" ]]; then
+        REBOOT_LOCKED="true"
+        REBOOT_ALLOWED="false"
+        save_reboot_lock_state 2>/dev/null || true
+    fi
     if [[ "${TRANSACTION_ACTIVE}" -eq 1 && -n "${CURRENT_BACKUP_DIR}" && -d "${CURRENT_BACKUP_DIR}" ]]; then
         log_warn_tr "rollback.log" "M_0002"
         perform_rollback "${CURRENT_BACKUP_DIR}" || true
@@ -2037,6 +2084,263 @@ run_interactive_wizard() {
         printf_tr "M_0082"
         exit 0
     fi
+}
+
+# ------------------------------ Centralized Reboot Lock -----------------------
+sanitize_env_value() {
+    local val="$1"
+    val="${val//$'\n'/ }"
+    val="${val//$'\r'/}"
+    val="${val//\"/\'}"
+    val="${val//\$/}"
+    val="${val//\`/}"
+    printf '%s' "${val}"
+}
+
+save_reboot_lock_state() {
+    install -d -m 0700 -o root -g root "${STATE_DIR}"
+    local tmp_rl="${REBOOT_LOCK_FILE}.tmp"
+    local safe_reasons safe_stage safe_pause_reason safe_ext
+    safe_reasons="$(sanitize_env_value "${REBOOT_REASONS:-}")"
+    safe_stage="$(sanitize_env_value "${INSTALL_PAUSED_STAGE:-}")"
+    safe_pause_reason="$(sanitize_env_value "${INSTALL_PAUSED_REASON:-}")"
+    safe_ext="$(sanitize_env_value "${EXTERNAL_REBOOT_TRIGGERS:-}")"
+
+    cat > "${tmp_rl}" <<EOF
+REBOOT_LOCKED="${REBOOT_LOCKED:-true}"
+SMARTDNS_VERIFIED="${SMARTDNS_VERIFIED:-false}"
+REBOOT_ALLOWED="${REBOOT_ALLOWED:-false}"
+REBOOT_REQUIRED="${REBOOT_REQUIRED:-false}"
+REBOOT_REASONS="${safe_reasons}"
+INSTALL_PAUSED="${INSTALL_PAUSED:-false}"
+INSTALL_PAUSED_STAGE="${safe_stage}"
+INSTALL_PAUSED_REASON="${safe_pause_reason}"
+EXTERNAL_REBOOT_TRIGGERS="${safe_ext}"
+REBOOT_LOCK_UPDATED_AT="$(date -Is)"
+EOF
+    chmod 0600 "${tmp_rl}"
+    mv -f "${tmp_rl}" "${REBOOT_LOCK_FILE}"
+}
+
+load_reboot_lock_state() {
+    if [[ -f "${REBOOT_LOCK_FILE}" ]]; then
+        # shellcheck disable=SC1090
+        source "${REBOOT_LOCK_FILE}"
+    fi
+    REBOOT_LOCKED="${REBOOT_LOCKED:-true}"
+    SMARTDNS_VERIFIED="${SMARTDNS_VERIFIED:-false}"
+    REBOOT_ALLOWED="${REBOOT_ALLOWED:-false}"
+    REBOOT_REQUIRED="${REBOOT_REQUIRED:-false}"
+    REBOOT_REASONS="${REBOOT_REASONS:-}"
+    INSTALL_PAUSED="${INSTALL_PAUSED:-false}"
+    INSTALL_PAUSED_STAGE="${INSTALL_PAUSED_STAGE:-}"
+    INSTALL_PAUSED_REASON="${INSTALL_PAUSED_REASON:-}"
+    EXTERNAL_REBOOT_TRIGGERS="${EXTERNAL_REBOOT_TRIGGERS:-}"
+}
+
+audit_external_reboot_triggers() {
+    local found=""
+    if grep -RqsE 'Automatic-Reboot[[:space:]]+"true"' /etc/apt/apt.conf.d/ 2>/dev/null; then
+        found+="unattended-upgrades:Automatic-Reboot=true; "
+    fi
+
+    if grep -RqsE '(^|[[:space:]])(reboot|shutdown[[:space:]]+-r|systemctl[[:space:]]+reboot)' /etc/crontab /etc/cron.d/ /etc/cron.daily/ /etc/cron.hourly/ /var/spool/cron/ 2>/dev/null; then
+        found+="cron:reboot-entry; "
+    fi
+    if grep -RqsE 'ExecStart=.*(reboot|shutdown[[:space:]]+-r)' /etc/systemd/system/*.service 2>/dev/null; then
+        found+="systemd:reboot-unit; "
+    fi
+
+    EXTERNAL_REBOOT_TRIGGERS="${found%; }"
+    if [[ -n "${EXTERNAL_REBOOT_TRIGGERS}" ]]; then
+        log_warn_tr "installation.log" "M_0378" "${EXTERNAL_REBOOT_TRIGGERS}"
+    fi
+}
+
+init_reboot_lock() {
+    local mode="${1:-enforce}"
+    install -d -m 0700 -o root -g root "${STATE_DIR}"
+    load_reboot_lock_state
+
+    if [[ "${mode}" == "force_lock" || "${SMARTDNS_VERIFIED}" != "true" ]]; then
+        REBOOT_LOCKED="true"
+        SMARTDNS_VERIFIED="false"
+        REBOOT_ALLOWED="false"
+    fi
+
+    audit_external_reboot_triggers
+    save_reboot_lock_state
+    log_info_tr "installation.log" "M_0376" "${REBOOT_LOCK_FILE}"
+}
+
+check_reboot_required() {
+    local quiet="${1:-0}"
+    local reason_list=""
+    local need_reboot=0
+
+    if [[ -f /var/run/reboot-required ]]; then
+        need_reboot=1
+        if [[ -s /var/run/reboot-required.pkgs ]]; then
+            local pkgs
+            pkgs="$(sort -u /var/run/reboot-required.pkgs | paste -sd ',' -)"
+            reason_list="reboot-required (${pkgs})"
+        else
+            reason_list="reboot-required (/var/run/reboot-required)"
+        fi
+    fi
+
+    local running_kern
+    running_kern="$(uname -r 2>/dev/null || true)"
+    if [[ -n "${running_kern}" && ! -d "/lib/modules/${running_kern}" ]]; then
+        need_reboot=1
+        if [[ -n "${reason_list}" ]]; then
+            reason_list+="; "
+        fi
+        reason_list+="kernel-modules-missing-for-${running_kern}"
+    fi
+
+    if [[ "${need_reboot}" -eq 1 ]]; then
+        REBOOT_REQUIRED="true"
+        if [[ -z "${REBOOT_REASONS}" ]]; then
+            REBOOT_REASONS="${reason_list}"
+        elif [[ "${REBOOT_REASONS}" != *"${reason_list}"* ]]; then
+            REBOOT_REASONS="${REBOOT_REASONS}; ${reason_list}"
+        fi
+        save_reboot_lock_state
+        if [[ "${quiet}" != "1" ]]; then
+            printf_tr "M_0377" "${REBOOT_REASONS}"
+        fi
+        return 0
+    fi
+    return 1
+}
+
+check_safe_to_continue_without_reboot() {
+    UNSAFE_CONTINUE_REASON=""
+    if command -v dpkg >/dev/null 2>&1; then
+        local dpkg_issues
+        dpkg_issues="$(dpkg --audit 2>/dev/null || true)"
+        if [[ -n "${dpkg_issues}" ]]; then
+            UNSAFE_CONTINUE_REASON="dpkg --audit reported unconfigured or broken packages"
+            log_error_tr "installation.log" "M_0379" "${UNSAFE_CONTINUE_REASON}"
+            return 1
+        fi
+    fi
+
+    local running_kern
+    running_kern="$(uname -r 2>/dev/null || true)"
+    if [[ -n "${running_kern}" && ! -d "/lib/modules/${running_kern}" ]]; then
+        if ! grep -q '^ip_set ' /proc/modules 2>/dev/null; then
+            UNSAFE_CONTINUE_REASON="modules directory /lib/modules/${running_kern} missing and ip_set not loaded"
+            log_error_tr "installation.log" "M_0379" "${UNSAFE_CONTINUE_REASON}"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+pause_install_for_recovery() {
+    local stage="$1"
+    local reason="$2"
+    REBOOT_LOCKED="true"
+    SMARTDNS_VERIFIED="false"
+    REBOOT_ALLOWED="false"
+    INSTALL_PAUSED="true"
+    INSTALL_PAUSED_STAGE="${stage}"
+    INSTALL_PAUSED_REASON="${reason}"
+    save_reboot_lock_state
+    log_warn "installation.log" "Установка приостановлена на этапе ${stage}: ${reason}"
+    printf_tr "M_0380" "${stage}" "${reason}" "${REBOOT_LOCK_FILE}" "${LOG_DIR}" "${SCRIPT_NAME}"
+}
+
+assert_reboot_allowed() {
+    load_reboot_lock_state
+    if [[ "${REBOOT_LOCKED}" == "false" && "${SMARTDNS_VERIFIED}" == "true" && "${REBOOT_ALLOWED}" == "true" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+unlock_reboot_after_smartdns() {
+    local dns_tests_passed="${1:-0}"
+    local fail_reason=""
+
+    if [[ "${dns_tests_passed}" != "1" ]]; then
+        fail_reason="DNS test suite not confirmed"
+    elif [[ ! -f "${SETTINGS_FILE}" ]]; then
+        fail_reason="settings file missing"
+    elif [[ -z "${DNS_ENGINE:-}" ]]; then
+        fail_reason="DNS_ENGINE undefined"
+    elif [[ "${DNS_ENGINE}" == "oxidns" && ! -s /etc/oxidns/config.yaml ]]; then
+        fail_reason="OxiDNS config missing"
+    elif [[ "${DNS_ENGINE}" == "adguardhome" && ! -s /etc/adguardhome/AdGuardHome.yaml ]]; then
+        fail_reason="AdGuardHome config missing"
+    elif [[ "${DNS_ENGINE}" == "oxidns" ]] && ! /usr/local/bin/oxidns check -c /etc/oxidns/config.yaml -d /var/lib/oxidns >/dev/null 2>&1; then
+        fail_reason="OxiDNS config validation failed"
+    elif ! systemctl is-active --quiet "${DNS_ENGINE}" 2>/dev/null; then
+        fail_reason="service ${DNS_ENGINE} is not active"
+    elif ! ss -ulnp 2>/dev/null | grep -q "127.0.0.1:5353 " || ! ss -tlnp 2>/dev/null | grep -q "127.0.0.1:8053 "; then
+        fail_reason="SmartDNS local sockets 5353/8053 not listening"
+    else
+        local live_a
+        live_a="$(dig +time=3 +tries=1 +short @127.0.0.1 -p 5353 example.com A 2>/dev/null | sed -n '1p' || true)"
+        if ! validate_single_ipv4 "${live_a}"; then
+            fail_reason="live DNS resolution check failed"
+        fi
+    fi
+
+    if [[ -n "${fail_reason}" ]]; then
+        REBOOT_LOCKED="true"
+        SMARTDNS_VERIFIED="false"
+        REBOOT_ALLOWED="false"
+        save_reboot_lock_state
+        log_error_tr "installation.log" "M_0381" "${fail_reason}"
+        return 1
+    fi
+
+    REBOOT_LOCKED="false"
+    SMARTDNS_VERIFIED="true"
+    REBOOT_ALLOWED="true"
+    INSTALL_PAUSED="false"
+    INSTALL_PAUSED_STAGE=""
+    INSTALL_PAUSED_REASON=""
+    save_reboot_lock_state
+    log_info_tr "installation.log" "M_0382" "${DNS_ENGINE}"
+    return 0
+}
+
+prompt_deferred_reboot_if_needed() {
+    check_reboot_required 1 || true
+    load_reboot_lock_state
+
+    if [[ "${REBOOT_REQUIRED}" != "true" ]]; then
+        return 0
+    fi
+
+    if ! assert_reboot_allowed; then
+        log_error_tr "installation.log" "M_0386"
+        return 0
+    fi
+
+    if [[ ! -t 0 ]]; then
+        printf_tr "M_0384"
+        return 0
+    fi
+
+    local confirm_reboot=""
+    read_tr "M_0383" confirm_reboot "${REBOOT_REASONS:-system updates}"
+    if [[ "${LAST_READ_EOF}" -eq 1 || "${confirm_reboot}" != "YES" ]]; then
+        printf_tr "M_0384"
+        return 0
+    fi
+
+    if ! assert_reboot_allowed; then
+        log_error_tr "installation.log" "M_0386"
+        return 1
+    fi
+
+    log_warn_tr "installation.log" "M_0385"
+    systemctl reboot
 }
 
 # ------------------------------ Initial Backup & Manifest ---------------------
