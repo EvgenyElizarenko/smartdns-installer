@@ -1,10 +1,10 @@
-# Unified SmartDNS + Transparent SNI Proxy Installer (`v2.11.0-stealth`)
+# Unified SmartDNS + Transparent SNI Proxy Installer (`v3.0-stealth`)
 
 [![Donate — CloudTips / SBP](https://img.shields.io/badge/Donate-CloudTips_%2F_SBP-0066FF?style=for-the-badge)](https://pay.cloudtips.ru/p/9785e813)
 
 **Language:** [Русский](README.md) | **English**
 
-[![Version](https://img.shields.io/badge/version-v2.10.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v2.11.0-stealth)
+[![Version](https://img.shields.io/badge/version-v2.10.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v3.0-stealth)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-technical-requirements)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-interface-language-selection-russian--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -16,7 +16,7 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 
 ---
 
-## What's New in v2.11.0-stealth
+## What's New in v3.0-stealth
 
 - **Initial Backup & Installation Manifest:** pre-modify backup of system files before changes (`/var/lib/oxidns-installer/initial-backup/`, `.sealed` immutability marker, `SHA-256` integrity checks) and structured object tracking (`install-manifest.tsv`).
 - **Interactive Selective `--uninstall`:** component-level removal with dependency graph validation, user data protection, `diff -u` / restore prompts for manually edited files, and safe package removal (`apt-get remove`).
@@ -155,7 +155,7 @@ On every interactive launch, the script prompts for the user interface language 
 
 1. **Download the script and make it executable:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v2.11.0-stealth.sh" -o smartdns-installer.sh
+   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.0-stealth.sh" -o smartdns-installer.sh
    chmod +x smartdns-installer.sh
    ```
 
@@ -194,6 +194,7 @@ Usage: sudo ./smartdns-installer.sh <COMMAND>
 | :--- | :--- |
 | `--help`, `-h` | Display help message listing all supported commands and exit |
 | `--preflight` | Check OS, kernel, RAM, disk, network, ports, and engine compatibility (read-only) |
+  --initial-setup                  Interactive Initial Server Setup & SSH Security Hardening
 | `--install` | Run interactive transactional installation of the full stack |
 | `--status` | Display active DNS engine, `systemd` services/timers state, and `ipset` entries |
 | `--test` | Execute 25 functional and negative self-tests across the entire proxy pipeline |
