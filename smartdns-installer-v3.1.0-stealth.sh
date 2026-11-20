@@ -12900,25 +12900,46 @@ nameserver 1.1.1.1
 nameserver 8.8.8.8
 EOF_RES
 
-    install -d -m 0755 "${NSPAWN_MACHINE_DIR}/etc/systemd/network"
-    cat > "${NSPAWN_MACHINE_DIR}/etc/systemd/network/10-host0.network" <<EOF_NET
-[Match]
-Name=host0
-
-[Network]
-Address=${NSPAWN_TRANSIT_CONT_V4}/30
-Gateway=${NSPAWN_TRANSIT_HOST_V4}
-DNS=1.1.1.1
-DNS=8.8.8.8
-EOF_NET
+    # Configure container transit interface (host0) via self-contained iproute2 unit
+    # (works reliably across Debian 12/13 and Ubuntu 22.04/24.04 minbase without systemd-networkd)
+    install -d -m 0755 "${NSPAWN_MACHINE_DIR}/usr/local/sbin" \
+        "${NSPAWN_MACHINE_DIR}/etc/systemd/system/multi-user.target.wants"
+    cat > "${NSPAWN_MACHINE_DIR}/usr/local/sbin/smartdns-container-net.sh" <<EOF_CNET
+#!/usr/bin/env bash
+set -Eeuo pipefail
+for _ in {1..20}; do
+    ip link show dev host0 >/dev/null 2>&1 && break
+    sleep 0.25
+done
+ip link set dev lo up || true
+ip link set dev host0 up
+ip addr replace ${NSPAWN_TRANSIT_CONT_V4}/30 dev host0
+ip route replace default via ${NSPAWN_TRANSIT_HOST_V4} dev host0
+EOF_CNET
     if [[ -n "${NSPAWN_SELECTED_IPV6}" ]]; then
-        cat >> "${NSPAWN_MACHINE_DIR}/etc/systemd/network/10-host0.network" <<EOF_NET6
-Address=${NSPAWN_TRANSIT_CONT_V6}/126
-Gateway=${NSPAWN_TRANSIT_HOST_V6}
-EOF_NET6
+        cat >> "${NSPAWN_MACHINE_DIR}/usr/local/sbin/smartdns-container-net.sh" <<EOF_CNET6
+ip -6 addr replace ${NSPAWN_TRANSIT_CONT_V6}/126 dev host0
+ip -6 route replace default via ${NSPAWN_TRANSIT_HOST_V6} dev host0
+EOF_CNET6
     fi
-    ln -sf /lib/systemd/system/systemd-networkd.service \
-        "${NSPAWN_MACHINE_DIR}/etc/systemd/system/multi-user.target.wants/systemd-networkd.service" 2>/dev/null || true
+    chmod 0750 "${NSPAWN_MACHINE_DIR}/usr/local/sbin/smartdns-container-net.sh"
+
+    cat > "${NSPAWN_MACHINE_DIR}/etc/systemd/system/smartdns-container-net.service" <<'EOF_CNET_UNIT'
+[Unit]
+Description=SmartDNS Isolated Container Transit Network (host0)
+Before=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/smartdns-container-net.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF_CNET_UNIT
+    ln -sf /etc/systemd/system/smartdns-container-net.service \
+        "${NSPAWN_MACHINE_DIR}/etc/systemd/system/multi-user.target.wants/smartdns-container-net.service"
 
     # Copy installer inside container (no persistent host filesystem bind mounts)
     install -d -m 0755 "${NSPAWN_MACHINE_DIR}/usr/local/sbin"
