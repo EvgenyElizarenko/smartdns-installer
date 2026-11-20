@@ -840,6 +840,98 @@ MSG_RU[M_0385]='Пользователь подтвердил перезагру
 MSG_EN[M_0385]='User confirmed reboot after SmartDNS verification. Executing systemctl reboot...'
 MSG_RU[M_0386]='ОШИБКА: Попытка перезагрузки заблокирована — SmartDNS не прошёл обязательную проверку.'
 MSG_EN[M_0386]='ERROR: Reboot attempt blocked — SmartDNS has not passed mandatory verification.'
+MSG_RU[M_0387]='\n--- [1] ПОЛНОЕ ОБНОВЛЕНИЕ СИСТЕМЫ ---\n'
+MSG_EN[M_0387]='\n--- [1] FULL SYSTEM UPDATE ---\n'
+MSG_RU[M_0388]='Обновление системы уже выполнялось в этом сеансе/установке. Повторить проверку обновлений? [y/N]: '
+MSG_EN[M_0388]='System update was already completed previously. Re-run update check? [y/N]: '
+MSG_RU[M_0389]='ОШИБКА: Недостаточно свободного места для безопасного обновления ОС: %s МБ (минимум 1500 МБ).\n'
+MSG_EN[M_0389]='ERROR: Insufficient free disk space for safe OS update: %s MB (minimum 1500 MB).\n'
+MSG_RU[M_0390]='Проверка доступности репозиториев APT (apt-get update)...\n'
+MSG_EN[M_0390]='Checking APT repositories reachability (apt-get update)...\n'
+MSG_RU[M_0391]='ОШИБКА: Не удалось обновить списки пакетов (apt-get update). Проверьте сеть и репозитории.\n'
+MSG_EN[M_0391]='ERROR: Failed to update package lists (apt-get update). Check network and repositories.\n'
+MSG_RU[M_0392]='Все установленные пакеты ОС уже актуальны (0 обновлений).\n'
+MSG_EN[M_0392]='All installed OS packages are already up to date (0 upgrades).\n'
+MSG_RU[M_0393]='Доступно обновлений пакетов: %s (переход на другую major-версию ОС не выполняется; перезагрузка заблокирована).\n'
+MSG_EN[M_0393]='Available package upgrades: %s (major OS release upgrade will NOT be performed; reboot is locked).\n'
+MSG_RU[M_0394]='Выполнить обновление пакетов ОС сейчас? [y/N]: '
+MSG_EN[M_0394]='Proceed with OS package upgrade now? [y/N]: '
+MSG_RU[M_0395]='Обновление пакетов ОС пропущено пользователем.\n'
+MSG_EN[M_0395]='OS package upgrade skipped by user.\n'
+MSG_RU[M_0396]='Выполняется non-interactive обновление пакетов ОС (без перезагрузки)...\n'
+MSG_EN[M_0396]='Running non-interactive OS package upgrade (no reboot)...\n'
+MSG_RU[M_0397]='Обновление пакетов ОС успешно завершено.\n'
+MSG_EN[M_0397]='OS package upgrade completed successfully.\n'
+MSG_RU[M_0398]='Найдены неиспользуемые пакеты для безопасного autoremove: %s\n'
+MSG_EN[M_0398]='Unused packages available for safe autoremove: %s\n'
+MSG_RU[M_0399]='Выполнить apt-get autoremove для этих пакетов? [y/N]: '
+MSG_EN[M_0399]='Run apt-get autoremove for these packages? [y/N]: '
+MSG_RU[M_0400]='ПРЕДУПРЕЖДЕНИЕ: Список autoremove содержит критически важные пакеты (%s) — удаление пропущено.\n'
+MSG_EN[M_0400]='WARNING: autoremove list contains critical packages (%s) — removal skipped.\n'
+MSG_RU[M_0401]='\n--- [2] ПРОВЕРКА И УСТАНОВКА SUDO ---\n'
+MSG_EN[M_0401]='\n--- [2] SUDO CHECK AND INSTALLATION ---\n'
+MSG_RU[M_0402]='Пакет и команда sudo уже установлены и работают корректно (%s).\n'
+MSG_EN[M_0402]='The sudo package and command are already installed and functional (%s).\n'
+MSG_RU[M_0403]='Команда sudo не найдена в системе.\n'
+MSG_EN[M_0403]='The sudo command was not found on this system.\n'
+MSG_RU[M_0404]='Установить пакет sudo через apt-get? [Y/n]: '
+MSG_EN[M_0404]='Install the sudo package via apt-get? [Y/n]: '
+MSG_RU[M_0405]='Пакет sudo успешно установлен и проверен.\n'
+MSG_EN[M_0405]='The sudo package was installed and verified successfully.\n'
+MSG_RU[M_0406]='ОШИБКА: Не удалось установить или проверить sudo.\n'
+MSG_EN[M_0406]='ERROR: Failed to install or verify sudo.\n'
+MSG_RU[M_0407]='\n--- [3] ИЗМЕНЕНИЕ ПАРОЛЯ ROOT ---\n'
+MSG_EN[M_0407]='\n--- [3] CHANGE ROOT PASSWORD ---\n'
+MSG_RU[M_0408]='Изменить пароль root? [y/N]: '
+MSG_EN[M_0408]='Change root password? [y/N]: '
+MSG_RU[M_0409]='Интерактивный терминал недоступен (non-interactive режим) — смена пароля пропущена.\n'
+MSG_EN[M_0409]='Interactive terminal unavailable (non-interactive mode) — password change skipped.\n'
+MSG_RU[M_0410]='Пароль root успешно изменён.\n'
+MSG_EN[M_0410]='Root password changed successfully.\n'
+MSG_RU[M_0411]='ПРЕДУПРЕЖДЕНИЕ: Смена пароля root не завершена или отменена.\n'
+MSG_EN[M_0411]='WARNING: Root password change was not completed or cancelled.\n'
+MSG_RU[M_0412]='\n--- [4] СОЗДАНИЕ / ВЫБОР АДМИНИСТРАТИВНОГО ПОЛЬЗОВАТЕЛЯ ---\n'
+MSG_EN[M_0412]='\n--- [4] CREATE / SELECT ADMINISTRATIVE USER ---\n'
+MSG_RU[M_0413]='Ранее настроен административный пользователь: %s. Оставить его без изменений? [Y/n]: '
+MSG_EN[M_0413]='Previously configured admin user: %s. Keep unchanged? [Y/n]: '
+MSG_RU[M_0414]='Создать нового пользователя (или выбрать существующего) для управления сервером? [y/N]: '
+MSG_EN[M_0414]='Create a new user (or select an existing one) for server administration? [y/N]: '
+MSG_RU[M_0415]='Введите имя пользователя (строчные латинские буквы, цифры, _, -; Enter — отмена): '
+MSG_EN[M_0415]='Enter username (lowercase Latin letters, digits, _, -; Enter to cancel): '
+MSG_RU[M_0416]='ОШИБКА: Недопустимое или зарезервированное системное имя пользователя: %s\n'
+MSG_EN[M_0416]='ERROR: Invalid or reserved system username: %s\n'
+MSG_RU[M_0417]='Пользователь "%s" уже существует (UID=%s, home=%s, shell=%s, sudo=%s).\n'
+MSG_EN[M_0417]='User "%s" already exists (UID=%s, home=%s, shell=%s, sudo=%s).\n'
+MSG_RU[M_0418]='ОШИБКА: Пользователь "%s" является системной учётной записью (UID=%s < 1000). Изменение запрещено.\n'
+MSG_EN[M_0418]='ERROR: User "%s" is a system account (UID=%s < 1000). Modification is prohibited.\n'
+MSG_RU[M_0419]='Использовать существующего пользователя "%s" для администрирования? [Y/n]: '
+MSG_EN[M_0419]='Use existing user "%s" for administration? [Y/n]: '
+MSG_RU[M_0420]='Введите полное имя пользователя (опционально, Enter — пропустить): '
+MSG_EN[M_0420]='Enter full name (optional, Enter to skip): '
+MSG_RU[M_0421]='Создать пользователя "%s" с домашней директорией и shell /bin/bash? [Y/n]: '
+MSG_EN[M_0421]='Create user "%s" with home directory and /bin/bash shell? [Y/n]: '
+MSG_RU[M_0422]='Задайте пароль для пользователя "%s" (ввод не отображается и не сохраняется в логах):\n'
+MSG_EN[M_0422]='Set password for user "%s" (input is hidden and never logged):\n'
+MSG_RU[M_0423]='Пользователь "%s" успешно создан (UID=%s, home=%s).\n'
+MSG_EN[M_0423]='User "%s" created successfully (UID=%s, home=%s).\n'
+MSG_RU[M_0424]='ОШИБКА: Не удалось создать пользователя "%s".\n'
+MSG_EN[M_0424]='ERROR: Failed to create user "%s".\n'
+MSG_RU[M_0425]='--- ДОБАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ В ГРУППУ SUDO ---\n'
+MSG_EN[M_0425]='--- ADD USER TO SUDO GROUP ---\n'
+MSG_RU[M_0426]='Пользователь "%s" уже состоит в группе sudo. Изменения не требуются.\n'
+MSG_EN[M_0426]='User "%s" is already a member of the sudo group. No changes needed.\n'
+MSG_RU[M_0427]='Добавить пользователя "%s" в группу sudo? [Y/n]: '
+MSG_EN[M_0427]='Add user "%s" to the sudo group? [Y/n]: '
+MSG_RU[M_0428]='Пользователь "%s" успешно добавлен в группу sudo (visudo -c: OK).\n'
+MSG_EN[M_0428]='User "%s" successfully added to the sudo group (visudo -c: OK).\n'
+MSG_RU[M_0429]='ОШИБКА: Группа sudo отсутствует в системе. Сначала установите пакет sudo.\n'
+MSG_EN[M_0429]='ERROR: Group sudo does not exist on this system. Install the sudo package first.\n'
+MSG_RU[M_0430]='ОШИБКА: Проверка visudo -c не пройдена — правило /etc/sudoers.d/90-smartdns-sudo-group откачено.\n'
+MSG_EN[M_0430]='ERROR: visudo -c validation failed — /etc/sudoers.d/90-smartdns-sudo-group rolled back.\n'
+MSG_RU[M_0431]='Не указан административный пользователь для добавления в sudo. Введите имя существующего пользователя (Enter — пропустить): '
+MSG_EN[M_0431]='No admin user selected for sudo. Enter an existing username (Enter to skip): '
+MSG_RU[M_0432]='ОШИБКА: Пользователь "%s" не найден в системе.\n'
+MSG_EN[M_0432]='ERROR: User "%s" was not found on this system.\n'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -1033,6 +1125,20 @@ INSTALL_PAUSED_STAGE=""
 INSTALL_PAUSED_REASON=""
 EXTERNAL_REBOOT_TRIGGERS=""
 UNSAFE_CONTINUE_REASON=""
+INITIAL_SETUP_COMPLETED="false"
+INITIAL_SETUP_OS_UPDATED="false"
+INITIAL_SETUP_SUDO_OK="false"
+INITIAL_SETUP_ROOT_PASS_CHANGED="false"
+INITIAL_SETUP_ADMIN_USER=""
+INITIAL_SETUP_ADMIN_IN_SUDO="false"
+INITIAL_SETUP_SSH_PORT=""
+INITIAL_SETUP_SSH_ORIG_PORT=""
+INITIAL_SETUP_SSH_KEY_OK="false"
+INITIAL_SETUP_SSH_KEY_CONFIRMED="false"
+INITIAL_SETUP_PASSAUTH_DISABLED="false"
+INITIAL_SETUP_ROOTLOGIN_DISABLED="false"
+INITIAL_SETUP_ACTIONS_DONE=""
+INITIAL_SETUP_CHECKS_SUMMARY=""
 SELECTED_DOMAIN_GROUPS="ALL"
 PENDING_CUSTOM_DOMAINS_FILE=""
 PENDING_CUSTOM_DOMAINS_COUNT=0
@@ -2341,6 +2447,454 @@ prompt_deferred_reboot_if_needed() {
 
     log_warn_tr "installation.log" "M_0385"
     systemctl reboot
+}
+
+# ------------------------------ Initial Server Setup (State & Modules 2-4) ----
+load_initial_setup_state() {
+    if [[ -f "${INITIAL_SETUP_STATE_FILE}" ]]; then
+        # shellcheck disable=SC1090
+        source "${INITIAL_SETUP_STATE_FILE}"
+    fi
+    INITIAL_SETUP_COMPLETED="${INITIAL_SETUP_COMPLETED:-false}"
+    INITIAL_SETUP_OS_UPDATED="${INITIAL_SETUP_OS_UPDATED:-false}"
+    INITIAL_SETUP_SUDO_OK="${INITIAL_SETUP_SUDO_OK:-false}"
+    INITIAL_SETUP_ROOT_PASS_CHANGED="${INITIAL_SETUP_ROOT_PASS_CHANGED:-false}"
+    INITIAL_SETUP_ADMIN_USER="${INITIAL_SETUP_ADMIN_USER:-}"
+    INITIAL_SETUP_ADMIN_IN_SUDO="${INITIAL_SETUP_ADMIN_IN_SUDO:-false}"
+    INITIAL_SETUP_SSH_PORT="${INITIAL_SETUP_SSH_PORT:-}"
+    INITIAL_SETUP_SSH_ORIG_PORT="${INITIAL_SETUP_SSH_ORIG_PORT:-}"
+    INITIAL_SETUP_SSH_KEY_OK="${INITIAL_SETUP_SSH_KEY_OK:-false}"
+    INITIAL_SETUP_SSH_KEY_CONFIRMED="${INITIAL_SETUP_SSH_KEY_CONFIRMED:-false}"
+    INITIAL_SETUP_PASSAUTH_DISABLED="${INITIAL_SETUP_PASSAUTH_DISABLED:-false}"
+    INITIAL_SETUP_ROOTLOGIN_DISABLED="${INITIAL_SETUP_ROOTLOGIN_DISABLED:-false}"
+    INITIAL_SETUP_ACTIONS_DONE="${INITIAL_SETUP_ACTIONS_DONE:-}"
+    INITIAL_SETUP_CHECKS_SUMMARY="${INITIAL_SETUP_CHECKS_SUMMARY:-}"
+}
+
+save_initial_setup_state() {
+    install -d -m 0700 -o root -g root "${STATE_DIR}"
+    local tmp_is="${INITIAL_SETUP_STATE_FILE}.tmp"
+    local safe_actions safe_checks safe_user
+    safe_actions="$(sanitize_env_value "${INITIAL_SETUP_ACTIONS_DONE:-}")"
+    safe_checks="$(sanitize_env_value "${INITIAL_SETUP_CHECKS_SUMMARY:-}")"
+    safe_user="$(sanitize_env_value "${INITIAL_SETUP_ADMIN_USER:-}")"
+
+    cat > "${tmp_is}" <<EOF
+INITIAL_SETUP_COMPLETED="${INITIAL_SETUP_COMPLETED:-false}"
+INITIAL_SETUP_OS_UPDATED="${INITIAL_SETUP_OS_UPDATED:-false}"
+INITIAL_SETUP_SUDO_OK="${INITIAL_SETUP_SUDO_OK:-false}"
+INITIAL_SETUP_ROOT_PASS_CHANGED="${INITIAL_SETUP_ROOT_PASS_CHANGED:-false}"
+INITIAL_SETUP_ADMIN_USER="${safe_user}"
+INITIAL_SETUP_ADMIN_IN_SUDO="${INITIAL_SETUP_ADMIN_IN_SUDO:-false}"
+INITIAL_SETUP_SSH_PORT="${INITIAL_SETUP_SSH_PORT:-}"
+INITIAL_SETUP_SSH_ORIG_PORT="${INITIAL_SETUP_SSH_ORIG_PORT:-}"
+INITIAL_SETUP_SSH_KEY_OK="${INITIAL_SETUP_SSH_KEY_OK:-false}"
+INITIAL_SETUP_SSH_KEY_CONFIRMED="${INITIAL_SETUP_SSH_KEY_CONFIRMED:-false}"
+INITIAL_SETUP_PASSAUTH_DISABLED="${INITIAL_SETUP_PASSAUTH_DISABLED:-false}"
+INITIAL_SETUP_ROOTLOGIN_DISABLED="${INITIAL_SETUP_ROOTLOGIN_DISABLED:-false}"
+INITIAL_SETUP_ACTIONS_DONE="${safe_actions}"
+INITIAL_SETUP_CHECKS_SUMMARY="${safe_checks}"
+INITIAL_SETUP_UPDATED_AT="$(date -Is)"
+EOF
+    chmod 0600 "${tmp_is}"
+    mv -f "${tmp_is}" "${INITIAL_SETUP_STATE_FILE}"
+}
+
+initial_setup_record_action() {
+    local act="$1"
+    if [[ ",${INITIAL_SETUP_ACTIONS_DONE}," != *",${act},"* ]]; then
+        if [[ -n "${INITIAL_SETUP_ACTIONS_DONE}" ]]; then
+            INITIAL_SETUP_ACTIONS_DONE="${INITIAL_SETUP_ACTIONS_DONE},${act}"
+        else
+            INITIAL_SETUP_ACTIONS_DONE="${act}"
+        fi
+    fi
+    save_initial_setup_state
+}
+
+initial_setup_record_check() {
+    local kv="$1"
+    if [[ "; ${INITIAL_SETUP_CHECKS_SUMMARY}; " != *"; ${kv}; "* ]]; then
+        if [[ -n "${INITIAL_SETUP_CHECKS_SUMMARY}" ]]; then
+            INITIAL_SETUP_CHECKS_SUMMARY="${INITIAL_SETUP_CHECKS_SUMMARY}; ${kv}"
+        else
+            INITIAL_SETUP_CHECKS_SUMMARY="${kv}"
+        fi
+    fi
+    save_initial_setup_state
+}
+
+# --- Step 1: Full OS Update (no reboot, non-interactive) ---
+initial_setup_os_update() {
+    printf_tr "M_0387"
+
+    if [[ "${INITIAL_SETUP_OS_UPDATED}" == "true" ]]; then
+        local rerun_upd=""
+        read_tr "M_0388" rerun_upd
+        if [[ "${LAST_READ_EOF}" -eq 1 || ! "${rerun_upd:-N}" =~ ^[Yy]$ ]]; then
+            return 0
+        fi
+    fi
+
+    local free_mb
+    free_mb="$(df -Pm / /var /usr 2>/dev/null | awk 'NR==2 {print $4}')"
+    free_mb="${free_mb:-0}"
+    if [[ "${free_mb}" -lt 1500 ]]; then
+        printf_err_tr "M_0389" "${free_mb}"
+        log_error "installation.log" "Недостаточно места для обновления ОС: ${free_mb} MB."
+        return 1
+    fi
+
+    printf_tr "M_0390"
+    if ! DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get update -y -q; then
+        printf_err_tr "M_0391"
+        log_error "installation.log" "Ошибка apt-get update на этапе Initial Server Setup."
+        pause_install_for_recovery "initial-setup:os-update" "apt-get update failed"
+        return 2
+    fi
+
+    local upgradable_cnt
+    upgradable_cnt="$(apt list --upgradable 2>/dev/null | grep -c 'upgradable' || true)"
+    upgradable_cnt="${upgradable_cnt:-0}"
+
+    if [[ "${upgradable_cnt}" -eq 0 ]]; then
+        printf_tr "M_0392"
+        INITIAL_SETUP_OS_UPDATED="true"
+        initial_setup_record_action "os_update_checked_clean"
+        check_reboot_required || true
+        return 0
+    fi
+
+    printf_tr "M_0393" "${upgradable_cnt}"
+    local confirm_upd=""
+    read_tr "M_0394" confirm_upd
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${confirm_upd:-N}" =~ ^[Yy]$ ]]; then
+        printf_tr "M_0395"
+        return 0
+    fi
+
+    printf_tr "M_0396"
+    log_info "installation.log" "Запуск non-interactive apt-get upgrade (пакетов: ${upgradable_cnt}, reboot заблокирован)."
+    if ! DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 \
+        apt-get -y -q -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade; then
+        log_error "installation.log" "Ошибка выполнения apt-get upgrade."
+        pause_install_for_recovery "initial-setup:os-update" "apt-get upgrade failed; resolve with dpkg --configure -a"
+        return 2
+    fi
+
+    printf_tr "M_0397"
+    INITIAL_SETUP_OS_UPDATED="true"
+    initial_setup_record_action "os_updated(${upgradable_cnt})"
+
+    # Безопасная проверка autoremove без удаления критических пакетов
+    local autoremove_pkgs
+    autoremove_pkgs="$(apt-get --simulate autoremove 2>/dev/null | awk '/^Remv / {print $2}' | paste -sd ' ' - || true)"
+    if [[ -n "${autoremove_pkgs}" ]]; then
+        local crit_hits
+        crit_hits="$(tr ' ' '\n' <<<"${autoremove_pkgs}" | grep -E '^(openssh-server|openssh-client|sudo|systemd|ufw|nginx|iptables|linux-image|libc6|bash)$' | paste -sd ',' - || true)"
+        if [[ -n "${crit_hits}" ]]; then
+            printf_tr "M_0400" "${crit_hits}"
+            log_warn "installation.log" "autoremove пропущен: найдены критические пакеты (${crit_hits})."
+        else
+            printf_tr "M_0398" "${autoremove_pkgs}"
+            local confirm_ar=""
+            read_tr "M_0399" confirm_ar
+            if [[ "${LAST_READ_EOF}" -eq 0 && "${confirm_ar:-N}" =~ ^[Yy]$ ]]; then
+                DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get autoremove -y -q || true
+                initial_setup_record_action "apt_autoremove"
+            fi
+        fi
+    fi
+
+    check_reboot_required || true
+    if ! check_safe_to_continue_without_reboot; then
+        pause_install_for_recovery "initial-setup:os-update" "${UNSAFE_CONTINUE_REASON}"
+        return 2
+    fi
+    return 0
+}
+
+# --- Step 2: Check / Install sudo ---
+initial_setup_check_sudo() {
+    printf_tr "M_0401"
+
+    local sudo_bin=""
+    sudo_bin="$(command -v sudo 2>/dev/null || true)"
+    if [[ -n "${sudo_bin}" ]] && dpkg-query -W -f='${Status}' sudo 2>/dev/null | grep -q 'install ok installed'; then
+        if sudo -V >/dev/null 2>&1; then
+            printf_tr "M_0402" "${sudo_bin}"
+            INITIAL_SETUP_SUDO_OK="true"
+            initial_setup_record_check "sudo=installed"
+            return 0
+        fi
+    fi
+
+    printf_tr "M_0403"
+    local confirm_sudo=""
+    read_tr "M_0404" confirm_sudo
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${confirm_sudo:-Y}" =~ ^[Yy]$ ]]; then
+        initial_setup_record_check "sudo=skipped"
+        return 0
+    fi
+
+    if ! DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get update -y -q \
+        || ! DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get install -y -q sudo; then
+        printf_err_tr "M_0406"
+        log_error "installation.log" "Не удалось установить пакет sudo."
+        return 1
+    fi
+
+    if command -v sudo >/dev/null 2>&1 && sudo -V >/dev/null 2>&1; then
+        printf_tr "M_0405"
+        INITIAL_SETUP_SUDO_OK="true"
+        initial_setup_record_action "sudo_installed"
+        initial_setup_record_check "sudo=installed"
+        return 0
+    fi
+
+    printf_err_tr "M_0406"
+    return 1
+}
+
+# --- Step 3: Root Password Change ---
+initial_setup_root_password() {
+    printf_tr "M_0407"
+    local confirm_rp=""
+    read_tr "M_0408" confirm_rp
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${confirm_rp:-N}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    if [[ ! -t 0 ]]; then
+        printf_tr "M_0409"
+        return 0
+    fi
+
+    if passwd root; then
+        printf_tr "M_0410"
+        INITIAL_SETUP_ROOT_PASS_CHANGED="true"
+        initial_setup_record_action "root_password_changed"
+        log_info "installation.log" "Пароль учётной записи root успешно обновлён (интерактивно через passwd)."
+    else
+        printf_tr "M_0411"
+        log_warn "installation.log" "Смена пароля root не завершена."
+    fi
+    return 0
+}
+
+# --- Step 4: Admin User Creation / Selection & Sudo Membership ---
+validate_admin_username() {
+    local uname="$1"
+    [[ "${uname}" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || return 1
+    case "${uname}" in
+        root|daemon|bin|sys|sync|games|man|lp|mail|news|uucp|proxy|www-data|backup|list|irc|gnats|nobody|_apt|sshd|xray|oxidns|adguard|systemd-*)
+            return 1
+            ;;
+    esac
+    return 0
+}
+
+user_in_sudo_group() {
+    local uname="$1"
+    id -nG "${uname}" 2>/dev/null | tr ' ' '\n' | grep -qx 'sudo'
+}
+
+initial_setup_add_user_sudo() {
+    local target_user="${1:-${INITIAL_SETUP_ADMIN_USER:-}}"
+    printf_tr "M_0425"
+
+    if [[ -z "${target_user}" ]]; then
+        read_tr "M_0431" target_user
+        if [[ "${LAST_READ_EOF}" -eq 1 || -z "${target_user}" ]]; then
+            return 0
+        fi
+    fi
+
+    if ! validate_admin_username "${target_user}"; then
+        printf_err_tr "M_0416" "${target_user}"
+        return 1
+    fi
+    if ! id -u "${target_user}" >/dev/null 2>&1; then
+        printf_err_tr "M_0432" "${target_user}"
+        return 1
+    fi
+
+    local target_uid
+    target_uid="$(id -u "${target_user}")"
+    if [[ "${target_uid}" -lt 1000 ]]; then
+        printf_err_tr "M_0418" "${target_user}" "${target_uid}"
+        return 1
+    fi
+
+    if ! command -v sudo >/dev/null 2>&1; then
+        initial_setup_check_sudo || return 1
+    fi
+    if ! getent group sudo >/dev/null 2>&1; then
+        printf_err_tr "M_0429"
+        return 1
+    fi
+
+    if user_in_sudo_group "${target_user}"; then
+        printf_tr "M_0426" "${target_user}"
+        INITIAL_SETUP_ADMIN_USER="${target_user}"
+        INITIAL_SETUP_ADMIN_IN_SUDO="true"
+        initial_setup_record_check "sudo_user=${target_user}"
+        return 0
+    fi
+
+    local confirm_add_sudo=""
+    read_tr "M_0427" confirm_add_sudo "${target_user}"
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${confirm_add_sudo:-Y}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    usermod -aG sudo "${target_user}"
+
+    # Проверяем наличие активного правила %sudo и целостность sudoers
+    if ! grep -Eq '^[[:space:]]*%sudo[[:space:]]+' /etc/sudoers /etc/sudoers.d/* 2>/dev/null; then
+        install -d -m 0750 /etc/sudoers.d
+        printf '%%sudo\tALL=(ALL:ALL) ALL\n' > /etc/sudoers.d/90-smartdns-sudo-group
+        chmod 0440 /etc/sudoers.d/90-smartdns-sudo-group
+        if command -v visudo >/dev/null 2>&1 && ! visudo -cf /etc/sudoers.d/90-smartdns-sudo-group >/dev/null 2>&1; then
+            rm -f /etc/sudoers.d/90-smartdns-sudo-group
+            printf_err_tr "M_0430"
+            return 1
+        fi
+    fi
+
+    if command -v visudo >/dev/null 2>&1 && ! visudo -c >/dev/null 2>&1; then
+        rm -f /etc/sudoers.d/90-smartdns-sudo-group 2>/dev/null || true
+        printf_err_tr "M_0430"
+        return 1
+    fi
+
+    if user_in_sudo_group "${target_user}"; then
+        printf_tr "M_0428" "${target_user}"
+        INITIAL_SETUP_ADMIN_USER="${target_user}"
+        INITIAL_SETUP_ADMIN_IN_SUDO="true"
+        initial_setup_record_action "user_added_to_sudo(${target_user})"
+        initial_setup_record_check "sudo_user=${target_user}"
+        log_info "installation.log" "Пользователь ${target_user} добавлен в группу sudo."
+        return 0
+    fi
+    return 1
+}
+
+initial_setup_admin_user() {
+    printf_tr "M_0412"
+
+    if [[ -n "${INITIAL_SETUP_ADMIN_USER}" ]] && id -u "${INITIAL_SETUP_ADMIN_USER}" >/dev/null 2>&1; then
+        local keep_u=""
+        read_tr "M_0413" keep_u "${INITIAL_SETUP_ADMIN_USER}"
+        if [[ "${LAST_READ_EOF}" -eq 1 || "${keep_u:-Y}" =~ ^[Yy]$ ]]; then
+            initial_setup_add_user_sudo "${INITIAL_SETUP_ADMIN_USER}" || true
+            return 0
+        fi
+    fi
+
+    local want_user=""
+    read_tr "M_0414" want_user
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${want_user:-N}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    local new_user=""
+    while true; do
+        read_tr "M_0415" new_user
+        if [[ "${LAST_READ_EOF}" -eq 1 || -z "${new_user}" ]]; then
+            return 0
+        fi
+        new_user="${new_user,,}"
+        if ! validate_admin_username "${new_user}"; then
+            printf_err_tr "M_0416" "${new_user}"
+            continue
+        fi
+
+        if id -u "${new_user}" >/dev/null 2>&1; then
+            local ex_uid ex_home ex_shell ex_sudo="no"
+            ex_uid="$(id -u "${new_user}")"
+            ex_home="$(getent passwd "${new_user}" | cut -d: -f6)"
+            ex_shell="$(getent passwd "${new_user}" | cut -d: -f7)"
+            if user_in_sudo_group "${new_user}"; then ex_sudo="yes"; fi
+
+            if [[ "${ex_uid}" -lt 1000 ]]; then
+                printf_err_tr "M_0418" "${new_user}" "${ex_uid}"
+                continue
+            fi
+
+            printf_tr "M_0417" "${new_user}" "${ex_uid}" "${ex_home}" "${ex_shell}" "${ex_sudo}"
+            local use_ex=""
+            read_tr "M_0419" use_ex "${new_user}"
+            if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+                return 0
+            fi
+            if [[ "${use_ex:-Y}" =~ ^[Yy]$ ]]; then
+                INITIAL_SETUP_ADMIN_USER="${new_user}"
+                if [[ "${ex_sudo}" == "yes" ]]; then
+                    INITIAL_SETUP_ADMIN_IN_SUDO="true"
+                else
+                    INITIAL_SETUP_ADMIN_IN_SUDO="false"
+                fi
+                save_initial_setup_state
+                initial_setup_add_user_sudo "${new_user}" || true
+                return 0
+            fi
+            continue
+        fi
+
+        local full_name=""
+        read_tr "M_0420" full_name
+        if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+            return 0
+        fi
+        full_name="${full_name//:/ }"
+
+        local confirm_create=""
+        read_tr "M_0421" confirm_create "${new_user}"
+        if [[ "${LAST_READ_EOF}" -eq 1 || ! "${confirm_create:-Y}" =~ ^[Yy]$ ]]; then
+            return 0
+        fi
+
+        if [[ -n "${full_name}" ]]; then
+            if ! useradd -m -s /bin/bash -c "${full_name}" "${new_user}"; then
+                printf_err_tr "M_0424" "${new_user}"
+                return 1
+            fi
+        else
+            if ! useradd -m -s /bin/bash "${new_user}"; then
+                printf_err_tr "M_0424" "${new_user}"
+                return 1
+            fi
+        fi
+
+        local created_uid created_home
+        created_uid="$(id -u "${new_user}")"
+        created_home="$(getent passwd "${new_user}" | cut -d: -f6)"
+        if [[ -d "${created_home}" ]]; then
+            chmod 0750 "${created_home}" 2>/dev/null || true
+        fi
+
+        if [[ -t 0 ]]; then
+            printf_tr "M_0422" "${new_user}"
+            local pass_try=0
+            while [[ "${pass_try}" -lt 3 ]]; do
+                if passwd "${new_user}"; then
+                    break
+                fi
+                pass_try=$((pass_try + 1))
+            done
+        else
+            printf_tr "M_0409"
+        fi
+
+        printf_tr "M_0423" "${new_user}" "${created_uid}" "${created_home}"
+        INITIAL_SETUP_ADMIN_USER="${new_user}"
+        INITIAL_SETUP_ADMIN_IN_SUDO="false"
+        initial_setup_record_action "user_created(${new_user})"
+        log_info "installation.log" "Создан административный пользователь ${new_user} (UID=${created_uid})."
+        initial_setup_add_user_sudo "${new_user}" || true
+        return 0
+    done
 }
 
 # ------------------------------ Initial Backup & Manifest ---------------------
