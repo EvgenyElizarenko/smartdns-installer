@@ -5,6 +5,19 @@
 
 ---
 
+## [3.0.1-stealth] — Unreleased
+
+### Added
+- **Provider Hostname Profile (`--profile hostname`, без Cloudflare):** интегрирован альтернативный профиль установки по Pull Request #1 (`53631fb`, `ec1e4af`) для внешнего DNS-провайдера и существующего сертификата Certbot (HTTP-01) с поддержкой всех возможностей `v3.0` (`Initial Server Setup`, `SSH Hardening`, `Reboot Lock`, 10 групп доменов, `Initial Backup`, выборочный `--uninstall`).
+- **Read-only проверка (`--hostname-check`):** 16-пунктовая проверка публичных DNS `A`/`AAAA` (`1.1.1.1`, `8.8.8.8`), существующего сертификата Certbot (срок, совпадение ключей, цепочка доверия, права), `webroot` и `renewal/*.conf`, занятых портов и конфликтующих служб без изменения системы.
+- **Изолированный контур HTTP-01 и Certbot renewal:** маршрут `/.well-known/acme-challenge/` в Nginx (только для `hostname`-профиля), отдельный валидатор `/usr/local/bin/verify-hostname-tls-keys.sh` и lineage-специфичный deploy-хук `/etc/letsencrypt/renewal-hooks/deploy/smartdns-hostname.sh` (`smartdns-hostname-cert-deploy.sh`) с проверкой `TLS_MODE`, `RENEWED_LINEAGE`, `nginx -t`, `systemctl reload nginx` и автооткатом при сбое.
+- **Автотесты и документация:** адаптирован и расширен набор `tests/test_hostname_profile.py` (регрессия неизменности функций Cloudflare renewal и защита от path traversal `..`), добавлен [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md), обновлены `README.md` и `README_EN.md`.
+
+### Security & Compatibility
+- Усилена валидация путей (`validate_safe_abs_path` — запрет `..`, системных корней и метасимволов) и добавлен строгий pure-Bash валидатор IPv6 (`validate_strict_ipv6`).
+- Для `Provider Hostname Profile` по умолчанию включена авторизация IP для DoT (`DOT_WHITELIST_ENABLED="true"`, режим `shared`) и блокировка установки поверх занятых портов или активных служб.
+- **Cloudflare Profile & Renewal (`v3.0-stealth`):** существующий профиль Cloudflare DNS-01 и исправленный в `v3.0-stealth` механизм автопродления (`acme.sh`, `smartdns-cert-renew.timer`, `smartdns-cert-deploy.sh`, `verify-tls-keys.sh`) сохранены полностью без изменений.
+
 ## [v2.10.0-stealth] — 2026-11-15
 
 ### Новые возможности (Added)
