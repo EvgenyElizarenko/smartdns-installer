@@ -11625,12 +11625,12 @@ run_install() {
     detect_environment
     prompt_install_profile_choice
     if is_hostname_profile; then
-        initialize_hostname_profile
+        initialize_hostname_profile || exit 1
     fi
     validate_os_and_resources
     if is_hostname_profile; then
-        assert_fresh_install_target
-        run_hostname_check
+        assert_fresh_install_target || exit 1
+        run_hostname_check || exit 1
     fi
 
     init_logging
@@ -11776,7 +11776,7 @@ main() {
             ACTION_MODE="preflight"
             check_root
             initialize_hostname_profile || exit 1
-            run_hostname_check
+            run_hostname_check || exit 1
             ;;
         --preflight)
             ACTION_MODE="preflight"
@@ -11817,7 +11817,7 @@ main() {
             check_root
             acquire_lock
             init_logging
-            run_change_domain "${2:-}"
+            run_change_domain "${2:-}" || exit 1
             ;;
         --domain-groups)
             ACTION_MODE="domain-groups"
