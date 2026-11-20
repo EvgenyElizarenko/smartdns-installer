@@ -814,6 +814,10 @@ MSG_RU[M_0372]='Автопродление TLS (smartdns-cert-renew.timer + depl
 MSG_EN[M_0372]='TLS auto-renewal (smartdns-cert-renew.timer + acme.sh deploy hook) is active and properly configured'
 MSG_RU[M_0373]='Профиль acme.sh для %s не найден; таймер создан и готов к работе после выпуска сертификата.'
 MSG_EN[M_0373]='acme.sh profile for %s not found; renewal timer created and ready after certificate issuance.'
+MSG_RU[M_0374]='Загрузка базы geosite.dat с GitHub (может занять до 1-2 минут)...'
+MSG_EN[M_0374]='Downloading geosite.dat from GitHub (may take 1-2 minutes)...'
+MSG_RU[M_0375]='Загрузка GeoHideDNS и генерация правил маршрутизации Xray/DNS...'
+MSG_EN[M_0375]='Downloading GeoHideDNS and generating Xray/DNS routing rules...'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -1683,7 +1687,7 @@ prompt_custom_domains_import() {
                 if wget -q --timeout=15 --tries=2 -O "${tmp_dl}" "${src_input}" 2>/dev/null && [[ -s "${tmp_dl}" ]]; then
                     local dl_sz
                     dl_sz="$(stat -c%s "${tmp_dl}" 2>/dev/null || echo 0)"
-                    [[ "${dl_sz}" -le 10485760 ]] && c_dl_ok=1
+                    if [[ "${dl_sz}" -le 10485760 ]]; then c_dl_ok=1; fi
                 fi
             fi
             if [[ "${c_dl_ok}" -ne 1 ]]; then
@@ -1805,7 +1809,7 @@ prompt_custom_domains_import() {
         fi
 
         rm -f "${tmp_parsed}" "${tmp_valid_all}" "${tmp_valid_uniq}" "${tmp_safe_uniq}" "${tmp_base}" "${tmp_new_uniq}"
-        [[ -n "${tmp_dl}" ]] && rm -f "${tmp_dl}"
+        if [[ -n "${tmp_dl}" ]]; then rm -f "${tmp_dl}"; fi
 
         local add_more=""
         read_tr "M_0358" add_more
@@ -2319,7 +2323,7 @@ record_postinstall_packages_and_accounts() {
         while IFS= read -r pkg; do
             [[ -n "${pkg}" ]] || continue
             local pkg_comp="packages"
-            [[ "${pkg}" == "nginx" ]] && pkg_comp="nginx"
+            if [[ "${pkg}" == "nginx" ]]; then pkg_comp="nginx"; fi
             manifest_record "PACKAGE" "${pkg_comp}" "${pkg}" "apt-installed" "-"
         done < <(comm -13 "${INITIAL_BACKUP_DIR}/preinstall-packages.list" <(dpkg-query -W -f='${Package}\n' 2>/dev/null | sort -u) 2>/dev/null || true)
     fi
@@ -2352,69 +2356,69 @@ record_full_install_manifest() {
     init_install_manifest
 
     # Компоненты
-    [[ -f /etc/nginx/nginx.conf ]] && manifest_record "COMPONENT" "nginx" "nginx" "installed" "-"
-    [[ -x /usr/local/bin/xray ]] && manifest_record "COMPONENT" "xray" "xray" "installed" "-"
-    [[ -x /usr/local/bin/oxidns || -f /etc/oxidns/config.yaml ]] && manifest_record "COMPONENT" "oxidns" "oxidns" "installed" "-"
-    [[ -x /usr/local/bin/AdGuardHome || -f /etc/adguardhome/AdGuardHome.yaml ]] && manifest_record "COMPONENT" "adguardhome" "adguardhome" "installed" "-"
-    [[ -x /usr/local/bin/doh-ipset-watcher.sh || -x /usr/local/bin/dot-ipset-watcher.sh ]] && manifest_record "COMPONENT" "ipset-watchers" "ipset-watchers" "installed" "-"
-    [[ -x /usr/local/bin/smartdns-firewall-apply.sh ]] && manifest_record "COMPONENT" "firewall" "firewall" "installed" "-"
+    if [[ -f /etc/nginx/nginx.conf ]]; then manifest_record "COMPONENT" "nginx" "nginx" "installed" "-"; fi
+    if [[ -x /usr/local/bin/xray ]]; then manifest_record "COMPONENT" "xray" "xray" "installed" "-"; fi
+    if [[ -x /usr/local/bin/oxidns || -f /etc/oxidns/config.yaml ]]; then manifest_record "COMPONENT" "oxidns" "oxidns" "installed" "-"; fi
+    if [[ -x /usr/local/bin/AdGuardHome || -f /etc/adguardhome/AdGuardHome.yaml ]]; then manifest_record "COMPONENT" "adguardhome" "adguardhome" "installed" "-"; fi
+    if [[ -x /usr/local/bin/doh-ipset-watcher.sh || -x /usr/local/bin/dot-ipset-watcher.sh ]]; then manifest_record "COMPONENT" "ipset-watchers" "ipset-watchers" "installed" "-"; fi
+    if [[ -x /usr/local/bin/smartdns-firewall-apply.sh ]]; then manifest_record "COMPONENT" "firewall" "firewall" "installed" "-"; fi
     manifest_record "COMPONENT" "systemd-timers" "systemd-timers" "installed" "-"
-    [[ -f "${CERT_DIR}/fullchain.pem" || -x /root/.acme.sh/acme.sh ]] && manifest_record "COMPONENT" "certificates" "certificates" "installed" "-"
-    [[ -d "${DNS_ASSETS_DIR}" ]] && manifest_record "COMPONENT" "domain-rules" "domain-rules" "installed" "-"
-    [[ -f "${WEB_ROOT}/index.html" ]] && manifest_record "COMPONENT" "cover-site" "cover-site" "installed" "-"
+    if [[ -f "${CERT_DIR}/fullchain.pem" || -x /root/.acme.sh/acme.sh ]]; then manifest_record "COMPONENT" "certificates" "certificates" "installed" "-"; fi
+    if [[ -d "${DNS_ASSETS_DIR}" ]]; then manifest_record "COMPONENT" "domain-rules" "domain-rules" "installed" "-"; fi
+    if [[ -f "${WEB_ROOT}/index.html" ]]; then manifest_record "COMPONENT" "cover-site" "cover-site" "installed" "-"; fi
     manifest_record "COMPONENT" "installer-core" "installer-core" "installed" "-"
 
     # Nginx
     for f in /etc/nginx/nginx.conf /etc/systemd/system/nginx.service.d/hardening.conf \
              /etc/apt/keyrings/nginx-archive-keyring.gpg /etc/apt/sources.list.d/nginx-official.list \
              /etc/apt/preferences.d/99nginx-official /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "nginx" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "nginx" "${f}" "managed"; fi
     done
 
     # Xray
     for f in /usr/local/bin/xray /usr/local/bin/xray-safe-reload.sh "${XRAY_CONF_DIR}/00-base.json"; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "xray" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "xray" "${f}" "managed"; fi
     done
-    [[ -L /etc/xray/conf.d/10-smartdns-routing.json ]] && manifest_record "SYMLINK" "xray" "/etc/xray/conf.d/10-smartdns-routing.json" "target:${XRAY_ROUTING_JSON}"
+    if [[ -L /etc/xray/conf.d/10-smartdns-routing.json ]]; then manifest_record "SYMLINK" "xray" "/etc/xray/conf.d/10-smartdns-routing.json" "target:${XRAY_ROUTING_JSON}"; fi
     for u in /etc/systemd/system/xray.service /etc/systemd/system/xray-reload.service; do
-        [[ -f "${u}" ]] && manifest_record "UNIT" "xray" "${u}" "systemd-service"
+        if [[ -f "${u}" ]]; then manifest_record "UNIT" "xray" "${u}" "systemd-service"; fi
     done
-    [[ -f /etc/systemd/system/xray-reload.path ]] && manifest_record "PATH_UNIT" "xray" "/etc/systemd/system/xray-reload.path" "systemd-path"
+    if [[ -f /etc/systemd/system/xray-reload.path ]]; then manifest_record "PATH_UNIT" "xray" "/etc/systemd/system/xray-reload.path" "systemd-path"; fi
     for d in /etc/xray "${XRAY_CONF_DIR}" "${XRAY_RULES_DIR}" /var/log/xray; do
-        [[ -d "${d}" ]] && manifest_record "DIR" "xray" "${d}" "managed" "-"
+        if [[ -d "${d}" ]]; then manifest_record "DIR" "xray" "${d}" "managed" "-"; fi
     done
 
     # OxiDNS
     for f in /usr/local/bin/oxidns /etc/oxidns/config.yaml; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "oxidns" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "oxidns" "${f}" "managed"; fi
     done
-    [[ -f /etc/systemd/system/oxidns.service ]] && manifest_record "UNIT" "oxidns" "/etc/systemd/system/oxidns.service" "systemd-service"
+    if [[ -f /etc/systemd/system/oxidns.service ]]; then manifest_record "UNIT" "oxidns" "/etc/systemd/system/oxidns.service" "systemd-service"; fi
     for d in /etc/oxidns /var/lib/oxidns; do
-        [[ -d "${d}" ]] && manifest_record "DIR" "oxidns" "${d}" "managed" "-"
+        if [[ -d "${d}" ]]; then manifest_record "DIR" "oxidns" "${d}" "managed" "-"; fi
     done
 
     # AdGuardHome
     for f in /usr/local/bin/AdGuardHome /etc/adguardhome/AdGuardHome.yaml; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "adguardhome" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "adguardhome" "${f}" "managed"; fi
     done
-    [[ -f /etc/systemd/system/adguardhome.service ]] && manifest_record "UNIT" "adguardhome" "/etc/systemd/system/adguardhome.service" "systemd-service"
+    if [[ -f /etc/systemd/system/adguardhome.service ]]; then manifest_record "UNIT" "adguardhome" "/etc/systemd/system/adguardhome.service" "systemd-service"; fi
     for d in /etc/adguardhome /var/lib/adguardhome; do
-        [[ -d "${d}" ]] && manifest_record "DIR" "adguardhome" "${d}" "managed" "-"
+        if [[ -d "${d}" ]]; then manifest_record "DIR" "adguardhome" "${d}" "managed" "-"; fi
     done
 
     # Watchers
     for f in /usr/local/bin/doh-ipset-watcher.sh /usr/local/bin/dot-ipset-watcher.sh; do
-        [[ -e "${f}" ]] && manifest_record "SCRIPT" "ipset-watchers" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "SCRIPT" "ipset-watchers" "${f}" "managed"; fi
     done
     for u in /etc/systemd/system/doh-ipset-watcher.service /etc/systemd/system/dot-ipset-watcher.service; do
-        [[ -f "${u}" ]] && manifest_record "UNIT" "ipset-watchers" "${u}" "systemd-service"
+        if [[ -f "${u}" ]]; then manifest_record "UNIT" "ipset-watchers" "${u}" "systemd-service"; fi
     done
 
     # Firewall & Sysctl
     for f in /usr/local/bin/smartdns-firewall-apply.sh /etc/sysctl.d/90-smartdns-keepalive.conf; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "firewall" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "firewall" "${f}" "managed"; fi
     done
-    [[ -f /etc/systemd/system/smartdns-firewall.service ]] && manifest_record "UNIT" "firewall" "/etc/systemd/system/smartdns-firewall.service" "systemd-service"
+    if [[ -f /etc/systemd/system/smartdns-firewall.service ]]; then manifest_record "UNIT" "firewall" "/etc/systemd/system/smartdns-firewall.service" "systemd-service"; fi
     for ch in "ipv4:nat:SMARTDNS_PREROUTING" "ipv4:filter:SMARTDNS_INPUT" "ipv4:filter:SMARTDNS_OUTPUT" \
               "ipv6:nat:SMARTDNS6_PREROUTING" "ipv6:filter:SMARTDNS6_INPUT" "ipv6:filter:SMARTDNS6_OUTPUT"; do
         manifest_record "FIREWALL_CHAIN" "firewall" "${ch}" "iptables-chain" "-"
@@ -2431,43 +2435,43 @@ record_full_install_manifest() {
              "${XRAY_ROUTING_JSON}" "${ROUTING_VARS_FILE}" "${GEOHIDE_LIST_FILE}" \
              "${GEOHIDE_HOSTS_FILE}" "${AGH_RULES_FILE}" "${DNS_ASSETS_DIR}/geosite.dat" \
              "${DOMAIN_GROUPS_MAP_FILE}"; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "domain-rules" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "domain-rules" "${f}" "managed"; fi
     done
     for f in "${CUSTOM_ALLOW_FILE}" "${CUSTOM_DENY_FILE}"; do
-        [[ -e "${f}" ]] && manifest_record "USER_DATA" "domain-rules" "${f}" "custom-rules"
+        if [[ -e "${f}" ]]; then manifest_record "USER_DATA" "domain-rules" "${f}" "custom-rules"; fi
     done
-    [[ -d "${DNS_ASSETS_DIR}" ]] && manifest_record "DIR" "domain-rules" "${DNS_ASSETS_DIR}" "managed" "-"
+    if [[ -d "${DNS_ASSETS_DIR}" ]]; then manifest_record "DIR" "domain-rules" "${DNS_ASSETS_DIR}" "managed" "-"; fi
     for u in /etc/systemd/system/geosite-update.service /etc/systemd/system/geohide-update.service; do
-        [[ -f "${u}" ]] && manifest_record "UNIT" "systemd-timers" "${u}" "systemd-service"
+        if [[ -f "${u}" ]]; then manifest_record "UNIT" "systemd-timers" "${u}" "systemd-service"; fi
     done
     for t in /etc/systemd/system/geosite-update.timer /etc/systemd/system/geohide-update.timer; do
-        [[ -f "${t}" ]] && manifest_record "TIMER" "systemd-timers" "${t}" "systemd-timer"
+        if [[ -f "${t}" ]]; then manifest_record "TIMER" "systemd-timers" "${t}" "systemd-timer"; fi
     done
 
     # Certificates
     for f in /usr/local/bin/verify-tls-keys.sh /usr/local/bin/smartdns-cert-deploy.sh /usr/local/bin/smartdns-cert-renew.sh; do
-        [[ -e "${f}" ]] && manifest_record "SCRIPT" "certificates" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "SCRIPT" "certificates" "${f}" "managed"; fi
     done
     for f in "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem"; do
-        [[ -e "${f}" ]] && manifest_record "CERT" "certificates" "${f}" "tls-material"
+        if [[ -e "${f}" ]]; then manifest_record "CERT" "certificates" "${f}" "tls-material"; fi
     done
-    [[ -f /etc/systemd/system/smartdns-cert-renew.service ]] && manifest_record "UNIT" "certificates" "/etc/systemd/system/smartdns-cert-renew.service" "systemd-service"
-    [[ -f /etc/systemd/system/smartdns-cert-renew.timer ]] && manifest_record "TIMER" "certificates" "/etc/systemd/system/smartdns-cert-renew.timer" "systemd-timer"
-    [[ -d "${CERT_DIR}" ]] && manifest_record "DIR" "certificates" "${CERT_DIR}" "managed" "-"
+    if [[ -f /etc/systemd/system/smartdns-cert-renew.service ]]; then manifest_record "UNIT" "certificates" "/etc/systemd/system/smartdns-cert-renew.service" "systemd-service"; fi
+    if [[ -f /etc/systemd/system/smartdns-cert-renew.timer ]]; then manifest_record "TIMER" "certificates" "/etc/systemd/system/smartdns-cert-renew.timer" "systemd-timer"; fi
+    if [[ -d "${CERT_DIR}" ]]; then manifest_record "DIR" "certificates" "${CERT_DIR}" "managed" "-"; fi
 
     # Cover Site
     for f in "${WEB_ROOT}/index.html" "${WEB_ROOT}/404.html" "${WEB_ROOT}/favicon.svg" \
              "${WEB_ROOT}/robots.txt" "${WEB_ROOT}/sitemap.xml" \
              "${WEB_ROOT}/assets/style.css" "${WEB_ROOT}/assets/app.js"; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "cover-site" "${f}" "managed"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "cover-site" "${f}" "managed"; fi
     done
-    [[ -d "${WEB_ROOT}" ]] && manifest_record "DIR" "cover-site" "${WEB_ROOT}" "managed" "-"
+    if [[ -d "${WEB_ROOT}" ]]; then manifest_record "DIR" "cover-site" "${WEB_ROOT}" "managed" "-"; fi
 
     # Installer Core State
     for f in "${SETTINGS_FILE}" "${VERSIONS_FILE}" "${SECRETS_FILE}" "${IPSET_SAVE_FILE}" \
              "${STATE_DIR}/geohide-stats.env" "${STATE_DIR}/cover-site.sha256" \
              "${STATE_DIR}/10-smartdns-routing.json.lastgood" "${STATE_DIR}/latest_backup"; do
-        [[ -e "${f}" ]] && manifest_record "FILE" "installer-core" "${f}" "state"
+        if [[ -e "${f}" ]]; then manifest_record "FILE" "installer-core" "${f}" "state"; fi
     done
     manifest_record "DIR" "installer-core" "${STATE_DIR}" "state-dir" "-"
     manifest_record "DIR" "installer-core" "${LOG_DIR}" "log-dir" "-"
@@ -2573,6 +2577,8 @@ perform_rollback() {
         systemctl disable --now adguardhome.service 2>/dev/null || true
         systemctl enable --now oxidns.service 2>/dev/null || true
     fi
+
+    wait_for_dns_backend_ready "${restored_engine}" || true
 
     for svc in nginx xray doh-ipset-watcher dot-ipset-watcher; do
         if systemctl list-unit-files "${svc}.service" >/dev/null 2>&1; then
@@ -2903,6 +2909,10 @@ install_adguardhome_binary() {
 }
 
 record_installed_versions() {
+    if [[ -z "${NGINX_INSTALLED_VER:-}" ]] && command -v nginx >/dev/null 2>&1; then
+        NGINX_INSTALLED_VER="$(nginx -v 2>&1 | awk -F'/' '{print $2}' || echo "unknown")"
+    fi
+    NGINX_INSTALLED_VER="${NGINX_INSTALLED_VER:-unknown}"
     local tmp_ver="${VERSIONS_FILE}.tmp"
     cat > "${tmp_ver}" <<EOF
 INSTALL_DATE="$(date -Is)"
@@ -5902,15 +5912,25 @@ EOF
     systemctl restart doh-ipset-watcher.service dot-ipset-watcher.service
     systemctl start geosite-update.timer geohide-update.timer smartdns-cert-renew.timer
 
-    for _ in {1..15}; do
-        if ss -ulnp 2>/dev/null | grep -q ":5353 "; then
-            break
-        fi
-        sleep 1
-    done
+    wait_for_dns_backend_ready "${DNS_ENGINE}" || true
 }
 
 # ------------------------------ Isolated Backend Verification & Switcher ------
+wait_for_dns_backend_ready() {
+    local target_svc="${1:-${DNS_ENGINE}}"
+    local _attempt
+    for _attempt in {1..20}; do
+        if systemctl is-active --quiet "${target_svc}" 2>/dev/null \
+            && ss -ulnp 2>/dev/null | grep -q "127.0.0.1:5353 " \
+            && ss -tlnp 2>/dev/null | grep -q "127.0.0.1:5353 " \
+            && ss -tlnp 2>/dev/null | grep -q "127.0.0.1:8053 "; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
 verify_dns_backend_isolated() {
     local expected_engine="${DNS_ENGINE}"
     local other_engine="adguardhome"
@@ -6922,6 +6942,7 @@ run_manage_domain_groups() {
     /usr/local/bin/update-geohide-domains.sh
 
     systemctl restart "${DNS_ENGINE}" xray
+    wait_for_dns_backend_ready "${DNS_ENGINE}" || true
     verify_dns_backend_isolated
     record_full_install_manifest
 
@@ -6973,7 +6994,9 @@ run_update() {
     configure_cert_auto_renewal
     install_domain_update_scripts
     configure_xray_base
+    log_info_tr "update.log" "M_0374"
     /usr/local/bin/update-geosite.sh
+    log_info_tr "update.log" "M_0375"
     /usr/local/bin/update-geohide-domains.sh
     configure_dns_engine
     generate_procedural_cover_site "${WEB_ROOT}" "0"
@@ -6982,6 +7005,7 @@ run_update() {
     configure_firewall_and_sysctl
     record_installed_versions
     systemctl restart "${DNS_ENGINE}" xray nginx doh-ipset-watcher dot-ipset-watcher
+    wait_for_dns_backend_ready "${DNS_ENGINE}" || true
     verify_dns_backend_isolated
     run_test_suite
     record_full_install_manifest
@@ -7322,10 +7346,10 @@ collect_removable_packages() {
         [[ -n "${pkg}" ]] || continue
         case "${pkg}" in
             nginx)
-                comp_is_removing "nginx" && UNINSTALL_CANDIDATE_PKGS+=("${pkg}")
+                if comp_is_removing "nginx"; then UNINSTALL_CANDIDATE_PKGS+=("${pkg}"); fi
                 ;;
             ipset|conntrack)
-                comp_is_removing "firewall" && UNINSTALL_CANDIDATE_PKGS+=("${pkg}")
+                if comp_is_removing "firewall"; then UNINSTALL_CANDIDATE_PKGS+=("${pkg}"); fi
                 ;;
             jq|dnsutils|unzip|socat|python3-bcrypt)
                 # Предлагаем к удалению только при удалении всего стека
@@ -7388,7 +7412,7 @@ uninstall_safe_remove_or_restore_file() {
     local has_backup=0
     if [[ -f "${INITIAL_BACKUP_MANIFEST}" ]]; then
         bak_info="$(initial_backup_lookup "${target_path}" || true)"
-        [[ -n "${bak_info}" ]] && has_backup=1
+        if [[ -n "${bak_info}" ]]; then has_backup=1; fi
     fi
 
     local expected_sha=""
@@ -7483,7 +7507,7 @@ remove_dir_if_empty() {
 remove_manifest_account_if_owned() {
     local acc_type="$1"
     local acc_name="$2"
-    [[ "${acc_name}" == "www-data" || "${acc_name}" == "root" ]] && return 0
+    if [[ "${acc_name}" == "www-data" || "${acc_name}" == "root" ]]; then return 0; fi
     if manifest_has_account "${acc_type}" "${acc_name}"; then
         if [[ "${acc_type}" == "USER" ]] && id -u "${acc_name}" >/dev/null 2>&1; then
             userdel "${acc_name}" 2>/dev/null || true
@@ -7753,14 +7777,14 @@ run_uninstall() {
     if comp_is_removing "domain-rules" && { [[ -s "${CUSTOM_ALLOW_FILE}" ]] || [[ -s "${CUSTOM_DENY_FILE}" ]]; }; then
         local ans_ud=""
         read_tr "M_0308" ans_ud
-        [[ "${ans_ud:-N}" =~ ^[Yy]$ ]] && UNINSTALL_REMOVE_USER_DATA=1
+        if [[ "${ans_ud:-N}" =~ ^[Yy]$ ]]; then UNINSTALL_REMOVE_USER_DATA=1; fi
     fi
 
     UNINSTALL_REMOVE_ACME=0
     if comp_is_removing "certificates" && [[ -d /root/.acme.sh ]]; then
         local ans_acme=""
         read_tr "M_0331" ans_acme
-        [[ "${ans_acme:-N}" =~ ^[Yy]$ ]] && UNINSTALL_REMOVE_ACME=1
+        if [[ "${ans_acme:-N}" =~ ^[Yy]$ ]]; then UNINSTALL_REMOVE_ACME=1; fi
     fi
 
     UNINSTALL_REMOVE_PACKAGES=0
@@ -7770,7 +7794,7 @@ run_uninstall() {
         pkg_list_str="$(printf '%s ' "${UNINSTALL_CANDIDATE_PKGS[@]}")"
         local ans_pkg=""
         read_tr "M_0309" ans_pkg "${pkg_list_str% }"
-        [[ "${ans_pkg:-N}" =~ ^[Yy]$ ]] && UNINSTALL_REMOVE_PACKAGES=1
+        if [[ "${ans_pkg:-N}" =~ ^[Yy]$ ]]; then UNINSTALL_REMOVE_PACKAGES=1; fi
     fi
 
     # Показ полного плана удаления
@@ -7783,7 +7807,7 @@ run_uninstall() {
             rem_any=1
         fi
     done
-    [[ "${rem_any}" -eq 0 ]] && printf_tr "M_0304"
+    if [[ "${rem_any}" -eq 0 ]]; then printf_tr "M_0304"; fi
 
     printf '\n'
     printf_tr "M_0303"
@@ -7793,7 +7817,7 @@ run_uninstall() {
             keep_any=1
         fi
     done
-    [[ "${keep_any}" -eq 0 ]] && printf_tr "M_0304"
+    if [[ "${keep_any}" -eq 0 ]]; then printf_tr "M_0304"; fi
 
     printf '\n'
     if comp_is_removing "domain-rules"; then
@@ -7806,7 +7830,7 @@ run_uninstall() {
 
     local final_confirm=""
     read_tr "M_0311" final_confirm
-    if [[ "${final_confirm}" != "YES" ]]; then
+    if [[ "${final_confirm^^}" != "YES" ]]; then
         printf_tr "M_0295"
         return 0
     fi
@@ -7938,7 +7962,9 @@ run_install() {
     issue_wildcard_certificate
     install_domain_update_scripts
     configure_xray_base
+    log_info_tr "installation.log" "M_0374"
     /usr/local/bin/update-geosite.sh
+    log_info_tr "installation.log" "M_0375"
     /usr/local/bin/update-geohide-domains.sh
     configure_dns_engine
 
