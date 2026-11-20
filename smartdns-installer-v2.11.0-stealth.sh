@@ -687,7 +687,7 @@ MSG_EN[M_0308]='Delete user custom lists custom-allow.txt and custom-deny.txt? [
 MSG_RU[M_0309]='Удалить системные пакеты, установленные именно этим скриптом (%s)? [y/N]: '
 MSG_EN[M_0309]='Remove APT packages installed exclusively by this script (%s)? [y/N]: '
 MSG_RU[M_0310]='Пакеты APT к удалению : %s\n'
-MSG_EN[M_0310]='APT packages to purge : %s\n'
+MSG_EN[M_0310]='APT packages to remove: %s\n'
 MSG_RU[M_0311]='Подтверждаете выполнение плана удаления? Введите YES для запуска (любой другой ввод — отмена): '
 MSG_EN[M_0311]='Confirm executing the uninstall plan? Type YES to proceed (anything else cancels): '
 MSG_RU[M_0312]='\nВНИМАНИЕ: Файл %s был изменён вручную после установки (или отсутствует исходный контрольный хеш).\n'
@@ -7764,6 +7764,16 @@ run_uninstall() {
         local dep_rc=0
         validate_uninstall_dependencies || dep_rc=$?
         if [[ "${dep_rc}" -eq 0 ]]; then
+            selected_count=0
+            for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+                if comp_is_removing "${cid}"; then
+                    selected_count=$((selected_count + 1))
+                fi
+            done
+            if [[ "${selected_count}" -eq 0 ]]; then
+                printf_tr "M_0297"
+                return 0
+            fi
             break
         elif [[ "${dep_rc}" -eq 2 ]]; then
             continue
@@ -7886,10 +7896,10 @@ run_uninstall() {
         fi
     done
 
-    # Опциональное удаление пакетов (только если не было ошибок)
+    # Опциональное удаление пакетов (только если не было ошибок; remove без purge сохраняет сторонние и восстановленные конфиги в /etc/)
     if [[ "${errors}" -eq 0 && "${UNINSTALL_REMOVE_PACKAGES}" -eq 1 && "${#UNINSTALL_CANDIDATE_PKGS[@]}" -gt 0 ]]; then
         export DEBIAN_FRONTEND=noninteractive
-        apt-get purge -y -q "${UNINSTALL_CANDIDATE_PKGS[@]}" || errors=$((errors + 1))
+        apt-get remove -y -q "${UNINSTALL_CANDIDATE_PKGS[@]}" || errors=$((errors + 1))
         apt-get autoremove -y -q >/dev/null 2>&1 || true
     fi
 
