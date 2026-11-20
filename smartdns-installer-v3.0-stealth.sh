@@ -4623,8 +4623,8 @@ run_launcher_whitelist_submenu() {
         return 0
     fi
     case "${wl_choice}" in
-        1) run_launcher_exec --whitelist-enable ;;
-        2) run_launcher_exec --whitelist-disable ;;
+        1) run_launcher_exec --whitelist-toggle on ;;
+        2) run_launcher_exec --whitelist-toggle off ;;
         3) run_launcher_exec --whitelist-mode shared ;;
         4) run_launcher_exec --whitelist-mode separate ;;
         *) printf_tr "M_0512" ;;
