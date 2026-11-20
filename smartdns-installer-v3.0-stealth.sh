@@ -8346,7 +8346,7 @@ ExecStartPre=/usr/local/bin/oxidns check -c /etc/oxidns/config.yaml -d /var/lib/
 ExecStart=/usr/local/bin/oxidns start -c /etc/oxidns/config.yaml -d /var/lib/oxidns
 Restart=on-failure
 RestartSec=3s
-TimeoutStartSec=20s
+TimeoutStartSec=60s
 TimeoutStopSec=15s
 
 AmbientCapabilities=CAP_NET_BIND_SERVICE
@@ -8442,7 +8442,7 @@ ExecStartPre=/usr/local/bin/xray run -test -confdir /etc/xray/conf.d
 ExecStart=/usr/local/bin/xray run -confdir /etc/xray/conf.d
 Restart=on-failure
 RestartSec=3s
-TimeoutStartSec=20s
+TimeoutStartSec=60s
 TimeoutStopSec=15s
 
 AmbientCapabilities=CAP_NET_BIND_SERVICE
@@ -8625,13 +8625,12 @@ EOF
 
     systemctl restart smartdns-firewall.service
     systemctl restart "${DNS_ENGINE}.service"
+    wait_for_dns_backend_ready "${DNS_ENGINE}" || true
     systemctl restart nginx.service
     systemctl restart xray.service
     systemctl start xray-reload.path
     systemctl restart doh-ipset-watcher.service dot-ipset-watcher.service
     systemctl start geosite-update.timer geohide-update.timer smartdns-cert-renew.timer
-
-    wait_for_dns_backend_ready "${DNS_ENGINE}" || true
 }
 
 # ------------------------------ Isolated Backend Verification & Switcher ------
