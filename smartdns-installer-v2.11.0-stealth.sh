@@ -578,7 +578,7 @@ MSG_RU[M_0273]='Использование: ${SCRIPT_NAME} [РЕЖИМ]
   --test                           Запуск комплексного набора функциональных и негативных тестов
   --backup                         Создание внеплановой резервной копии конфигураций и правил
   --rollback                       Аварийный откат к последней рабочей резервной копии
-  --uninstall                      Корректное отключение служб и очистка правил перенаправления
+  --uninstall                      Интерактивное полное или выборочное удаление с восстановлением backup
 
 Управление DoT IP-whitelist (TCP 853):
   --whitelist-status               Просмотр статуса DoT whitelist, списка разрешённых IPv4/IPv6 и их TTL
@@ -604,7 +604,7 @@ Commands:
   --update                         Safely update Xray/DNS binaries and domain lists (preserves Cover Site)
   --backup                         Create an on-demand full backup of configs, TLS, and firewall rules
   --rollback [PATH]                Roll back system state to the latest (or specified) backup
-  --uninstall                      Stop/disable all stack services and remove SMARTDNS_* firewall rules
+  --uninstall                      Interactive full or selective uninstall with backup restoration
   --whitelist-status               Show DoT IP whitelist (853/TCP) status, mode, and authorized IPs
   --whitelist-toggle [on|off]      Enable, disable, or toggle DoT IP filtering on port 853/TCP
   --whitelist-mode [shared|separate]
@@ -634,6 +634,102 @@ MSG_RU[M_0283]='Installation manifest обновлён (%s).'
 MSG_EN[M_0283]='Installation manifest updated (%s).'
 MSG_RU[M_0284]='Не удалось запечатать первоначальный backup: проверка целостности завершилась ошибкой.'
 MSG_EN[M_0284]='Failed to seal initial backup: integrity verification failed.'
+MSG_RU[M_0285]='=== UNINSTALL (УДАЛЕНИЕ UNIFIED SMARTDNS STACK) ===\n'
+MSG_EN[M_0285]='=== UNINSTALL (UNIFIED SMARTDNS STACK REMOVAL) ===\n'
+MSG_RU[M_0286]='Установленные компоненты SmartDNS не обнаружены в системе. Удалять нечего.\n'
+MSG_EN[M_0286]='No installed SmartDNS components were detected on this system. Nothing to remove.\n'
+MSG_RU[M_0287]='Installation manifest : %s\n'
+MSG_EN[M_0287]='Installation manifest : %s\n'
+MSG_RU[M_0288]='Initial backup        : %s\n'
+MSG_EN[M_0288]='Initial backup        : %s\n'
+MSG_RU[M_0289]='НАЙДЕН И ВАЛИДЕН'
+MSG_EN[M_0289]='FOUND AND VALID'
+MSG_RU[M_0290]='ОТСУТСТВУЕТ ИЛИ ПОВРЕЖДЁН (безопасный legacy-режим)'
+MSG_EN[M_0290]='MISSING OR CORRUPTED (safe legacy mode)'
+MSG_RU[M_0291]='ПРОВЕРЕН (SHA-256 OK)'
+MSG_EN[M_0291]='VERIFIED (SHA-256 OK)'
+MSG_RU[M_0292]='ОТСУТСТВУЕТ ИЛИ ОШИБКА ЦЕЛОСТНОСТИ (системные файлы не будут перезаписаны)'
+MSG_EN[M_0292]='MISSING OR INTEGRITY FAILED (system files will not be overwritten)'
+MSG_RU[M_0293]='\nОбнаруженные компоненты (отмеченные [x] будут УДАЛЕНЫ, [ ] — СОХРАНЕНЫ):\n\n'
+MSG_EN[M_0293]='\nDetected components ([x] will be REMOVED, [ ] will be KEPT):\n\n'
+MSG_RU[M_0294]='\nВыберите действие:\n  [ A ] Удалить все обнаруженные компоненты\n  [ S ] Сохранить все компоненты (выход)\n  [ C ] Настроить выборочно\n  [ Q ] Отмена\n\nВаш выбор [Q]: '
+MSG_EN[M_0294]='\nSelect an action:\n  [ A ] Remove all detected components\n  [ S ] Keep all components (exit)\n  [ C ] Custom selection\n  [ Q ] Cancel\n\nYour choice [Q]: '
+MSG_RU[M_0295]='Удаление отменено пользователем. Изменения в систему не вносились.\n'
+MSG_EN[M_0295]='Uninstall cancelled by user. No changes were made to the system.\n'
+MSG_RU[M_0296]='Введите номера компонентов через пробел для переключения, [D] — продолжить, [A] — выбрать все, [N] — снять все, [Q] — отмена: '
+MSG_EN[M_0296]='Enter component numbers separated by spaces to toggle, [D] to continue, [A] all, [N] none, [Q] cancel: '
+MSG_RU[M_0297]='Не выбрано ни одного компонента для удаления. Изменения не вносились.\n'
+MSG_EN[M_0297]='No components selected for removal. No changes were made.\n'
+MSG_RU[M_0298]='\nВНИМАНИЕ: Обнаружены конфликты зависимостей между сохраняемыми и удаляемыми компонентами:\n'
+MSG_EN[M_0298]='\nWARNING: Dependency conflicts detected between kept and removed components:\n'
+MSG_RU[M_0299]='  - Сохранение [%s] требует сохранения [%s] (%s)\n'
+MSG_EN[M_0299]='  - Keeping [%s] requires keeping [%s] (%s)\n'
+MSG_RU[M_0300]='\nВыберите разрешение конфликта:\n  [ 1 ] Автоматически сохранить необходимые зависимости\n  [ 2 ] Вернуться к выбору компонентов\n  [ Q ] Отменить удаление\nВаш выбор [1]: '
+MSG_EN[M_0300]='\nResolve conflict:\n  [ 1 ] Automatically keep required dependencies\n  [ 2 ] Return to component selection\n  [ Q ] Cancel uninstall\nYour choice [1]: '
+MSG_RU[M_0301]='\n==================== ПЛАН УДАЛЕНИЯ ====================\n'
+MSG_EN[M_0301]='\n==================== UNINSTALL PLAN ====================\n'
+MSG_RU[M_0302]='Будут УДАЛЕНЫ:\n'
+MSG_EN[M_0302]='Will be REMOVED:\n'
+MSG_RU[M_0303]='Будут СОХРАНЕНЫ:\n'
+MSG_EN[M_0303]='Will be KEPT:\n'
+MSG_RU[M_0304]='  (нет)\n'
+MSG_EN[M_0304]='  (none)\n'
+MSG_RU[M_0305]='Пользовательские правила (custom-allow.txt / custom-deny.txt): %s\n'
+MSG_EN[M_0305]='User custom rules (custom-allow.txt / custom-deny.txt): %s\n'
+MSG_RU[M_0306]='УДАЛИТЬ'
+MSG_EN[M_0306]='REMOVE'
+MSG_RU[M_0307]='СОХРАНИТЬ'
+MSG_EN[M_0307]='KEEP'
+MSG_RU[M_0308]='Удалить пользовательские списки custom-allow.txt и custom-deny.txt? [y/N]: '
+MSG_EN[M_0308]='Delete user custom lists custom-allow.txt and custom-deny.txt? [y/N]: '
+MSG_RU[M_0309]='Удалить системные пакеты, установленные именно этим скриптом (%s)? [y/N]: '
+MSG_EN[M_0309]='Remove APT packages installed exclusively by this script (%s)? [y/N]: '
+MSG_RU[M_0310]='Пакеты APT к удалению : %s\n'
+MSG_EN[M_0310]='APT packages to purge : %s\n'
+MSG_RU[M_0311]='Подтверждаете выполнение плана удаления? Введите YES для запуска (любой другой ввод — отмена): '
+MSG_EN[M_0311]='Confirm executing the uninstall plan? Type YES to proceed (anything else cancels): '
+MSG_RU[M_0312]='\nВНИМАНИЕ: Файл %s был изменён вручную после установки (или отсутствует исходный контрольный хеш).\n'
+MSG_EN[M_0312]='\nWARNING: File %s was modified after installation (or baseline hash is unavailable).\n'
+MSG_RU[M_0313]='Выберите действие для %s:\n  [ K ] Сохранить текущую версию (по умолчанию)\n'
+MSG_EN[M_0313]='Select action for %s:\n  [ K ] Keep current version (default)\n'
+MSG_RU[M_0314]='  [ R ] Восстановить оригинальную версию из initial-backup\n'
+MSG_EN[M_0314]='  [ R ] Restore original version from initial-backup\n'
+MSG_RU[M_0315]='  [ D ] Показать различия (diff -u с initial-backup)\n'
+MSG_EN[M_0315]='  [ D ] Show differences (diff -u against initial-backup)\n'
+MSG_RU[M_0316]='  [ X ] Удалить файл без восстановления\n'
+MSG_EN[M_0316]='  [ X ] Delete file without restoration\n'
+MSG_RU[M_0317]='  [ C ] Отменить удаление данного файла (сохранить)\nВаш выбор [K]: '
+MSG_EN[M_0317]='  [ C ] Cancel deletion of this file (keep)\nYour choice [K]: '
+MSG_RU[M_0318]='Сохранён файл %s по выбору пользователя.'
+MSG_EN[M_0318]='Preserved file %s per user selection.'
+MSG_RU[M_0319]='Восстановлен оригинальный файл %s из initial-backup (SHA-256 подтверждён).'
+MSG_EN[M_0319]='Restored original file %s from initial-backup (SHA-256 verified).'
+MSG_RU[M_0320]='Ошибка восстановления %s из initial-backup: файл сохранен без изменений.'
+MSG_EN[M_0320]='Failed to restore %s from initial-backup: existing file preserved unchanged.'
+MSG_RU[M_0321]='Удалён управляемый файл %s.'
+MSG_EN[M_0321]='Removed managed file %s.'
+MSG_RU[M_0322]='Не удаляется файл %s: исходный backup отсутствует или повреждён.'
+MSG_EN[M_0322]='Skipping deletion of %s: original backup is missing or corrupted.'
+MSG_RU[M_0323]='[UNINSTALL] Удаление компонента: %s...'
+MSG_EN[M_0323]='[UNINSTALL] Removing component: %s...'
+MSG_RU[M_0324]='[UNINSTALL] ОШИБКА при удалении компонента %s. Критические зависимости и backup сохранены.'
+MSG_EN[M_0324]='[UNINSTALL] ERROR while removing component %s. Critical dependencies and backups are preserved.'
+MSG_RU[M_0325]='Удалить также каталог резервных копий (%s и %s)? [y/N]: '
+MSG_EN[M_0325]='Also delete backup directories (%s and %s)? [y/N]: '
+MSG_RU[M_0326]='Удаление завершено успешно. Резервные копии сохранены в %s.\n'
+MSG_EN[M_0326]='Uninstall completed successfully. Backups preserved in %s.\n'
+MSG_RU[M_0327]='Полное удаление завершено успешно (включая резервные копии по запросу пользователя).\n'
+MSG_EN[M_0327]='Full uninstall completed successfully (including backups per user request).\n'
+MSG_RU[M_0328]='Частичное удаление завершено с ошибками (%s). Manifest и резервные копии сохранены в %s; вы можете безопасно повторить --uninstall.\n'
+MSG_EN[M_0328]='Partial uninstall finished with errors (%s). Manifest and backups preserved in %s; you may safely re-run --uninstall.\n'
+MSG_RU[M_0329]='Частичное удаление завершено: выбранные компоненты удалены, сохранённые компоненты и manifest оставлены в системе.\n'
+MSG_EN[M_0329]='Selective uninstall completed: selected components removed, kept components and manifest preserved.\n'
+MSG_RU[M_0330]='Каталог %s не пуст (содержит сторонние или сохранённые файлы) — пропущен.'
+MSG_EN[M_0330]='Directory %s is not empty (contains third-party or preserved files) — skipped.'
+MSG_RU[M_0331]='Удалить также локальный клиент /root/.acme.sh (при отсутствии других доменов)? [y/N]: '
+MSG_EN[M_0331]='Also remove local /root/.acme.sh client (if no other domains exist)? [y/N]: '
+MSG_RU[M_0332]='Различия недоступны: до установки файла %s не существовало.\n'
+MSG_EN[M_0332]='Diff unavailable: %s did not exist prior to installation.\n'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -5869,21 +5965,919 @@ run_update() {
     log_info_tr "update.log" "M_0267"
 }
 
-run_uninstall() {
-    read_tr "M_0268" confirm_uninst
-    if [[ ! "${confirm_uninst:-N}" =~ ^[Yy]$ ]]; then
-        exit 0
+# ------------------------------ Safe Selective Uninstall ----------------------
+UNINSTALL_LEGACY_MODE=0
+UNINSTALL_BACKUP_OK=0
+UNINSTALL_REMOVE_USER_DATA=0
+UNINSTALL_REMOVE_ACME=0
+UNINSTALL_REMOVE_PACKAGES=0
+declare -a UNINSTALL_DETECTED_COMPS=()
+declare -a UNINSTALL_CANDIDATE_PKGS=()
+declare -A UNINSTALL_COMP_SELECTED=()
+
+uninstall_comp_label() {
+    local cid="$1"
+    if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
+        case "${cid}" in
+            nginx)          printf '%s' "Nginx (SmartDNS config, hardening drop-in & repo)" ;;
+            xray)           printf '%s' "Xray-core (transparent SNI proxy & reload path)" ;;
+            oxidns)         printf '%s' "OxiDNS (Rust SmartDNS backend)" ;;
+            adguardhome)    printf '%s' "AdGuardHome (Go SmartDNS backend)" ;;
+            ipset-watchers) printf '%s' "Dynamic ipset Watchers (DoH / DoT auth)" ;;
+            firewall)       printf '%s' "Firewall rules (SMARTDNS_* chains, ipset, UFW, sysctl)" ;;
+            systemd-timers) printf '%s' "Systemd update timers (geosite & GeoHideDNS)" ;;
+            certificates)   printf '%s' "TLS Certificates & ACME renewal (/etc/ssl/smartdns)" ;;
+            domain-rules)   printf '%s' "Proxy domain rules & DNS assets (/var/lib/dns-assets)" ;;
+            cover-site)     printf '%s' "Cover Site (/var/www/studio-nord)" ;;
+            installer-core) printf '%s' "Installer state, manifest & logs (/var/lib/oxidns-installer)" ;;
+            *)              printf '%s' "${cid}" ;;
+        esac
+    else
+        case "${cid}" in
+            nginx)          printf '%s' "Nginx (конфиг SmartDNS, drop-in hardening и репозиторий)" ;;
+            xray)           printf '%s' "Xray-core (прозрачный SNI-прокси и автоперезагрузка)" ;;
+            oxidns)         printf '%s' "OxiDNS (DNS-движок Rust)" ;;
+            adguardhome)    printf '%s' "AdGuardHome (DNS-движок Go)" ;;
+            ipset-watchers) printf '%s' "Службы динамической авторизации ipset (DoH / DoT)" ;;
+            firewall)       printf '%s' "Правила Firewall (цепочки SMARTDNS_*, ipset, UFW, sysctl)" ;;
+            systemd-timers) printf '%s' "Systemd-таймеры обновления (geosite и GeoHideDNS)" ;;
+            certificates)   printf '%s' "TLS-сертификаты и автопродление ACME (/etc/ssl/smartdns)" ;;
+            domain-rules)   printf '%s' "Правила проксируемых доменов (/var/lib/dns-assets)" ;;
+            cover-site)     printf '%s' "Сайт-заглушка Cover Site (/var/www/studio-nord)" ;;
+            installer-core) printf '%s' "Состояние, manifest и логи установщика (/var/lib/oxidns-installer)" ;;
+            *)              printf '%s' "${cid}" ;;
+        esac
     fi
-    for svc in doh-ipset-watcher dot-ipset-watcher xray-reload.path xray oxidns adguardhome geosite-update.timer geohide-update.timer smartdns-firewall; do
-        systemctl disable --now "${svc}" 2>/dev/null || true
+}
+
+validate_install_manifest_file() {
+    [[ -f "${INSTALL_MANIFEST_FILE}" ]] || return 1
+    grep -q '^# FORMAT=v1$' "${INSTALL_MANIFEST_FILE}" 2>/dev/null || return 1
+    awk -F'\t' '!/^#/ && NF != 5 { bad=1 } END { exit bad }' "${INSTALL_MANIFEST_FILE}" 2>/dev/null || return 1
+    return 0
+}
+
+manifest_has_component() {
+    local cid="$1"
+    [[ "${UNINSTALL_LEGACY_MODE}" -eq 0 && -f "${INSTALL_MANIFEST_FILE}" ]] || return 1
+    awk -F'\t' -v c="${cid}" '!/^#/ && $1 == "COMPONENT" && $2 == c { found=1 } END { exit !found }' "${INSTALL_MANIFEST_FILE}"
+}
+
+manifest_get_file_sha() {
+    local target_path="$1"
+    [[ "${UNINSTALL_LEGACY_MODE}" -eq 0 && -f "${INSTALL_MANIFEST_FILE}" ]] || return 1
+    awk -F'\t' -v p="${target_path}" '!/^#/ && ($1 == "FILE" || $1 == "SCRIPT" || $1 == "CERT" || $1 == "UNIT" || $1 == "TIMER" || $1 == "PATH_UNIT") && $3 == p { sha=$5 } END { if (sha != "") print sha }' "${INSTALL_MANIFEST_FILE}"
+}
+
+manifest_has_account() {
+    local acc_type="$1"
+    local acc_name="$2"
+    [[ "${UNINSTALL_LEGACY_MODE}" -eq 0 && -f "${INSTALL_MANIFEST_FILE}" ]] || return 1
+    awk -F'\t' -v t="${acc_type}" -v n="${acc_name}" '!/^#/ && $1 == t && $3 == n { found=1 } END { exit !found }' "${INSTALL_MANIFEST_FILE}"
+}
+
+manifest_remove_component_entries() {
+    local cid="$1"
+    [[ -f "${INSTALL_MANIFEST_FILE}" ]] || return 0
+    local tmp_mf="${INSTALL_MANIFEST_FILE}.tmp"
+    awk -F'\t' -v c="${cid}" '/^#/ { print; next } $2 == c { next } { print }' "${INSTALL_MANIFEST_FILE}" > "${tmp_mf}"
+    chmod 0600 "${tmp_mf}"
+    mv -f "${tmp_mf}" "${INSTALL_MANIFEST_FILE}"
+}
+
+initial_backup_lookup() {
+    local target_path="$1"
+    [[ -f "${INITIAL_BACKUP_MANIFEST}" ]] || return 1
+    awk -F'\t' -v p="${target_path}" '!/^#/ && $2 == p { print $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9; exit }' "${INITIAL_BACKUP_MANIFEST}"
+}
+
+detect_installed_components() {
+    UNINSTALL_DETECTED_COMPS=()
+    UNINSTALL_COMP_SELECTED=()
+    UNINSTALL_LEGACY_MODE=0
+    UNINSTALL_BACKUP_OK=0
+
+    if ! validate_install_manifest_file; then
+        UNINSTALL_LEGACY_MODE=1
+    fi
+
+    if [[ -f "${INITIAL_BACKUP_MANIFEST}" ]] && verify_backup_integrity "${INITIAL_BACKUP_DIR}" >/dev/null 2>&1; then
+        UNINSTALL_BACKUP_OK=1
+    fi
+
+    if manifest_has_component "nginx" || [[ -f /etc/systemd/system/nginx.service.d/hardening.conf ]] || { [[ -f /etc/nginx/nginx.conf ]] && grep -q 'doh-auth.log' /etc/nginx/nginx.conf 2>/dev/null; }; then
+        UNINSTALL_DETECTED_COMPS+=("nginx")
+    fi
+    if manifest_has_component "xray" || [[ -x /usr/local/bin/xray || -f /etc/systemd/system/xray.service || -f "${XRAY_CONF_DIR}/00-base.json" ]]; then
+        UNINSTALL_DETECTED_COMPS+=("xray")
+    fi
+    if manifest_has_component "oxidns" || [[ -x /usr/local/bin/oxidns || -f /etc/systemd/system/oxidns.service || -f /etc/oxidns/config.yaml ]]; then
+        UNINSTALL_DETECTED_COMPS+=("oxidns")
+    fi
+    if manifest_has_component "adguardhome" || [[ -x /usr/local/bin/AdGuardHome || -f /etc/systemd/system/adguardhome.service || -f /etc/adguardhome/AdGuardHome.yaml ]]; then
+        UNINSTALL_DETECTED_COMPS+=("adguardhome")
+    fi
+    if manifest_has_component "ipset-watchers" || [[ -x /usr/local/bin/doh-ipset-watcher.sh || -f /etc/systemd/system/doh-ipset-watcher.service || -f /etc/systemd/system/dot-ipset-watcher.service ]]; then
+        UNINSTALL_DETECTED_COMPS+=("ipset-watchers")
+    fi
+    if manifest_has_component "firewall" || [[ -x /usr/local/bin/smartdns-firewall-apply.sh || -f /etc/systemd/system/smartdns-firewall.service || -f /etc/sysctl.d/90-smartdns-keepalive.conf ]] || iptables -t nat -S SMARTDNS_PREROUTING >/dev/null 2>&1; then
+        UNINSTALL_DETECTED_COMPS+=("firewall")
+    fi
+    if manifest_has_component "systemd-timers" || [[ -f /etc/systemd/system/geosite-update.timer || -f /etc/systemd/system/geohide-update.timer ]]; then
+        UNINSTALL_DETECTED_COMPS+=("systemd-timers")
+    fi
+    if manifest_has_component "certificates" || [[ -f "${CERT_DIR}/fullchain.pem" || -x /usr/local/bin/smartdns-cert-deploy.sh || -f /etc/systemd/system/smartdns-cert-renew.timer ]]; then
+        UNINSTALL_DETECTED_COMPS+=("certificates")
+    fi
+    if manifest_has_component "domain-rules" || [[ -f "${GEOHIDE_LIST_FILE}" || -f "${XRAY_ROUTING_JSON}" || -x /usr/local/bin/update-geohide-domains.sh ]]; then
+        UNINSTALL_DETECTED_COMPS+=("domain-rules")
+    fi
+    if manifest_has_component "cover-site" || [[ -f "${WEB_ROOT}/index.html" ]]; then
+        UNINSTALL_DETECTED_COMPS+=("cover-site")
+    fi
+    if manifest_has_component "installer-core" || [[ -f "${SETTINGS_FILE}" || -f "${INSTALL_MANIFEST_FILE}" || -d "${STATE_DIR}" ]]; then
+        UNINSTALL_DETECTED_COMPS+=("installer-core")
+    fi
+
+    local cid
+    for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+        UNINSTALL_COMP_SELECTED["${cid}"]=0
     done
-    iptables -t nat -D PREROUTING -j SMARTDNS_PREROUTING 2>/dev/null || true
-    iptables -t filter -D INPUT -j SMARTDNS_INPUT 2>/dev/null || true
-    iptables -t filter -D OUTPUT -j SMARTDNS_OUTPUT 2>/dev/null || true
-    ip6tables -t nat -D PREROUTING -j SMARTDNS6_PREROUTING 2>/dev/null || true
-    ip6tables -t filter -D INPUT -j SMARTDNS6_INPUT 2>/dev/null || true
-    ip6tables -t filter -D OUTPUT -j SMARTDNS6_OUTPUT 2>/dev/null || true
-    printf_tr "M_0269" "${BACKUP_ROOT}"
+}
+
+comp_is_detected() {
+    local target="$1"
+    local cid
+    for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+        [[ "${cid}" == "${target}" ]] && return 0
+    done
+    return 1
+}
+
+comp_is_removing() {
+    local target="$1"
+    comp_is_detected "${target}" && [[ "${UNINSTALL_COMP_SELECTED[${target}]:-0}" -eq 1 ]]
+}
+
+comp_is_keeping() {
+    local target="$1"
+    comp_is_detected "${target}" && [[ "${UNINSTALL_COMP_SELECTED[${target}]:-0}" -eq 0 ]]
+}
+
+print_uninstall_component_menu() {
+    printf_tr "M_0293"
+    local i=0
+    local cid mark label
+    for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+        i=$((i + 1))
+        mark=" "
+        [[ "${UNINSTALL_COMP_SELECTED[${cid}]:-0}" -eq 1 ]] && mark="x"
+        label="$(uninstall_comp_label "${cid}")"
+        printf '  [%s] [%2d] %s\n' "${mark}" "${i}" "${label}"
+    done
+}
+
+prompt_uninstall_selection() {
+    local choice=""
+    local cid
+    while true; do
+        print_uninstall_component_menu
+        read_tr "M_0294" choice
+        choice="${choice^^}"
+        choice="${choice:-Q}"
+
+        case "${choice}" in
+            A)
+                for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+                    UNINSTALL_COMP_SELECTED["${cid}"]=1
+                done
+                return 0
+                ;;
+            S|Q)
+                printf_tr "M_0295"
+                return 1
+                ;;
+            C)
+                local custom_in=""
+                while true; do
+                    print_uninstall_component_menu
+                    printf '\n'
+                    read_tr "M_0296" custom_in
+                    custom_in="${custom_in//$'\r'/}"
+                    case "${custom_in^^}" in
+                        Q)
+                            printf_tr "M_0295"
+                            return 1
+                            ;;
+                        A)
+                            for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+                                UNINSTALL_COMP_SELECTED["${cid}"]=1
+                            done
+                            ;;
+                        N)
+                            for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+                                UNINSTALL_COMP_SELECTED["${cid}"]=0
+                            done
+                            ;;
+                        D)
+                            return 0
+                            ;;
+                        *)
+                            local tok idx target_cid
+                            for tok in ${custom_in//,/ }; do
+                                if [[ "${tok}" =~ ^[0-9]+$ ]] && [[ "${tok}" -ge 1 && "${tok}" -le "${#UNINSTALL_DETECTED_COMPS[@]}" ]]; then
+                                    idx=$((tok - 1))
+                                    target_cid="${UNINSTALL_DETECTED_COMPS[${idx}]}"
+                                    if [[ "${UNINSTALL_COMP_SELECTED[${target_cid}]:-0}" -eq 1 ]]; then
+                                        UNINSTALL_COMP_SELECTED["${target_cid}"]=0
+                                    else
+                                        UNINSTALL_COMP_SELECTED["${target_cid}"]=1
+                                    fi
+                                fi
+                            done
+                            ;;
+                    esac
+                done
+                ;;
+        esac
+    done
+}
+
+validate_uninstall_dependencies() {
+    while true; do
+        local -a dep_from=()
+        local -a dep_need=()
+        local -a dep_reason=()
+
+        if comp_is_keeping "xray"; then
+            if comp_is_removing "nginx"; then
+                dep_from+=("xray"); dep_need+=("nginx"); dep_reason+=("nginx-local 127.0.0.1:9444 / dot-backend 127.0.0.1:8853")
+            fi
+            if comp_is_removing "domain-rules"; then
+                dep_from+=("xray"); dep_need+=("domain-rules"); dep_reason+=("10-smartdns-routing.json")
+            fi
+            if comp_is_removing "firewall"; then
+                dep_from+=("xray"); dep_need+=("firewall"); dep_reason+=("PREROUTING & anti-loop OUTPUT")
+            fi
+        fi
+
+        if comp_is_keeping "nginx"; then
+            if comp_is_removing "certificates"; then
+                dep_from+=("nginx"); dep_need+=("certificates"); dep_reason+=("ssl_certificate /etc/ssl/smartdns")
+            fi
+            local active_dns="oxidns"
+            if [[ -f "${SETTINGS_FILE}" ]]; then
+                active_dns="$(awk -F'"' '/^DNS_ENGINE=/ {print $2}' "${SETTINGS_FILE}" 2>/dev/null || echo "oxidns")"
+            fi
+            if comp_is_removing "${active_dns}"; then
+                local other_dns="adguardhome"
+                [[ "${active_dns}" == "adguardhome" ]] && other_dns="oxidns"
+                if ! comp_is_keeping "${other_dns}"; then
+                    dep_from+=("nginx"); dep_need+=("${active_dns}"); dep_reason+=("upstream 127.0.0.1:5353 / 8053")
+                fi
+            fi
+        fi
+
+        if comp_is_keeping "ipset-watchers" && comp_is_removing "firewall"; then
+            dep_from+=("ipset-watchers"); dep_need+=("firewall"); dep_reason+=("ipset smartdns_clients / dot_clients")
+        fi
+
+        if comp_is_keeping "systemd-timers" && comp_is_removing "domain-rules"; then
+            dep_from+=("systemd-timers"); dep_need+=("domain-rules"); dep_reason+=("update-geosite.sh / update-geohide-domains.sh")
+        fi
+
+        if comp_is_removing "installer-core"; then
+            local kcomp
+            for kcomp in firewall ipset-watchers domain-rules systemd-timers xray nginx oxidns adguardhome; do
+                if comp_is_keeping "${kcomp}"; then
+                    dep_from+=("${kcomp}"); dep_need+=("installer-core"); dep_reason+=("/var/lib/oxidns-installer/settings")
+                    break
+                fi
+            done
+        fi
+
+        if [[ "${#dep_from[@]}" -eq 0 ]]; then
+            return 0
+        fi
+
+        printf_tr "M_0298"
+        local i=0
+        while [[ "${i}" -lt "${#dep_from[@]}" ]]; do
+            printf_tr "M_0299" "${dep_from[${i}]}" "${dep_need[${i}]}" "${dep_reason[${i}]}"
+            i=$((i + 1))
+        done
+
+        local dep_choice=""
+        read_tr "M_0300" dep_choice
+        dep_choice="${dep_choice^^}"
+        dep_choice="${dep_choice:-1}"
+        case "${dep_choice}" in
+            1)
+                local req
+                for req in "${dep_need[@]}"; do
+                    UNINSTALL_COMP_SELECTED["${req}"]=0
+                done
+                ;;
+            2)
+                return 2
+                ;;
+            *)
+                printf_tr "M_0295"
+                return 1
+                ;;
+        esac
+    done
+}
+
+collect_removable_packages() {
+    UNINSTALL_CANDIDATE_PKGS=()
+    [[ "${UNINSTALL_LEGACY_MODE}" -eq 0 && -f "${INSTALL_MANIFEST_FILE}" ]] || return 0
+
+    local pkg
+    while IFS= read -r pkg; do
+        [[ -n "${pkg}" ]] || continue
+        case "${pkg}" in
+            nginx)
+                comp_is_removing "nginx" && UNINSTALL_CANDIDATE_PKGS+=("${pkg}")
+                ;;
+            ipset|conntrack)
+                comp_is_removing "firewall" && UNINSTALL_CANDIDATE_PKGS+=("${pkg}")
+                ;;
+            jq|dnsutils|unzip|socat|python3-bcrypt)
+                # Предлагаем к удалению только при удалении всего стека
+                if comp_is_removing "installer-core"; then
+                    UNINSTALL_CANDIDATE_PKGS+=("${pkg}")
+                fi
+                ;;
+        esac
+    done < <(awk -F'\t' '!/^#/ && $1 == "PACKAGE" { print $3 }' "${INSTALL_MANIFEST_FILE}" | sort -u)
+}
+
+restore_file_from_initial_backup() {
+    local target_path="$1"
+    local bak_info="$2"
+
+    local b_type b_mode b_owner b_group b_link b_sha b_rel
+    IFS=$'\t' read -r b_type b_mode b_owner b_group b_link b_sha b_rel <<<"${bak_info}"
+    local bak_full="${INITIAL_BACKUP_DIR}/${b_rel}"
+
+    if [[ "${b_type}" == "file" ]]; then
+        if [[ ! -f "${bak_full}" ]]; then
+            log_error_tr "rollback.log" "M_0320" "${target_path}"
+            return 1
+        fi
+        local bak_sha_now
+        bak_sha_now="$(sha256sum "${bak_full}" | awk '{print $1}')"
+        if [[ "${bak_sha_now}" != "${b_sha}" ]]; then
+            log_error_tr "rollback.log" "M_0320" "${target_path}"
+            return 1
+        fi
+        mkdir -p "$(dirname "${target_path}")"
+        cp -a "${bak_full}" "${target_path}.restore.tmp" || return 1
+        mv -f "${target_path}.restore.tmp" "${target_path}"
+        chown "${b_owner}:${b_group}" "${target_path}" 2>/dev/null || true
+        chmod "${b_mode}" "${target_path}" 2>/dev/null || true
+        if [[ -f "${bak_full}.acl" ]] && command -v setfacl >/dev/null 2>&1; then
+            setfacl --restore="${bak_full}.acl" 2>/dev/null || true
+        fi
+        log_info_tr "rollback.log" "M_0319" "${target_path}"
+        return 0
+    elif [[ "${b_type}" == "symlink" ]]; then
+        mkdir -p "$(dirname "${target_path}")"
+        rm -f "${target_path}"
+        ln -s "${b_link}" "${target_path}"
+        log_info_tr "rollback.log" "M_0319" "${target_path}"
+        return 0
+    fi
+    return 1
+}
+
+uninstall_safe_remove_or_restore_file() {
+    local target_path="$1"
+    local allow_delete_without_manifest="${2:-0}"
+
+    if [[ ! -e "${target_path}" && ! -L "${target_path}" ]]; then
+        return 0
+    fi
+
+    local bak_info=""
+    local has_backup=0
+    if [[ -f "${INITIAL_BACKUP_MANIFEST}" ]]; then
+        bak_info="$(initial_backup_lookup "${target_path}" || true)"
+        [[ -n "${bak_info}" ]] && has_backup=1
+    fi
+
+    local expected_sha=""
+    if [[ "${UNINSTALL_LEGACY_MODE}" -eq 0 ]]; then
+        expected_sha="$(manifest_get_file_sha "${target_path}" || true)"
+    fi
+
+    local user_modified=0
+    if [[ -f "${target_path}" && ! -L "${target_path}" ]]; then
+        if [[ -n "${expected_sha}" && "${expected_sha}" != "-" && "${expected_sha}" != symlink:* ]]; then
+            local cur_sha
+            cur_sha="$(sha256sum "${target_path}" | awk '{print $1}')"
+            if [[ "${cur_sha}" != "${expected_sha}" ]]; then
+                user_modified=1
+            fi
+        elif [[ "${UNINSTALL_LEGACY_MODE}" -eq 1 && "${allow_delete_without_manifest}" -ne 1 ]]; then
+            user_modified=1
+        fi
+    fi
+
+    if [[ "${user_modified}" -eq 1 ]]; then
+        printf_tr "M_0312" "${target_path}"
+        while true; do
+            printf_tr "M_0313" "${target_path}"
+            if [[ "${has_backup}" -eq 1 && "${UNINSTALL_BACKUP_OK}" -eq 1 ]]; then
+                printf_tr "M_0314"
+                printf_tr "M_0315"
+            else
+                printf_tr "M_0316"
+            fi
+            local fchoice=""
+            read_tr "M_0317" fchoice
+            fchoice="${fchoice^^}"
+            fchoice="${fchoice:-K}"
+
+            case "${fchoice}" in
+                K|C)
+                    log_info_tr "rollback.log" "M_0318" "${target_path}"
+                    return 0
+                    ;;
+                D)
+                    if [[ "${has_backup}" -eq 1 ]]; then
+                        local b_rel
+                        b_rel="$(awk -F'\t' '{print $7}' <<<"${bak_info}")"
+                        diff -u "${INITIAL_BACKUP_DIR}/${b_rel}" "${target_path}" || true
+                    else
+                        printf_tr "M_0332" "${target_path}"
+                    fi
+                    ;;
+                R)
+                    if [[ "${has_backup}" -eq 1 && "${UNINSTALL_BACKUP_OK}" -eq 1 ]]; then
+                        restore_file_from_initial_backup "${target_path}" "${bak_info}"
+                        return $?
+                    fi
+                    ;;
+                X)
+                    if [[ "${has_backup}" -eq 0 ]]; then
+                        rm -f "${target_path}"
+                        log_info_tr "rollback.log" "M_0321" "${target_path}"
+                        return 0
+                    fi
+                    ;;
+            esac
+        done
+    fi
+
+    if [[ "${has_backup}" -eq 1 ]]; then
+        if [[ "${UNINSTALL_BACKUP_OK}" -eq 1 ]]; then
+            restore_file_from_initial_backup "${target_path}" "${bak_info}"
+            return $?
+        else
+            log_warn_tr "rollback.log" "M_0322" "${target_path}"
+            return 0
+        fi
+    fi
+
+    rm -f "${target_path}"
+    log_info_tr "rollback.log" "M_0321" "${target_path}"
+    return 0
+}
+
+remove_dir_if_empty() {
+    local dir_path="$1"
+    [[ -d "${dir_path}" ]] || return 0
+    if [[ -z "$(ls -A "${dir_path}" 2>/dev/null)" ]]; then
+        rmdir "${dir_path}" 2>/dev/null || true
+    else
+        log_info_tr "rollback.log" "M_0330" "${dir_path}"
+    fi
+}
+
+remove_manifest_account_if_owned() {
+    local acc_type="$1"
+    local acc_name="$2"
+    [[ "${acc_name}" == "www-data" || "${acc_name}" == "root" ]] && return 0
+    if manifest_has_account "${acc_type}" "${acc_name}"; then
+        if [[ "${acc_type}" == "USER" ]] && id -u "${acc_name}" >/dev/null 2>&1; then
+            userdel "${acc_name}" 2>/dev/null || true
+        elif [[ "${acc_type}" == "GROUP" ]] && getent group "${acc_name}" >/dev/null 2>&1; then
+            groupdel "${acc_name}" 2>/dev/null || true
+        fi
+    fi
+}
+
+uninstall_component_ipset_watchers() {
+    systemctl disable --now doh-ipset-watcher.service dot-ipset-watcher.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/doh-ipset-watcher.service" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/dot-ipset-watcher.service" 1
+    systemctl daemon-reload || true
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/doh-ipset-watcher.sh" 1
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/dot-ipset-watcher.sh" 1
+}
+
+uninstall_component_systemd_timers() {
+    systemctl disable --now geosite-update.timer geohide-update.timer geosite-update.service geohide-update.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/geosite-update.timer" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/geosite-update.service" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/geohide-update.timer" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/geohide-update.service" 1
+    systemctl daemon-reload || true
+}
+
+uninstall_component_xray() {
+    systemctl disable --now xray-reload.path xray-reload.service xray.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/xray-reload.path" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/xray-reload.service" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/xray.service" 1
+    systemctl daemon-reload || true
+    uninstall_safe_remove_or_restore_file "/etc/xray/conf.d/10-smartdns-routing.json" 1
+    uninstall_safe_remove_or_restore_file "${XRAY_CONF_DIR}/00-base.json" 0
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/xray" 1
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/xray-safe-reload.sh" 1
+    rm -f /var/log/xray/access.log /var/log/xray/error.log 2>/dev/null || true
+    remove_dir_if_empty /var/log/xray
+    remove_dir_if_empty "${XRAY_CONF_DIR}"
+    remove_dir_if_empty "${XRAY_RULES_DIR}"
+    remove_dir_if_empty /etc/xray
+    remove_manifest_account_if_owned "USER" "xray"
+    remove_manifest_account_if_owned "GROUP" "xray"
+}
+
+uninstall_component_nginx() {
+    systemctl stop nginx.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/nginx.service.d/hardening.conf" 1
+    remove_dir_if_empty /etc/systemd/system/nginx.service.d
+    systemctl daemon-reload || true
+    uninstall_safe_remove_or_restore_file "/etc/nginx/nginx.conf" 0
+    uninstall_safe_remove_or_restore_file "/etc/apt/sources.list.d/nginx-official.list" 1
+    uninstall_safe_remove_or_restore_file "/etc/apt/preferences.d/99nginx-official" 1
+    uninstall_safe_remove_or_restore_file "/etc/apt/keyrings/nginx-archive-keyring.gpg" 1
+    rm -f /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log 2>/dev/null || true
+    gpasswd -d www-data ssl-smartdns >/dev/null 2>&1 || true
+
+    # Если nginx существовал до установки и его оригинальный конфиг восстановлен, вернуть в работу
+    if [[ -f "${INITIAL_BACKUP_DIR}/preinstall-packages.list" ]] && grep -qx 'nginx' "${INITIAL_BACKUP_DIR}/preinstall-packages.list" 2>/dev/null; then
+        if nginx -t >/dev/null 2>&1; then
+            systemctl restart nginx.service 2>/dev/null || true
+        fi
+    else
+        systemctl disable nginx.service 2>/dev/null || true
+    fi
+}
+
+uninstall_component_oxidns() {
+    systemctl disable --now oxidns.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/oxidns.service" 1
+    systemctl daemon-reload || true
+    uninstall_safe_remove_or_restore_file "/etc/oxidns/config.yaml" 0
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/oxidns" 1
+    remove_dir_if_empty /etc/oxidns
+    remove_dir_if_empty /var/lib/oxidns
+    remove_manifest_account_if_owned "USER" "oxidns"
+    remove_manifest_account_if_owned "GROUP" "oxidns"
+}
+
+uninstall_component_adguardhome() {
+    systemctl disable --now adguardhome.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/adguardhome.service" 1
+    systemctl daemon-reload || true
+    uninstall_safe_remove_or_restore_file "/etc/adguardhome/AdGuardHome.yaml" 0
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/AdGuardHome" 1
+    remove_dir_if_empty /etc/adguardhome
+    remove_dir_if_empty /var/lib/adguardhome
+    remove_manifest_account_if_owned "USER" "adguard"
+    remove_manifest_account_if_owned "GROUP" "adguard"
+}
+
+uninstall_component_domain_rules() {
+    local f
+    for f in /usr/local/bin/update-geosite.sh /usr/local/bin/update-geohide-domains.sh \
+             "${XRAY_ROUTING_JSON}" "${ROUTING_VARS_FILE}" "${GEOHIDE_LIST_FILE}" \
+             "${GEOHIDE_HOSTS_FILE}" "${AGH_RULES_FILE}" "${DNS_ASSETS_DIR}/geosite.dat" \
+             "${DNS_ASSETS_DIR}/domain-groups.map"; do
+        uninstall_safe_remove_or_restore_file "${f}" 1
+    done
+    if [[ "${UNINSTALL_REMOVE_USER_DATA}" -eq 1 ]]; then
+        uninstall_safe_remove_or_restore_file "${CUSTOM_ALLOW_FILE}" 1
+        uninstall_safe_remove_or_restore_file "${CUSTOM_DENY_FILE}" 1
+    fi
+    remove_dir_if_empty "${DNS_ASSETS_DIR}"
+    remove_dir_if_empty "${XRAY_RULES_DIR}"
+}
+
+uninstall_component_cover_site() {
+    local f
+    for f in "${WEB_ROOT}/index.html" "${WEB_ROOT}/404.html" "${WEB_ROOT}/favicon.svg" \
+             "${WEB_ROOT}/robots.txt" "${WEB_ROOT}/sitemap.xml" \
+             "${WEB_ROOT}/assets/style.css" "${WEB_ROOT}/assets/app.js"; do
+        uninstall_safe_remove_or_restore_file "${f}" 0
+    done
+    remove_dir_if_empty "${WEB_ROOT}/assets"
+    remove_dir_if_empty "${WEB_ROOT}"
+}
+
+uninstall_component_certificates() {
+    systemctl disable --now smartdns-cert-renew.timer smartdns-cert-renew.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/smartdns-cert-renew.timer" 1
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/smartdns-cert-renew.service" 1
+    systemctl daemon-reload || true
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/verify-tls-keys.sh" 1
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/smartdns-cert-deploy.sh" 1
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/smartdns-cert-renew.sh" 1
+    uninstall_safe_remove_or_restore_file "${CERT_DIR}/fullchain.pem" 0
+    uninstall_safe_remove_or_restore_file "${CERT_DIR}/privkey.pem" 0
+    rm -rf "${STATE_DIR}/cert-stage" 2>/dev/null || true
+    remove_dir_if_empty "${CERT_DIR}"
+    if [[ "${UNINSTALL_REMOVE_ACME}" -eq 1 && -d /root/.acme.sh ]]; then
+        /root/.acme.sh/acme.sh --uninstall >/dev/null 2>&1 || true
+        rm -rf /root/.acme.sh 2>/dev/null || true
+    fi
+    remove_manifest_account_if_owned "GROUP" "ssl-smartdns"
+}
+
+uninstall_component_firewall() {
+    systemctl disable --now smartdns-firewall.service 2>/dev/null || true
+    uninstall_safe_remove_or_restore_file "/etc/systemd/system/smartdns-firewall.service" 1
+    systemctl daemon-reload || true
+
+    # Удаляем строго цепочки установщика, не затрагивая остальные правила iptables
+    while iptables -t nat -C PREROUTING -j SMARTDNS_PREROUTING 2>/dev/null; do
+        iptables -t nat -D PREROUTING -j SMARTDNS_PREROUTING || break
+    done
+    iptables -t nat -F SMARTDNS_PREROUTING 2>/dev/null || true
+    iptables -t nat -X SMARTDNS_PREROUTING 2>/dev/null || true
+
+    while iptables -t filter -C INPUT -j SMARTDNS_INPUT 2>/dev/null; do
+        iptables -t filter -D INPUT -j SMARTDNS_INPUT || break
+    done
+    iptables -t filter -F SMARTDNS_INPUT 2>/dev/null || true
+    iptables -t filter -X SMARTDNS_INPUT 2>/dev/null || true
+
+    while iptables -t filter -C OUTPUT -j SMARTDNS_OUTPUT 2>/dev/null; do
+        iptables -t filter -D OUTPUT -j SMARTDNS_OUTPUT || break
+    done
+    iptables -t filter -F SMARTDNS_OUTPUT 2>/dev/null || true
+    iptables -t filter -X SMARTDNS_OUTPUT 2>/dev/null || true
+
+    while ip6tables -t nat -C PREROUTING -j SMARTDNS6_PREROUTING 2>/dev/null; do
+        ip6tables -t nat -D PREROUTING -j SMARTDNS6_PREROUTING || break
+    done
+    ip6tables -t nat -F SMARTDNS6_PREROUTING 2>/dev/null || true
+    ip6tables -t nat -X SMARTDNS6_PREROUTING 2>/dev/null || true
+
+    while ip6tables -t filter -C INPUT -j SMARTDNS6_INPUT 2>/dev/null; do
+        ip6tables -t filter -D INPUT -j SMARTDNS6_INPUT || break
+    done
+    ip6tables -t filter -F SMARTDNS6_INPUT 2>/dev/null || true
+    ip6tables -t filter -X SMARTDNS6_INPUT 2>/dev/null || true
+
+    while ip6tables -t filter -C OUTPUT -j SMARTDNS6_OUTPUT 2>/dev/null; do
+        ip6tables -t filter -D OUTPUT -j SMARTDNS6_OUTPUT || break
+    done
+    ip6tables -t filter -F SMARTDNS6_OUTPUT 2>/dev/null || true
+    ip6tables -t filter -X SMARTDNS6_OUTPUT 2>/dev/null || true
+
+    if command -v ipset >/dev/null 2>&1; then
+        local iset
+        for iset in smartdns_clients smartdns_clients6 dot_clients dot_clients6; do
+            ipset destroy "${iset}" 2>/dev/null || true
+        done
+    fi
+
+    uninstall_safe_remove_or_restore_file "/etc/sysctl.d/90-smartdns-keepalive.conf" 1
+    sysctl --system >/dev/null 2>&1 || true
+
+    if command -v ufw >/dev/null 2>&1; then
+        local ssh_port
+        ssh_port="$(ss -tlnp 2>/dev/null | awk '/sshd/ {split($4,a,":"); print a[length(a)]; exit}')"
+        ssh_port="${ssh_port:-22}"
+        ufw allow "${ssh_port}/tcp" >/dev/null 2>&1 || true
+
+        ufw delete allow 853/tcp >/dev/null 2>&1 || true
+        if ! comp_is_keeping "nginx"; then
+            ufw delete allow 80/tcp >/dev/null 2>&1 || true
+            ufw delete allow 443/tcp >/dev/null 2>&1 || true
+        fi
+
+        if [[ -f "${INITIAL_BACKUP_DIR}/preinstall-ufw-state.txt" ]]; then
+            if grep -Eq 'Status: (inactive|not-installed)' "${INITIAL_BACKUP_DIR}/preinstall-ufw-state.txt" 2>/dev/null; then
+                ufw --force disable >/dev/null 2>&1 || true
+            fi
+        fi
+    fi
+
+    uninstall_safe_remove_or_restore_file "/usr/local/bin/smartdns-firewall-apply.sh" 1
+}
+
+run_uninstall() {
+    detect_environment
+    detect_installed_components
+
+    printf '\n'
+    printf_tr "M_0285"
+    if [[ "${#UNINSTALL_DETECTED_COMPS[@]}" -eq 0 ]]; then
+        printf_tr "M_0286"
+        return 0
+    fi
+
+    if [[ "${UNINSTALL_LEGACY_MODE}" -eq 0 ]]; then
+        printf_tr "M_0287" "$(tr_msg M_0289)"
+    else
+        printf_tr "M_0287" "$(tr_msg M_0290)"
+    fi
+
+    if [[ "${UNINSTALL_BACKUP_OK}" -eq 1 ]]; then
+        printf_tr "M_0288" "$(tr_msg M_0291)"
+    else
+        printf_tr "M_0288" "$(tr_msg M_0292)"
+    fi
+
+    # Выбор компонентов с проверкой зависимостей (можно отменить на любом шаге)
+    while true; do
+        if ! prompt_uninstall_selection; then
+            return 0
+        fi
+
+        local selected_count=0
+        local cid
+        for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+            if comp_is_removing "${cid}"; then
+                selected_count=$((selected_count + 1))
+            fi
+        done
+        if [[ "${selected_count}" -eq 0 ]]; then
+            printf_tr "M_0297"
+            return 0
+        fi
+
+        local dep_rc=0
+        validate_uninstall_dependencies || dep_rc=$?
+        if [[ "${dep_rc}" -eq 0 ]]; then
+            break
+        elif [[ "${dep_rc}" -eq 2 ]]; then
+            continue
+        else
+            return 0
+        fi
+    done
+
+    # Дополнительные безопасные опции (пользовательские данные, acme.sh, пакеты)
+    UNINSTALL_REMOVE_USER_DATA=0
+    if comp_is_removing "domain-rules" && { [[ -s "${CUSTOM_ALLOW_FILE}" ]] || [[ -s "${CUSTOM_DENY_FILE}" ]]; }; then
+        local ans_ud=""
+        read_tr "M_0308" ans_ud
+        [[ "${ans_ud:-N}" =~ ^[Yy]$ ]] && UNINSTALL_REMOVE_USER_DATA=1
+    fi
+
+    UNINSTALL_REMOVE_ACME=0
+    if comp_is_removing "certificates" && [[ -d /root/.acme.sh ]]; then
+        local ans_acme=""
+        read_tr "M_0331" ans_acme
+        [[ "${ans_acme:-N}" =~ ^[Yy]$ ]] && UNINSTALL_REMOVE_ACME=1
+    fi
+
+    UNINSTALL_REMOVE_PACKAGES=0
+    collect_removable_packages
+    if [[ "${#UNINSTALL_CANDIDATE_PKGS[@]}" -gt 0 ]]; then
+        local pkg_list_str
+        pkg_list_str="$(printf '%s ' "${UNINSTALL_CANDIDATE_PKGS[@]}")"
+        local ans_pkg=""
+        read_tr "M_0309" ans_pkg "${pkg_list_str% }"
+        [[ "${ans_pkg:-N}" =~ ^[Yy]$ ]] && UNINSTALL_REMOVE_PACKAGES=1
+    fi
+
+    # Показ полного плана удаления
+    printf_tr "M_0301"
+    printf_tr "M_0302"
+    local rem_any=0 keep_any=0
+    for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+        if comp_is_removing "${cid}"; then
+            printf '  - [%s] %s\n' "${cid}" "$(uninstall_comp_label "${cid}")"
+            rem_any=1
+        fi
+    done
+    [[ "${rem_any}" -eq 0 ]] && printf_tr "M_0304"
+
+    printf '\n'
+    printf_tr "M_0303"
+    for cid in "${UNINSTALL_DETECTED_COMPS[@]}"; do
+        if comp_is_keeping "${cid}"; then
+            printf '  - [%s] %s\n' "${cid}" "$(uninstall_comp_label "${cid}")"
+            keep_any=1
+        fi
+    done
+    [[ "${keep_any}" -eq 0 ]] && printf_tr "M_0304"
+
+    printf '\n'
+    if comp_is_removing "domain-rules"; then
+        printf_tr "M_0305" "$( [[ "${UNINSTALL_REMOVE_USER_DATA}" -eq 1 ]] && tr_msg M_0306 || tr_msg M_0307 )"
+    fi
+    if [[ "${UNINSTALL_REMOVE_PACKAGES}" -eq 1 && "${#UNINSTALL_CANDIDATE_PKGS[@]}" -gt 0 ]]; then
+        printf_tr "M_0310" "$(printf '%s ' "${UNINSTALL_CANDIDATE_PKGS[@]}")"
+    fi
+    printf '=========================================================\n\n'
+
+    local final_confirm=""
+    read_tr "M_0311" final_confirm
+    if [[ "${final_confirm}" != "YES" ]]; then
+        printf_tr "M_0295"
+        return 0
+    fi
+
+    # Инициализируем логи только после подтверждения пользователя
+    init_logging
+
+    # Строгий порядок удаления с учётом зависимостей
+    local -a ordered_removal=(
+        "ipset-watchers"
+        "systemd-timers"
+        "xray"
+        "nginx"
+        "oxidns"
+        "adguardhome"
+        "domain-rules"
+        "cover-site"
+        "certificates"
+        "firewall"
+    )
+
+    local errors=0
+    local failed_comps=""
+    local comp_rc=0
+
+    for cid in "${ordered_removal[@]}"; do
+        if ! comp_is_removing "${cid}"; then
+            continue
+        fi
+        log_info_tr "rollback.log" "M_0323" "${cid}"
+        comp_rc=0
+        case "${cid}" in
+            ipset-watchers) uninstall_component_ipset_watchers || comp_rc=$? ;;
+            systemd-timers) uninstall_component_systemd_timers || comp_rc=$? ;;
+            xray)           uninstall_component_xray || comp_rc=$? ;;
+            nginx)          uninstall_component_nginx || comp_rc=$? ;;
+            oxidns)         uninstall_component_oxidns || comp_rc=$? ;;
+            adguardhome)    uninstall_component_adguardhome || comp_rc=$? ;;
+            domain-rules)   uninstall_component_domain_rules || comp_rc=$? ;;
+            cover-site)     uninstall_component_cover_site || comp_rc=$? ;;
+            certificates)   uninstall_component_certificates || comp_rc=$? ;;
+            firewall)       uninstall_component_firewall || comp_rc=$? ;;
+        esac
+
+        if [[ "${comp_rc}" -ne 0 ]]; then
+            errors=$((errors + 1))
+            failed_comps+="${cid} "
+            log_error_tr "rollback.log" "M_0324" "${cid}"
+            # Не удаляем критические зависимости при сбое удаления зависимого компонента
+            break
+        else
+            manifest_remove_component_entries "${cid}"
+        fi
+    done
+
+    # Опциональное удаление пакетов (только если не было ошибок)
+    if [[ "${errors}" -eq 0 && "${UNINSTALL_REMOVE_PACKAGES}" -eq 1 && "${#UNINSTALL_CANDIDATE_PKGS[@]}" -gt 0 ]]; then
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get purge -y -q "${UNINSTALL_CANDIDATE_PKGS[@]}" || errors=$((errors + 1))
+        apt-get autoremove -y -q >/dev/null 2>&1 || true
+    fi
+
+    # Удаление state/manifest выполняется строго последним и только без ошибок
+    if [[ "${errors}" -ne 0 ]]; then
+        printf_tr "M_0328" "${failed_comps% }" "${STATE_DIR}"
+        return 1
+    fi
+
+    if comp_is_removing "installer-core" && [[ "${keep_any}" -eq 0 ]]; then
+        local sf
+        for sf in "${SETTINGS_FILE}" "${VERSIONS_FILE}" "${SECRETS_FILE}" "${IPSET_SAVE_FILE}" \
+                  "${STATE_DIR}/geohide-stats.env" "${STATE_DIR}/cover-site.sha256" \
+                  "${STATE_DIR}/10-smartdns-routing.json.lastgood" "${STATE_DIR}/latest_backup"; do
+            rm -f "${sf}" 2>/dev/null || true
+        done
+        rm -rf "${STATE_DIR}/fw-backup" 2>/dev/null || true
+
+        local ans_bak=""
+        read_tr "M_0325" ans_bak "${INITIAL_BACKUP_DIR}" "${BACKUP_ROOT}"
+        if [[ "${ans_bak:-N}" =~ ^[Yy]$ ]]; then
+            rm -rf "${INITIAL_BACKUP_DIR}" "${BACKUP_ROOT}" 2>/dev/null || true
+            rm -f "${INSTALL_MANIFEST_FILE}" 2>/dev/null || true
+            rm -f "${STATE_DIR}"/credentials-*.txt 2>/dev/null || true
+            remove_dir_if_empty "${STATE_DIR}"
+            rm -f "${LOG_DIR}"/*.log 2>/dev/null || true
+            remove_dir_if_empty "${LOG_DIR}"
+            printf_tr "M_0327"
+        else
+            rm -f "${INSTALL_MANIFEST_FILE}" 2>/dev/null || true
+            printf_tr "M_0326" "${STATE_DIR}"
+        fi
+    else
+        printf_tr "M_0329"
+    fi
+    return 0
 }
 
 # ------------------------------ Full Installation Flow ------------------------
@@ -6029,7 +7023,6 @@ main() {
             ACTION_MODE="uninstall"
             check_root
             acquire_lock
-            init_logging
             run_uninstall
             ;;
         --whitelist-status)
