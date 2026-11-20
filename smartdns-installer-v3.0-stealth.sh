@@ -2515,6 +2515,11 @@ check_reboot_required() {
         fi
         return 0
     fi
+    if [[ "${REBOOT_REQUIRED}" == "true" ]]; then
+        REBOOT_REQUIRED="false"
+        REBOOT_REASONS=""
+        save_reboot_lock_state
+    fi
     return 1
 }
 
