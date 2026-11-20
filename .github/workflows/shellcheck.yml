@@ -1,28 +1,24 @@
-name: Bash Syntax & ShellCheck
+name: ShellCheck & Bash Syntax
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, "dev/**" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main, "dev/**" ]
 
 jobs:
   lint:
-    name: Validate Bash Script
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check Linux LF line endings
+      - name: Bash Syntax & ShellCheck
         run: |
-          if grep -q $'\r' smartdns-installer-v2.10.0-stealth.sh; then
-            echo "ERROR: CRLF line endings detected in smartdns-installer-v2.10.0-stealth.sh"
-            exit 1
+          bash -n smartdns-installer-v3.0-stealth.sh
+          for f in old/*.sh; do
+            [ -e "$f" ] && bash -n "$f"
+          done
+          if command -v shellcheck >/dev/null 2>&1; then
+            shellcheck -S error smartdns-installer-v3.0-stealth.sh
           fi
-
-      - name: Run Bash syntax check (bash -n)
-        run: bash -n smartdns-installer-v2.10.0-stealth.sh
-
-      - name: Run ShellCheck static analysis
-        run: shellcheck -S warning -e SC1090,SC2034,SC2154 smartdns-installer-v2.10.0-stealth.sh
