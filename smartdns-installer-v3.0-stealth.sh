@@ -932,6 +932,118 @@ MSG_RU[M_0431]='Не указан административный пользо�
 MSG_EN[M_0431]='No admin user selected for sudo. Enter an existing username (Enter to skip): '
 MSG_RU[M_0432]='ОШИБКА: Пользователь "%s" не найден в системе.\n'
 MSG_EN[M_0432]='ERROR: User "%s" was not found on this system.\n'
+MSG_RU[M_0433]='Создан backup конфигурации SSH в %s (файлов: %s).'
+MSG_EN[M_0433]='SSH configuration backup created in %s (files: %s).'
+MSG_RU[M_0434]='ОШИБКА: Не удалось создать резервную копию конфигурации SSH. Изменения отменены.'
+MSG_EN[M_0434]='ERROR: Failed to back up SSH configuration. Changes aborted.'
+MSG_RU[M_0435]='ОШИБКА проверки конфигурации SSH (%s). Выполняется автоматический откат из %s...'
+MSG_EN[M_0435]='SSH configuration validation failed (%s). Rolling back from %s...'
+MSG_RU[M_0436]='Откат конфигурации SSH из %s завершён успешно (sshd -t: OK).'
+MSG_EN[M_0436]='SSH configuration rollback from %s completed successfully (sshd -t: OK).'
+MSG_RU[M_0437]='Конфигурация SSH проверена (sshd -t / sshd -T) и безопасно применена без разрыва текущей сессии.'
+MSG_EN[M_0437]='SSH configuration validated (sshd -t / sshd -T) and applied safely without dropping the current session.'
+MSG_RU[M_0438]='ПРЕДУПРЕЖДЕНИЕ: В /etc/ssh/sshd_config* обнаружены блоки Match. Итоговые параметры будут проверены через sshd -T -C.'
+MSG_EN[M_0438]='WARNING: Match blocks detected in /etc/ssh/sshd_config*. Effective parameters will be verified via sshd -T -C.'
+MSG_RU[M_0439]='\n--- [5] АУДИТ И БАЗОВАЯ НАСТРОЙКА SSH ---\n'
+MSG_EN[M_0439]='\n--- [5] SSH AUDIT AND BASE CONFIGURATION ---\n'
+MSG_RU[M_0440]='Пакет openssh-server (sshd) не установлен в системе.\n'
+MSG_EN[M_0440]='Package openssh-server (sshd) is not installed on this system.\n'
+MSG_RU[M_0441]='Установить openssh-server через apt-get (без перезагрузки)? [Y/n]: '
+MSG_EN[M_0441]='Install openssh-server via apt-get (no reboot)? [Y/n]: '
+MSG_RU[M_0442]='Текущее состояние SSH:\n  - Служба / Socket     : %s (socket activation: %s)\n  - Активные порты      : %s\n  - PubkeyAuthentication: %s\n  - PasswordAuth        : %s\n  - PermitRootLogin     : %s\n  - AuthorizedKeysFile  : %s\n  - Файлы sshd_config.d : %s\n'
+MSG_EN[M_0442]='Current SSH state:\n  - Service / Socket    : %s (socket activation: %s)\n  - Active ports        : %s\n  - PubkeyAuthentication: %s\n  - PasswordAuth        : %s\n  - PermitRootLogin     : %s\n  - AuthorizedKeysFile  : %s\n  - sshd_config.d files : %s\n'
+MSG_RU[M_0443]='Включить PubkeyAuthentication yes в конфигурации SSH сейчас? [Y/n]: '
+MSG_EN[M_0443]='Enable PubkeyAuthentication yes in SSH configuration now? [Y/n]: '
+MSG_RU[M_0444]='\n--- [7] НАСТРОЙКА SSH KEY AUTHENTICATION ---\n'
+MSG_EN[M_0444]='\n--- [7] SSH KEY AUTHENTICATION SETUP ---\n'
+MSG_RU[M_0445]='Настройка SSH-ключей для пользователя: %s (домашний каталог: %s)\n'
+MSG_EN[M_0445]='Configuring SSH keys for user: %s (home directory: %s)\n'
+MSG_RU[M_0446]='ВНИМАНИЕ: Отдельный административный пользователь не создан; ключи будут настраиваться для root.\n'
+MSG_EN[M_0446]='WARNING: No separate admin user configured; keys will be configured for root.\n'
+MSG_RU[M_0447]='\nГде создать SSH key?\n  [1] На локальном компьютере (рекомендуется — вставить публичный ключ)\n  [2] Сгенерировать на сервере (Ed25519 / RSA 4096)\n  [3] Использовать существующий ключ в системе\n  [4] Пропустить\n\nВаш выбор [1]: '
+MSG_EN[M_0447]='\nWhere should the SSH key be created?\n  [1] On your local computer (recommended — paste public key)\n  [2] Generate on this server (Ed25519 / RSA 4096)\n  [3] Use an existing key on the system\n  [4] Skip\n\nYour choice [1]: '
+MSG_RU[M_0448]='Вставьте строку публичного SSH-ключа (ssh-ed25519 / ssh-rsa / ecdsa-sha2-..., Enter — отмена): '
+MSG_EN[M_0448]='Paste your SSH public key line (ssh-ed25519 / ssh-rsa / ecdsa-sha2-..., Enter to cancel): '
+MSG_RU[M_0449]='ОШИБКА: Переданная строка не является валидным публичным SSH-ключом (проверка ssh-keygen -lf не пройдена).\n'
+MSG_EN[M_0449]='ERROR: Provided line is not a valid SSH public key (ssh-keygen -lf validation failed).\n'
+MSG_RU[M_0450]='Этот публичный ключ уже присутствует в %s (дубликат не добавлен).\n'
+MSG_EN[M_0450]='This public key already exists in %s (duplicate skipped).\n'
+MSG_RU[M_0451]='Публичный SSH-ключ проверен и добавлен в %s (%s).\n'
+MSG_EN[M_0451]='SSH public key validated and added to %s (%s).\n'
+MSG_RU[M_0452]='Выберите тип ключа:\n  [1] Ed25519 (рекомендуется)\n  [2] RSA 4096\nВаш выбор [1]: '
+MSG_EN[M_0452]='Select key type:\n  [1] Ed25519 (recommended)\n  [2] RSA 4096\nYour choice [1]: '
+MSG_RU[M_0453]='Введите имя файла ключа (по умолчанию %s): '
+MSG_EN[M_0453]='Enter key filename (default %s): '
+MSG_RU[M_0454]='ОШИБКА: Имя файла ключа должно содержать только латинские буквы, цифры, точки, _ и -.\n'
+MSG_EN[M_0454]='ERROR: Key filename must contain only Latin letters, digits, dots, _, and -.\n'
+MSG_RU[M_0455]='Файл ключа %s уже существует. Перезаписать его? [y/N]: '
+MSG_EN[M_0455]='Key file %s already exists. Overwrite it? [y/N]: '
+MSG_RU[M_0456]='Генерация ключа на сервере (рекомендуется задать надёжную passphrase; приватный ключ не отображается и не пишется в лог)...\n'
+MSG_EN[M_0456]='Generating key on server (a strong passphrase is recommended; private key is never printed or logged)...\n'
+MSG_RU[M_0457]='ОШИБКА: Генерация SSH-ключа завершилась неудачей.\n'
+MSG_EN[M_0457]='ERROR: SSH key generation failed.\n'
+MSG_RU[M_0458]='Найдено валидных ключей в %s: %s.\n'
+MSG_EN[M_0458]='Valid keys found in %s: %s.\n'
+MSG_RU[M_0459]='В /root/.ssh/authorized_keys найдено ключей: %s. Скопировать их в %s без перезаписи существующих? [Y/n]: '
+MSG_EN[M_0459]='Found %s key(s) in /root/.ssh/authorized_keys. Append them to %s without overwriting existing keys? [Y/n]: '
+MSG_RU[M_0460]='Действующие публичные ключи не найдены в %s. Сначала добавьте или сгенерируйте ключ.\n'
+MSG_EN[M_0460]='No valid public keys found in %s. Please add or generate a key first.\n'
+MSG_RU[M_0461]='\nВАЖНО: Проверьте вход по SSH-ключу в ОТДЕЛЬНОМ терминале на вашем компьютере:\n  ssh -p %s %s@%s\nПодтверждаете, что вход по SSH-ключу успешно работает? [y/N]: '
+MSG_EN[M_0461]='\nIMPORTANT: Test SSH key login in a SEPARATE terminal on your local machine:\n  ssh -p %s %s@%s\nDo you confirm that SSH key authentication works? [y/N]: '
+MSG_RU[M_0462]='Статус SSH key authentication: ПОДТВЕРЖДЁН пользователем.\n'
+MSG_EN[M_0462]='SSH key authentication status: CONFIRMED by user.\n'
+MSG_RU[M_0463]='Вход по ключу пока НЕ подтверждён. Отключение PasswordAuthentication и Root Login будет заблокировано до подтверждения.\n'
+MSG_EN[M_0463]='Key login NOT confirmed yet. Disabling PasswordAuthentication and Root Login will remain blocked until confirmed.\n'
+MSG_RU[M_0464]='\n--- [6] НАСТРОЙКА SSH PORT ---\n'
+MSG_EN[M_0464]='\n--- [6] SSH PORT CONFIGURATION ---\n'
+MSG_RU[M_0465]='Текущий SSH port: %s\n'
+MSG_EN[M_0465]='Current SSH port: %s\n'
+MSG_RU[M_0466]='Изменить SSH port? [y/N]: '
+MSG_EN[M_0466]='Change SSH port? [y/N]: '
+MSG_RU[M_0467]='Введите новый SSH port (1024-65535, Enter — отмена): '
+MSG_EN[M_0467]='Enter new SSH port (1024-65535, Enter to cancel): '
+MSG_RU[M_0468]='ОШИБКА: Порт должен быть целым числом в диапазоне 1024..65535.\n'
+MSG_EN[M_0468]='ERROR: Port must be an integer in range 1024..65535.\n'
+MSG_RU[M_0469]='ОШИБКА: Порт %s зарезервирован для компонентов SmartDNS/Xray/Nginx. Выберите другой порт.\n'
+MSG_EN[M_0469]='ERROR: Port %s is reserved for SmartDNS/Xray/Nginx components. Choose another port.\n'
+MSG_RU[M_0470]='ОШИБКА: Порт %s уже занят другим процессом в системе.\n'
+MSG_EN[M_0470]='ERROR: Port %s is already in use by another process on this system.\n'
+MSG_RU[M_0471]='Порт %s совпадает с текущим SSH-портом. Изменение не требуется.\n'
+MSG_EN[M_0471]='Port %s is already the current SSH port. No change required.\n'
+MSG_RU[M_0472]='\nВНИМАНИЕ: Firewall (UFW/iptables) на данном этапе НЕ включается — выбранный порт %s будет автоматически передан в основную фазу установки и разрешён до включения блокирующих правил.\nСначала SSH будет временно слушать ОБА порта (%s и %s), чтобы вы безопасно проверили новое подключение.\nПрименить временную конфигурацию с двумя портами? [Y/n]: '
+MSG_EN[M_0472]='\nNOTICE: Firewall (UFW/iptables) is NOT enabled at this stage — port %s will be passed to the main installation phase and allowed before blocking rules.\nSSH will temporarily listen on BOTH ports (%s and %s) so you can safely test the new connection.\nApply temporary dual-port configuration? [Y/n]: '
+MSG_RU[M_0473]='\nSSH теперь слушает порты %s и %s. Откройте ВТОРОЙ терминал и проверьте вход:\n  ssh -p %s %s@%s\nПодтверждаете, что подключение на новый порт %s успешно работает? [y/N]: '
+MSG_EN[M_0473]='\nSSH is now listening on ports %s and %s. Open a SECOND terminal and test login:\n  ssh -p %s %s@%s\nDo you confirm that login on the new port %s works? [y/N]: '
+MSG_RU[M_0474]='Отключить старый SSH port %s и оставить только порт %s? [y/N]: '
+MSG_EN[M_0474]='Disable the old SSH port %s and keep only port %s? [y/N]: '
+MSG_RU[M_0475]='Новый SSH port %s успешно применён (старый порт %s отключён).\n'
+MSG_EN[M_0475]='New SSH port %s applied successfully (old port %s disabled).\n'
+MSG_RU[M_0476]='ВНИМАНИЕ: Новый порт %s не подтверждён. Выполнить откат к исходному порту %s? [Y/n]: '
+MSG_EN[M_0476]='WARNING: New port %s was not confirmed. Roll back to original port %s? [Y/n]: '
+MSG_RU[M_0477]='Старый порт %s оставлен активным вместе с %s для безопасности доступа.\n'
+MSG_EN[M_0477]='Old port %s remains active alongside %s to protect access.\n'
+MSG_RU[M_0478]='\n--- [8] ОТКЛЮЧЕНИЕ PASSWORDAUTHENTICATION ---\n'
+MSG_EN[M_0478]='\n--- [8] DISABLE PASSWORDAUTHENTICATION ---\n'
+MSG_RU[M_0479]='PasswordAuthentication уже отключён (sshd -T: passwordauthentication no).\n'
+MSG_EN[M_0479]='PasswordAuthentication is already disabled (sshd -T: passwordauthentication no).\n'
+MSG_RU[M_0480]='ЗАБЛОКИРОВАНО: Нельзя отключить PasswordAuthentication — %s.\n'
+MSG_EN[M_0480]='BLOCKED: Cannot disable PasswordAuthentication — %s.\n'
+MSG_RU[M_0481]='ВНИМАНИЕ: Отключение входа по паролю сделает невозможным вход без валидного SSH-ключа.\nОтключить PasswordAuthentication и KbdInteractiveAuthentication? [y/N]: '
+MSG_EN[M_0481]='WARNING: Disabling password login will prevent login without a valid SSH key.\nDisable PasswordAuthentication and KbdInteractiveAuthentication? [y/N]: '
+MSG_RU[M_0482]='PasswordAuthentication успешно отключён и подтверждён через sshd -T.\n'
+MSG_EN[M_0482]='PasswordAuthentication successfully disabled and verified via sshd -T.\n'
+MSG_RU[M_0483]='\n--- [9] ОТКЛЮЧЕНИЕ ROOT LOGIN ПО SSH ---\n'
+MSG_EN[M_0483]='\n--- [9] DISABLE SSH ROOT LOGIN ---\n'
+MSG_RU[M_0484]='PermitRootLogin уже отключён (sshd -T: permitrootlogin no).\n'
+MSG_EN[M_0484]='PermitRootLogin is already disabled (sshd -T: permitrootlogin no).\n'
+MSG_RU[M_0485]='ЗАБЛОКИРОВАНО: Нельзя отключить SSH Root Login — %s.\n'
+MSG_EN[M_0485]='BLOCKED: Cannot disable SSH Root Login — %s.\n'
+MSG_RU[M_0486]='Отключить SSH login под root (PermitRootLogin no)?\nРекомендуется использовать отдельного пользователя "%s" с sudo (учётная запись root не блокируется).\nПодтверждаете? [y/N]: '
+MSG_EN[M_0486]='Disable SSH root login (PermitRootLogin no)?\nRecommended when using separate sudo user "%s" (the root OS account itself is NOT locked).\nConfirm? [y/N]: '
+MSG_RU[M_0487]='PermitRootLogin no успешно применён и подтверждён через sshd -T (учётная запись root сохранена).\n'
+MSG_EN[M_0487]='PermitRootLogin no applied and verified via sshd -T (local root account preserved).\n'
+MSG_RU[M_0488]='ОШИБКА: Эффективное значение sshd -T для %s не совпало (ожидалось: %s, получено: %s).'
+MSG_EN[M_0488]='ERROR: Effective sshd -T value for %s mismatch (expected: %s, got: %s).'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -1139,6 +1251,18 @@ INITIAL_SETUP_PASSAUTH_DISABLED="false"
 INITIAL_SETUP_ROOTLOGIN_DISABLED="false"
 INITIAL_SETUP_ACTIONS_DONE=""
 INITIAL_SETUP_CHECKS_SUMMARY=""
+SSH_HARDENING_CONF="/etc/ssh/sshd_config.d/00-smartdns-hardening.conf"
+SSH_SOCKET_DROPIN_DIR="/etc/systemd/system/ssh.socket.d"
+SSH_SOCKET_DROPIN_FILE="${SSH_SOCKET_DROPIN_DIR}/override.conf"
+SSH_SERVICE_NAME="ssh"
+SSH_SOCKET_ACTIVE=0
+SSH_CURRENT_PORTS="22"
+SSH_DESIRED_PORTS=""
+SSH_DESIRED_PUBKEY=""
+SSH_DESIRED_PASSAUTH=""
+SSH_DESIRED_ROOTLOGIN=""
+SSH_HARDENING_CRYPTO="false"
+SSH_LAST_BACKUP_DIR=""
 SELECTED_DOMAIN_GROUPS="ALL"
 PENDING_CUSTOM_DOMAINS_FILE=""
 PENDING_CUSTOM_DOMAINS_COUNT=0
@@ -2467,6 +2591,7 @@ load_initial_setup_state() {
     INITIAL_SETUP_SSH_KEY_CONFIRMED="${INITIAL_SETUP_SSH_KEY_CONFIRMED:-false}"
     INITIAL_SETUP_PASSAUTH_DISABLED="${INITIAL_SETUP_PASSAUTH_DISABLED:-false}"
     INITIAL_SETUP_ROOTLOGIN_DISABLED="${INITIAL_SETUP_ROOTLOGIN_DISABLED:-false}"
+    SSH_HARDENING_CRYPTO="${SSH_HARDENING_CRYPTO:-false}"
     INITIAL_SETUP_ACTIONS_DONE="${INITIAL_SETUP_ACTIONS_DONE:-}"
     INITIAL_SETUP_CHECKS_SUMMARY="${INITIAL_SETUP_CHECKS_SUMMARY:-}"
 }
@@ -2492,6 +2617,7 @@ INITIAL_SETUP_SSH_KEY_OK="${INITIAL_SETUP_SSH_KEY_OK:-false}"
 INITIAL_SETUP_SSH_KEY_CONFIRMED="${INITIAL_SETUP_SSH_KEY_CONFIRMED:-false}"
 INITIAL_SETUP_PASSAUTH_DISABLED="${INITIAL_SETUP_PASSAUTH_DISABLED:-false}"
 INITIAL_SETUP_ROOTLOGIN_DISABLED="${INITIAL_SETUP_ROOTLOGIN_DISABLED:-false}"
+SSH_HARDENING_CRYPTO="${SSH_HARDENING_CRYPTO:-false}"
 INITIAL_SETUP_ACTIONS_DONE="${safe_actions}"
 INITIAL_SETUP_CHECKS_SUMMARY="${safe_checks}"
 INITIAL_SETUP_UPDATED_AT="$(date -Is)"
@@ -2895,6 +3021,938 @@ initial_setup_admin_user() {
         initial_setup_add_user_sudo "${new_user}" || true
         return 0
     done
+}
+
+# ------------------------------ SSH Hardening Engine (Module 5) ---------------
+ssh_is_installed() {
+    command -v sshd >/dev/null 2>&1 && [[ -f /etc/ssh/sshd_config ]]
+}
+
+ssh_ensure_runtime_dir() {
+    if [[ ! -d /run/sshd ]]; then
+        install -d -m 0755 -o root -g root /run/sshd
+    fi
+}
+
+ssh_get_effective_param() {
+    local param_name="$1"
+    local test_user="${2:-}"
+    ssh_ensure_runtime_dir
+    local out=""
+    if [[ -n "${test_user}" ]]; then
+        out="$(sshd -T -C "user=${test_user},host=localhost,addr=127.0.0.1" 2>/dev/null || sshd -T 2>/dev/null || true)"
+    else
+        out="$(sshd -T 2>/dev/null || true)"
+    fi
+    awk -v k="${param_name,,}" 'tolower($1) == k { $1=""; sub(/^[[:space:]]+/, ""); print; exit }' <<<"${out}"
+}
+
+ssh_get_all_effective_ports() {
+    ssh_ensure_runtime_dir
+    local ports=""
+    if command -v sshd >/dev/null 2>&1; then
+        ports="$(sshd -T 2>/dev/null | awk 'tolower($1) == "port" { print $2 }' | sort -nu | paste -sd ' ' - || true)"
+    fi
+    if [[ "${SSH_SOCKET_ACTIVE:-0}" -eq 1 ]]; then
+        local sock_ports
+        sock_ports="$(systemctl cat ssh.socket 2>/dev/null | awk -F= '/^[[:space:]]*ListenStream=/ {
+            v=$2; gsub(/^[[:space:]]+|[[:space:]]+$/, "", v);
+            if (v == "") { delete p; next }
+            sub(/^.*:/, "", v);
+            if (v ~ /^[0-9]+$/) p[v]=1
+        } END { for (k in p) print k }' | sort -nu | paste -sd ' ' - || true)"
+        if [[ -n "${sock_ports}" ]]; then
+            ports="${sock_ports}"
+        fi
+    fi
+    if [[ -z "${ports}" ]]; then
+        ports="$(ss -tlnp 2>/dev/null | awk '/(sshd|ssh\.socket)/ {split($4,a,":"); print a[length(a)]}' | sort -nu | paste -sd ' ' - || true)"
+    fi
+    printf '%s' "${ports:-22}"
+}
+
+ssh_detect_state() {
+    SSH_SERVICE_NAME="ssh"
+    if systemctl list-unit-files sshd.service 2>/dev/null | grep -q '^sshd\.service'; then
+        if ! systemctl list-unit-files ssh.service 2>/dev/null | grep -q '^ssh\.service'; then
+            SSH_SERVICE_NAME="sshd"
+        fi
+    fi
+
+    SSH_SOCKET_ACTIVE=0
+    if systemctl is-active --quiet ssh.socket 2>/dev/null || systemctl is-enabled --quiet ssh.socket 2>/dev/null; then
+        SSH_SOCKET_ACTIVE=1
+    fi
+
+    SSH_CURRENT_PORTS="$(ssh_get_all_effective_ports)"
+    if [[ -z "${INITIAL_SETUP_SSH_ORIG_PORT}" ]]; then
+        INITIAL_SETUP_SSH_ORIG_PORT="$(awk '{print $1}' <<<"${SSH_CURRENT_PORTS}")"
+    fi
+    if [[ -z "${INITIAL_SETUP_SSH_PORT}" ]]; then
+        INITIAL_SETUP_SSH_PORT="$(awk '{print $1}' <<<"${SSH_CURRENT_PORTS}")"
+    fi
+
+    if [[ -z "${SSH_DESIRED_PORTS}" ]]; then
+        SSH_DESIRED_PORTS="${SSH_CURRENT_PORTS}"
+    fi
+    if [[ -z "${SSH_DESIRED_PUBKEY}" ]]; then
+        SSH_DESIRED_PUBKEY="$(ssh_get_effective_param "pubkeyauthentication")"
+        SSH_DESIRED_PUBKEY="${SSH_DESIRED_PUBKEY:-yes}"
+    fi
+    if [[ -z "${SSH_DESIRED_PASSAUTH}" ]]; then
+        SSH_DESIRED_PASSAUTH="$(ssh_get_effective_param "passwordauthentication")"
+        SSH_DESIRED_PASSAUTH="${SSH_DESIRED_PASSAUTH:-yes}"
+    fi
+    if [[ -z "${SSH_DESIRED_ROOTLOGIN}" ]]; then
+        SSH_DESIRED_ROOTLOGIN="$(ssh_get_effective_param "permitrootlogin")"
+        SSH_DESIRED_ROOTLOGIN="${SSH_DESIRED_ROOTLOGIN:-prohibit-password}"
+    fi
+}
+
+ssh_backup_single_dir_to() {
+    local target_dir="$1"
+    install -d -m 0700 -o root -g root "${target_dir}" "${target_dir}/fs"
+    local mf="${target_dir}/manifest.tsv"
+    cat > "${mf}" <<EOF
+# SSH_BACKUP_CREATED=$(date -Is)
+# INSTALLER_VERSION=${INSTALLER_VERSION}
+# PATH	TYPE	MODE	OWNER	GROUP	LINK_TARGET	SHA256	REL_PATH
+EOF
+    chmod 0600 "${mf}"
+
+    local count=0
+    local src_item entry rel dest ftype mode_v own_v grp_v lt sha_v
+    for src_item in /etc/ssh/sshd_config /etc/ssh/sshd_config.d "${SSH_SOCKET_DROPIN_DIR}"; do
+        if [[ ! -e "${src_item}" && ! -L "${src_item}" ]]; then
+            continue
+        fi
+        while IFS= read -r -d '' entry; do
+            rel="${entry#/}"
+            dest="${target_dir}/fs/${rel}"
+            mkdir -p "$(dirname "${dest}")"
+            mode_v="$(stat -c '%a' "${entry}" 2>/dev/null || echo "0644")"
+            own_v="$(stat -c '%U' "${entry}" 2>/dev/null || echo "root")"
+            grp_v="$(stat -c '%G' "${entry}" 2>/dev/null || echo "root")"
+            lt="-"
+            if [[ -L "${entry}" ]]; then
+                ftype="symlink"
+                lt="$(readlink "${entry}")"
+                sha_v="symlink"
+                cp -a --no-dereference "${entry}" "${dest}" || return 1
+            elif [[ -f "${entry}" ]]; then
+                ftype="file"
+                sha_v="$(sha256sum "${entry}" | awk '{print $1}')"
+                cp -a "${entry}" "${dest}" || return 1
+                local chk_sha
+                chk_sha="$(sha256sum "${dest}" | awk '{print $1}')"
+                if [[ "${chk_sha}" != "${sha_v}" ]]; then
+                    return 1
+                fi
+            else
+                continue
+            fi
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+                "${entry}" "${ftype}" "${mode_v}" "${own_v}" "${grp_v}" "${lt}" "${sha_v}" "fs/${rel}" >> "${mf}"
+            count=$((count + 1))
+        done < <(find "${src_item}" \( -type f -o -type l \) -print0 2>/dev/null)
+    done
+    log_info_tr "installation.log" "M_0433" "${target_dir}" "${count}"
+    return 0
+}
+
+ssh_backup_config() {
+    install -d -m 0700 -o root -g root "${SSH_BACKUP_ROOT}"
+    if [[ ! -f "${SSH_BACKUP_ROOT}/initial/.sealed" ]]; then
+        if ! ssh_backup_single_dir_to "${SSH_BACKUP_ROOT}/initial"; then
+            log_error_tr "installation.log" "M_0434"
+            return 1
+        fi
+        printf 'SEALED_AT=%s\n' "$(date -Is)" > "${SSH_BACKUP_ROOT}/initial/.sealed"
+        chmod 0400 "${SSH_BACKUP_ROOT}/initial/.sealed"
+    fi
+
+    local ts_now
+    ts_now="$(date +%Y%m%d-%H%M%S)"
+    SSH_LAST_BACKUP_DIR="${SSH_BACKUP_ROOT}/backup-${ts_now}-$$"
+    if ! ssh_backup_single_dir_to "${SSH_LAST_BACKUP_DIR}"; then
+        log_error_tr "installation.log" "M_0434"
+        return 1
+    fi
+    return 0
+}
+
+ssh_rollback_config() {
+    local bdir="${1:-${SSH_LAST_BACKUP_DIR:-}}"
+    if [[ -z "${bdir}" || ! -d "${bdir}" ]]; then
+        return 1
+    fi
+
+    # Удаляем управляемые файлы, если их не было в этом backup
+    if [[ ! -e "${bdir}/fs${SSH_HARDENING_CONF}" ]]; then
+        rm -f "${SSH_HARDENING_CONF}"
+    fi
+    if [[ ! -e "${bdir}/fs${SSH_SOCKET_DROPIN_FILE}" ]]; then
+        rm -f "${SSH_SOCKET_DROPIN_FILE}"
+        rmdir "${SSH_SOCKET_DROPIN_DIR}" 2>/dev/null || true
+    fi
+
+    if [[ -d "${bdir}/fs" ]]; then
+        local orig_p ftype mode_v own_v grp_v lt sha_v rel_p
+        while IFS=$'\t' read -r orig_p ftype mode_v own_v grp_v lt sha_v rel_p; do
+            [[ -z "${orig_p}" || "${orig_p}" == \#* ]] && continue
+            mkdir -p "$(dirname "${orig_p}")"
+            if [[ "${ftype}" == "file" && -f "${bdir}/${rel_p}" ]]; then
+                cp -a "${bdir}/${rel_p}" "${orig_p}.rb.tmp"
+                mv -f "${orig_p}.rb.tmp" "${orig_p}"
+                chown "${own_v}:${grp_v}" "${orig_p}" 2>/dev/null || true
+                chmod "${mode_v}" "${orig_p}" 2>/dev/null || true
+            elif [[ "${ftype}" == "symlink" ]]; then
+                rm -f "${orig_p}"
+                ln -s "${lt}" "${orig_p}"
+            fi
+        done < "${bdir}/manifest.tsv"
+    fi
+
+    systemctl daemon-reload 2>/dev/null || true
+    ssh_ensure_runtime_dir
+    if sshd -t >/dev/null 2>&1; then
+        if [[ "${SSH_SOCKET_ACTIVE:-0}" -eq 1 ]]; then
+            systemctl restart ssh.socket 2>/dev/null || true
+        fi
+        systemctl reload "${SSH_SERVICE_NAME}" 2>/dev/null || systemctl restart "${SSH_SERVICE_NAME}" 2>/dev/null || true
+        log_info_tr "installation.log" "M_0436" "${bdir}"
+        return 0
+    fi
+    return 1
+}
+
+ssh_ensure_include_directive() {
+    if [[ ! -f /etc/ssh/sshd_config ]]; then
+        return 1
+    fi
+    install -d -m 0755 -o root -g root /etc/ssh/sshd_config.d
+
+    if grep -Eq '^[[:space:]]*Match[[:space:]]+' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; then
+        log_warn_tr "installation.log" "M_0438"
+    fi
+
+    if ! grep -Eq '^[[:space:]]*Include[[:space:]]+/etc/ssh/sshd_config\.d/\*\.conf' /etc/ssh/sshd_config 2>/dev/null; then
+        local tmp_main="/etc/ssh/sshd_config.v3.tmp"
+        {
+            printf 'Include /etc/ssh/sshd_config.d/*.conf\n'
+            cat /etc/ssh/sshd_config
+        } > "${tmp_main}"
+        chmod 0644 "${tmp_main}"
+        mv -f "${tmp_main}" /etc/ssh/sshd_config
+    fi
+    return 0
+}
+
+ssh_validate_and_apply() {
+    local verify_key="${1:-}"
+    local verify_expected="${2:-}"
+    local verify_user="${3:-}"
+
+    if ! ssh_backup_config; then
+        return 1
+    fi
+
+    ssh_ensure_include_directive || {
+        ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+        return 1
+    }
+
+    local tmp_hc="${SSH_HARDENING_CONF}.tmp"
+    {
+        printf '# Managed by Unified SmartDNS Installer v3.0 (Initial Server Setup)\n'
+        printf '# Do not edit manually if managing SSH via installer\n'
+        local p
+        for p in ${SSH_DESIRED_PORTS}; do
+            if [[ "${p}" =~ ^[0-9]+$ ]]; then
+                printf 'Port %s\n' "${p}"
+            fi
+        done
+        if [[ -n "${SSH_DESIRED_PUBKEY}" ]]; then
+            printf 'PubkeyAuthentication %s\n' "${SSH_DESIRED_PUBKEY}"
+        fi
+        if [[ -n "${SSH_DESIRED_PASSAUTH}" ]]; then
+            printf 'PasswordAuthentication %s\n' "${SSH_DESIRED_PASSAUTH}"
+            if [[ "${SSH_DESIRED_PASSAUTH}" == "no" ]]; then
+                printf 'KbdInteractiveAuthentication no\n'
+                printf 'ChallengeResponseAuthentication no\n'
+            fi
+        fi
+        if [[ -n "${SSH_DESIRED_ROOTLOGIN}" ]]; then
+            printf 'PermitRootLogin %s\n' "${SSH_DESIRED_ROOTLOGIN}"
+        fi
+        if [[ "${SSH_HARDENING_CRYPTO:-false}" == "true" ]]; then
+            printf 'KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org\n'
+            printf 'Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com\n'
+            printf 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com\n'
+        fi
+    } > "${tmp_hc}"
+    chmod 0644 "${tmp_hc}"
+    mv -f "${tmp_hc}" "${SSH_HARDENING_CONF}"
+
+    if [[ "${SSH_SOCKET_ACTIVE:-0}" -eq 1 ]]; then
+        install -d -m 0755 -o root -g root "${SSH_SOCKET_DROPIN_DIR}"
+        local tmp_sd="${SSH_SOCKET_DROPIN_FILE}.tmp"
+        {
+            printf '[Socket]\n'
+            printf 'ListenStream=\n'
+            local sp
+            for sp in ${SSH_DESIRED_PORTS}; do
+                if [[ "${sp}" =~ ^[0-9]+$ ]]; then
+                    printf 'ListenStream=%s\n' "${sp}"
+                fi
+            done
+        } > "${tmp_sd}"
+        chmod 0644 "${tmp_sd}"
+        mv -f "${tmp_sd}" "${SSH_SOCKET_DROPIN_FILE}"
+    fi
+
+    ssh_ensure_runtime_dir
+    if ! sshd -t >> "${LOG_DIR}/installation.log" 2>&1; then
+        log_error_tr "installation.log" "M_0435" "sshd -t failed" "${SSH_LAST_BACKUP_DIR}"
+        ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+        return 1
+    fi
+
+    if [[ -n "${verify_key}" && -n "${verify_expected}" ]]; then
+        local actual_val
+        actual_val="$(ssh_get_effective_param "${verify_key}" "${verify_user}")"
+        if [[ "${actual_val,,}" != "${verify_expected,,}" ]]; then
+            log_error_tr "installation.log" "M_0488" "${verify_key}" "${verify_expected}" "${actual_val:-empty}"
+            log_error_tr "installation.log" "M_0435" "sshd -T verification mismatch" "${SSH_LAST_BACKUP_DIR}"
+            ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+            return 1
+        fi
+    fi
+
+    if [[ "${SSH_SOCKET_ACTIVE:-0}" -eq 1 ]]; then
+        systemctl daemon-reload
+        if ! systemctl restart ssh.socket; then
+            log_error_tr "installation.log" "M_0435" "systemctl restart ssh.socket failed" "${SSH_LAST_BACKUP_DIR}"
+            ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+            return 1
+        fi
+        if systemctl is-active --quiet "${SSH_SERVICE_NAME}" 2>/dev/null; then
+            systemctl reload "${SSH_SERVICE_NAME}" 2>/dev/null || true
+        fi
+    else
+        if systemctl is-active --quiet "${SSH_SERVICE_NAME}" 2>/dev/null; then
+            if ! systemctl reload "${SSH_SERVICE_NAME}" 2>/dev/null; then
+                if ! systemctl restart "${SSH_SERVICE_NAME}"; then
+                    log_error_tr "installation.log" "M_0435" "systemctl reload/restart ${SSH_SERVICE_NAME} failed" "${SSH_LAST_BACKUP_DIR}"
+                    ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+                    return 1
+                fi
+            fi
+        else
+            if ! systemctl enable --now "${SSH_SERVICE_NAME}"; then
+                log_error_tr "installation.log" "M_0435" "systemctl start ${SSH_SERVICE_NAME} failed" "${SSH_LAST_BACKUP_DIR}"
+                ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+                return 1
+            fi
+        fi
+    fi
+
+    SSH_CURRENT_PORTS="$(ssh_get_all_effective_ports)"
+    log_info_tr "installation.log" "M_0437"
+    return 0
+}
+
+# --- Step 5: Base SSH Audit & Setup ---
+initial_setup_ssh_base() {
+    printf_tr "M_0439"
+
+    if ! ssh_is_installed; then
+        printf_tr "M_0440"
+        local inst_ssh=""
+        read_tr "M_0441" inst_ssh
+        if [[ "${LAST_READ_EOF}" -eq 1 || ! "${inst_ssh:-Y}" =~ ^[Yy]$ ]]; then
+            return 0
+        fi
+        if ! DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get update -y -q \
+            || ! DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get install -y -q openssh-server; then
+            log_error "installation.log" "Не удалось установить openssh-server."
+            return 1
+        fi
+        systemctl enable --now ssh 2>/dev/null || systemctl enable --now sshd 2>/dev/null || true
+        initial_setup_record_action "openssh_installed"
+    fi
+
+    ssh_detect_state
+    local svc_state sock_label pub_v pass_v root_v authf_v confd_list
+    svc_state="$(systemctl is-active "${SSH_SERVICE_NAME}" 2>/dev/null || echo inactive)"
+    sock_label="no"
+    if [[ "${SSH_SOCKET_ACTIVE}" -eq 1 ]]; then sock_label="yes (ssh.socket)"; fi
+    pub_v="$(ssh_get_effective_param "pubkeyauthentication")"
+    pass_v="$(ssh_get_effective_param "passwordauthentication")"
+    root_v="$(ssh_get_effective_param "permitrootlogin")"
+    authf_v="$(ssh_get_effective_param "authorizedkeysfile")"
+    confd_list="$(find /etc/ssh/sshd_config.d -maxdepth 1 -type f 2>/dev/null | sort | paste -sd ',' - || true)"
+    confd_list="${confd_list:-none}"
+
+    printf_tr "M_0442" "${SSH_SERVICE_NAME}:${svc_state}" "${sock_label}" "${SSH_CURRENT_PORTS}" \
+        "${pub_v:-unknown}" "${pass_v:-unknown}" "${root_v:-unknown}" "${authf_v:-default}" "${confd_list}"
+
+    if [[ "${pub_v,,}" != "yes" ]]; then
+        local en_pub=""
+        read_tr "M_0443" en_pub
+        if [[ "${LAST_READ_EOF}" -eq 0 && "${en_pub:-Y}" =~ ^[Yy]$ ]]; then
+            SSH_DESIRED_PUBKEY="yes"
+            if ssh_validate_and_apply "pubkeyauthentication" "yes"; then
+                initial_setup_record_action "ssh_pubkey_enabled"
+            fi
+        fi
+    fi
+
+    initial_setup_record_check "ssh_ports=${SSH_CURRENT_PORTS// /,}"
+    return 0
+}
+
+# --- Step 7: SSH Key Authentication ---
+ssh_count_valid_keys() {
+    local auth_file="$1"
+    if [[ ! -s "${auth_file}" ]]; then
+        printf '0'
+        return 0
+    fi
+    local valid=0
+    local line tmp_k
+    tmp_k="$(mktemp /tmp/ssh-key-chk.XXXXXX)"
+    while IFS= read -r line || [[ -n "${line}" ]]; do
+        line="${line//$'\r'/}"
+        [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+        printf '%s\n' "${line}" > "${tmp_k}"
+        if ssh-keygen -lf "${tmp_k}" >/dev/null 2>&1; then
+            valid=$((valid + 1))
+        fi
+    done < "${auth_file}"
+    rm -f "${tmp_k}"
+    printf '%s' "${valid}"
+}
+
+ssh_append_pubkey_safe() {
+    local pub_line="$1"
+    local auth_file="$2"
+    local target_user="$3"
+
+    pub_line="${pub_line//$'\r'/}"
+    local tmp_k
+    tmp_k="$(mktemp /tmp/ssh-key-val.XXXXXX)"
+    printf '%s\n' "${pub_line}" > "${tmp_k}"
+    local fp=""
+    if ! fp="$(ssh-keygen -lf "${tmp_k}" 2>/dev/null)"; then
+        rm -f "${tmp_k}"
+        printf_err_tr "M_0449"
+        return 1
+    fi
+    rm -f "${tmp_k}"
+
+    local key_body
+    key_body="$(awk '{print $1 " " $2}' <<<"${pub_line}")"
+    if [[ -f "${auth_file}" ]] && grep -Fq "${key_body}" "${auth_file}" 2>/dev/null; then
+        printf_tr "M_0450" "${auth_file}"
+        return 0
+    fi
+
+    printf '%s\n' "${pub_line}" >> "${auth_file}"
+    chown "${target_user}:${target_user}" "${auth_file}" 2>/dev/null || chown "${target_user}" "${auth_file}"
+    chmod 0600 "${auth_file}"
+    printf_tr "M_0451" "${auth_file}" "${fp}"
+    return 0
+}
+
+print_ssh_key_transfer_instructions() {
+    local target_user="$1"
+    local priv_path="$2"
+    local pub_path="$3"
+    local ssh_port="$4"
+    local key_base
+    key_base="$(basename "${priv_path}")"
+    local srv_ip="${SERVER_IPV4:-<SERVER_IP>}"
+
+    if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
+        cat <<EOF
+
+==============================================================================
+  INSTRUCTIONS TO COPY THE GENERATED SSH KEY TO YOUR LOCAL COMPUTER
+==============================================================================
+Private key on server : ${priv_path}
+Public key on server  : ${pub_path}
+
+SECURITY WARNING:
+  - NEVER share your private key with third parties.
+  - Store the private key securely (mode 0600) and protect it with a passphrase.
+  - After copying the private key to your local machine, consider removing
+    ${priv_path} from the server (keeping the public key in authorized_keys).
+
+--- Windows (PowerShell / Windows Terminal / OpenSSH Client) ---
+  mkdir \$HOME\\.ssh -Force
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${priv_path} "\$HOME\\.ssh\\${key_base}"
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${pub_path} "\$HOME\\.ssh\\${key_base}.pub"
+  icacls "\$HOME\\.ssh\\${key_base}" /inheritance:r /grant:r "\$env:USERNAME:R"
+  # Connect:
+  ssh -i "\$HOME\\.ssh\\${key_base}" -p ${ssh_port} ${target_user}@${srv_ip}
+  # PuTTY users: open PuTTYgen -> Conversions -> Import key (${key_base}) -> Save private key (.ppk).
+
+--- Linux ---
+  mkdir -p ~/.ssh && chmod 700 ~/.ssh
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${priv_path} ~/.ssh/${key_base}
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${pub_path} ~/.ssh/${key_base}.pub
+  chmod 600 ~/.ssh/${key_base} && chmod 644 ~/.ssh/${key_base}.pub
+  # Connect:
+  ssh -i ~/.ssh/${key_base} -p ${ssh_port} ${target_user}@${srv_ip}
+
+--- macOS ---
+  mkdir -p ~/.ssh && chmod 700 ~/.ssh
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${priv_path} ~/.ssh/${key_base}
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${pub_path} ~/.ssh/${key_base}.pub
+  chmod 600 ~/.ssh/${key_base} && chmod 644 ~/.ssh/${key_base}.pub
+  # Connect:
+  ssh -i ~/.ssh/${key_base} -p ${ssh_port} ${target_user}@${srv_ip}
+==============================================================================
+EOF
+    else
+        cat <<EOF
+
+==============================================================================
+  ИНСТРУКЦИЯ ПО КОПИРОВАНИЮ СГЕНЕРИРОВАННОГО SSH-КЛЮЧА НА ЛОКАЛЬНЫЙ ПК
+==============================================================================
+Приватный ключ на сервере : ${priv_path}
+Публичный ключ на сервере : ${pub_path}
+
+ПРАВИЛА БЕЗОПАСНОСТИ:
+  - НИКОГДА не передавайте приватный ключ третьим лицам.
+  - Храните приватный ключ в защищённом месте (права 0600) и используйте passphrase.
+  - После успешного копирования и проверки входа рекомендуется удалить
+    приватный ключ ${priv_path} с сервера (оставив публичный в authorized_keys).
+
+--- Windows (PowerShell / Windows Terminal / OpenSSH Client) ---
+  mkdir \$HOME\\.ssh -Force
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${priv_path} "\$HOME\\.ssh\\${key_base}"
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${pub_path} "\$HOME\\.ssh\\${key_base}.pub"
+  icacls "\$HOME\\.ssh\\${key_base}" /inheritance:r /grant:r "\$env:USERNAME:R"
+  # Подключение:
+  ssh -i "\$HOME\\.ssh\\${key_base}" -p ${ssh_port} ${target_user}@${srv_ip}
+  # Для PuTTY: откройте PuTTYgen -> Conversions -> Import key (${key_base}) -> Save private key (.ppk).
+
+--- Linux ---
+  mkdir -p ~/.ssh && chmod 700 ~/.ssh
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${priv_path} ~/.ssh/${key_base}
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${pub_path} ~/.ssh/${key_base}.pub
+  chmod 600 ~/.ssh/${key_base} && chmod 644 ~/.ssh/${key_base}.pub
+  # Подключение:
+  ssh -i ~/.ssh/${key_base} -p ${ssh_port} ${target_user}@${srv_ip}
+
+--- macOS ---
+  mkdir -p ~/.ssh && chmod 700 ~/.ssh
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${priv_path} ~/.ssh/${key_base}
+  scp -P ${ssh_port} ${target_user}@${srv_ip}:${pub_path} ~/.ssh/${key_base}.pub
+  chmod 600 ~/.ssh/${key_base} && chmod 644 ~/.ssh/${key_base}.pub
+  # Подключение:
+  ssh -i ~/.ssh/${key_base} -p ${ssh_port} ${target_user}@${srv_ip}
+==============================================================================
+EOF
+    fi
+}
+
+initial_setup_ssh_keys() {
+    printf_tr "M_0444"
+    if ! ssh_is_installed; then
+        initial_setup_ssh_base || return 1
+    fi
+    ssh_detect_state
+
+    local target_user="${INITIAL_SETUP_ADMIN_USER:-}"
+    if [[ -z "${target_user}" ]] || ! id -u "${target_user}" >/dev/null 2>&1; then
+        target_user="root"
+        printf_tr "M_0446"
+    fi
+
+    local target_home target_group
+    target_home="$(getent passwd "${target_user}" | cut -d: -f6)"
+    target_group="$(id -gn "${target_user}")"
+    local ssh_dir="${target_home}/.ssh"
+    local auth_file="${ssh_dir}/authorized_keys"
+
+    printf_tr "M_0445" "${target_user}" "${target_home}"
+
+    install -d -m 0700 -o "${target_user}" -g "${target_group}" "${ssh_dir}"
+    if [[ ! -f "${auth_file}" ]]; then
+        touch "${auth_file}"
+    fi
+    chown "${target_user}:${target_group}" "${auth_file}"
+    chmod 0600 "${auth_file}"
+
+    local key_mode=""
+    read_tr "M_0447" key_mode
+    if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+        return 0
+    fi
+    key_mode="${key_mode:-1}"
+
+    local key_added_or_present=0
+    case "${key_mode}" in
+        1)
+            local pasted_key=""
+            while true; do
+                read_tr "M_0448" pasted_key
+                if [[ "${LAST_READ_EOF}" -eq 1 || -z "${pasted_key}" ]]; then
+                    break
+                fi
+                if ssh_append_pubkey_safe "${pasted_key}" "${auth_file}" "${target_user}"; then
+                    key_added_or_present=1
+                    break
+                fi
+            done
+            ;;
+        2)
+            local ktype_choice=""
+            read_tr "M_0452" ktype_choice
+            if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+                return 0
+            fi
+            local ktype="ed25519"
+            local kbits_args=()
+            local def_kname="id_ed25519_${target_user}"
+            if [[ "${ktype_choice}" == "2" ]]; then
+                ktype="rsa"
+                kbits_args=(-b 4096)
+                def_kname="id_rsa_${target_user}"
+            fi
+
+            local kname=""
+            while true; do
+                read_tr "M_0453" kname "${def_kname}"
+                if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+                    return 0
+                fi
+                kname="${kname:-${def_kname}}"
+                if [[ "${kname}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+                    break
+                fi
+                printf_err_tr "M_0454"
+            done
+
+            local priv_file="${ssh_dir}/${kname}"
+            local pub_file="${priv_file}.pub"
+            if [[ -e "${priv_file}" || -e "${pub_file}" ]]; then
+                local ovw=""
+                read_tr "M_0455" ovw "${priv_file}"
+                if [[ "${LAST_READ_EOF}" -eq 1 || ! "${ovw:-N}" =~ ^[Yy]$ ]]; then
+                    return 0
+                fi
+                rm -f "${priv_file}" "${pub_file}"
+            fi
+
+            printf_tr "M_0456"
+            if [[ -t 0 ]]; then
+                if ! ssh-keygen -t "${ktype}" "${kbits_args[@]}" -f "${priv_file}" -C "${target_user}@$(hostname -s 2>/dev/null || echo server)"; then
+                    printf_err_tr "M_0457"
+                    return 1
+                fi
+            else
+                if ! ssh-keygen -t "${ktype}" "${kbits_args[@]}" -f "${priv_file}" -N "" -C "${target_user}@server" >/dev/null; then
+                    printf_err_tr "M_0457"
+                    return 1
+                fi
+            fi
+
+            chown "${target_user}:${target_group}" "${priv_file}" "${pub_file}"
+            chmod 0600 "${priv_file}"
+            chmod 0644 "${pub_file}"
+
+            local gen_pub
+            gen_pub="$(cat "${pub_file}")"
+            if ssh_append_pubkey_safe "${gen_pub}" "${auth_file}" "${target_user}"; then
+                key_added_or_present=1
+                local active_p
+                active_p="$(awk '{print $1}' <<<"${SSH_CURRENT_PORTS}")"
+                print_ssh_key_transfer_instructions "${target_user}" "${priv_file}" "${pub_file}" "${active_p:-22}"
+            fi
+            ;;
+        3)
+            local existing_cnt
+            existing_cnt="$(ssh_count_valid_keys "${auth_file}")"
+            printf_tr "M_0458" "${auth_file}" "${existing_cnt}"
+            if [[ "${target_user}" != "root" && -s /root/.ssh/authorized_keys ]]; then
+                local root_cnt
+                root_cnt="$(ssh_count_valid_keys /root/.ssh/authorized_keys)"
+                if [[ "${root_cnt}" -gt 0 ]]; then
+                    local copy_rk=""
+                    read_tr "M_0459" copy_rk "${root_cnt}" "${auth_file}"
+                    if [[ "${LAST_READ_EOF}" -eq 0 && "${copy_rk:-Y}" =~ ^[Yy]$ ]]; then
+                        local rk_line
+                        while IFS= read -r rk_line || [[ -n "${rk_line}" ]]; do
+                            [[ -z "${rk_line}" || "${rk_line}" =~ ^[[:space:]]*# ]] && continue
+                            ssh_append_pubkey_safe "${rk_line}" "${auth_file}" "${target_user}" || true
+                        done < /root/.ssh/authorized_keys
+                        existing_cnt="$(ssh_count_valid_keys "${auth_file}")"
+                    fi
+                fi
+            fi
+            if [[ "${existing_cnt}" -gt 0 ]]; then
+                key_added_or_present=1
+            else
+                printf_tr "M_0460" "${auth_file}"
+            fi
+            ;;
+        4|*)
+            return 0
+            ;;
+    esac
+
+    local final_key_cnt
+    final_key_cnt="$(ssh_count_valid_keys "${auth_file}")"
+    if [[ "${key_added_or_present}" -eq 1 || "${final_key_cnt}" -gt 0 ]]; then
+        SSH_DESIRED_PUBKEY="yes"
+        if ssh_validate_and_apply "pubkeyauthentication" "yes" "${target_user}"; then
+            INITIAL_SETUP_SSH_KEY_OK="true"
+            initial_setup_record_action "ssh_keys_configured(${target_user})"
+            local test_port
+            test_port="$(awk '{print $1}' <<<"${SSH_CURRENT_PORTS}")"
+            local conf_login=""
+            read_tr "M_0461" conf_login "${test_port:-22}" "${target_user}" "${SERVER_IPV4:-<SERVER_IP>}"
+            if [[ "${LAST_READ_EOF}" -eq 0 && "${conf_login:-N}" =~ ^[Yy]$ ]]; then
+                INITIAL_SETUP_SSH_KEY_CONFIRMED="true"
+                initial_setup_record_check "ssh_key_login=confirmed(${target_user})"
+                printf_tr "M_0462"
+            else
+                INITIAL_SETUP_SSH_KEY_CONFIRMED="false"
+                save_initial_setup_state
+                printf_tr "M_0463"
+            fi
+        fi
+    fi
+    return 0
+}
+
+# --- Step 6: SSH Port Configuration (Two-Phase Safe Switch) ---
+ssh_port_is_reserved_by_stack() {
+    local p="$1"
+    case "${p}" in
+        80|443|853|3000|5353|8053|8443|8444|8853|9443|9444)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+initial_setup_ssh_port() {
+    printf_tr "M_0464"
+    if ! ssh_is_installed; then
+        initial_setup_ssh_base || return 1
+    fi
+    ssh_detect_state
+
+    local cur_port
+    cur_port="$(awk '{print $1}' <<<"${SSH_CURRENT_PORTS}")"
+    printf_tr "M_0465" "${SSH_CURRENT_PORTS}"
+
+    local want_change=""
+    read_tr "M_0466" want_change
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${want_change:-N}" =~ ^[Yy]$ ]]; then
+        INITIAL_SETUP_SSH_PORT="${cur_port}"
+        save_initial_setup_state
+        return 0
+    fi
+
+    local new_port=""
+    while true; do
+        read_tr "M_0467" new_port
+        if [[ "${LAST_READ_EOF}" -eq 1 || -z "${new_port}" ]]; then
+            return 0
+        fi
+        if [[ ! "${new_port}" =~ ^[0-9]+$ ]] || [[ "${new_port}" -lt 1024 || "${new_port}" -gt 65535 ]]; then
+            printf_err_tr "M_0468"
+            continue
+        fi
+        if [[ "${new_port}" == "${cur_port}" ]]; then
+            printf_tr "M_0471" "${new_port}"
+            return 0
+        fi
+        if ssh_port_is_reserved_by_stack "${new_port}"; then
+            printf_err_tr "M_0469" "${new_port}"
+            continue
+        fi
+        if ss -tulnp 2>/dev/null | awk '{print $5}' | grep -Eq "(^|:)${new_port}$"; then
+            printf_err_tr "M_0470" "${new_port}"
+            continue
+        fi
+        break
+    done
+
+    local confirm_dual=""
+    read_tr "M_0472" confirm_dual "${new_port}" "${cur_port}" "${new_port}"
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${confirm_dual:-Y}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    local prev_ports="${SSH_DESIRED_PORTS}"
+    SSH_DESIRED_PORTS="${cur_port} ${new_port}"
+    if ! ssh_validate_and_apply; then
+        SSH_DESIRED_PORTS="${prev_ports}"
+        return 1
+    fi
+
+    local login_user="${INITIAL_SETUP_ADMIN_USER:-root}"
+    local confirm_new_conn=""
+    read_tr "M_0473" confirm_new_conn "${cur_port}" "${new_port}" "${new_port}" "${login_user}" "${SERVER_IPV4:-<SERVER_IP>}" "${new_port}"
+    if [[ "${LAST_READ_EOF}" -eq 0 && "${confirm_new_conn:-N}" =~ ^[Yy]$ ]]; then
+        local disable_old=""
+        read_tr "M_0474" disable_old "${cur_port}" "${new_port}"
+        if [[ "${LAST_READ_EOF}" -eq 0 && "${disable_old:-N}" =~ ^[Yy]$ ]]; then
+            SSH_DESIRED_PORTS="${new_port}"
+            if ssh_validate_and_apply "port" "${new_port}"; then
+                INITIAL_SETUP_SSH_PORT="${new_port}"
+                initial_setup_record_action "ssh_port_changed(${cur_port}->${new_port})"
+                initial_setup_record_check "ssh_port=${new_port}"
+                printf_tr "M_0475" "${new_port}" "${cur_port}"
+            else
+                SSH_DESIRED_PORTS="${prev_ports}"
+            fi
+        else
+            INITIAL_SETUP_SSH_PORT="${new_port}"
+            initial_setup_record_action "ssh_port_dual(${cur_port},${new_port})"
+            printf_tr "M_0477" "${cur_port}" "${new_port}"
+        fi
+    else
+        local do_rb=""
+        read_tr "M_0476" do_rb "${new_port}" "${cur_port}"
+        if [[ "${LAST_READ_EOF}" -eq 1 || "${do_rb:-Y}" =~ ^[Yy]$ ]]; then
+            SSH_DESIRED_PORTS="${cur_port}"
+            ssh_rollback_config "${SSH_LAST_BACKUP_DIR}" || true
+            INITIAL_SETUP_SSH_PORT="${cur_port}"
+            save_initial_setup_state
+        else
+            INITIAL_SETUP_SSH_PORT="${new_port}"
+            initial_setup_record_action "ssh_port_dual(${cur_port},${new_port})"
+            printf_tr "M_0477" "${cur_port}" "${new_port}"
+        fi
+    fi
+    return 0
+}
+
+# --- Step 8: Disable PasswordAuthentication ---
+initial_setup_disable_password_auth() {
+    printf_tr "M_0478"
+    if ! ssh_is_installed; then
+        initial_setup_ssh_base || return 1
+    fi
+    ssh_detect_state
+
+    local target_user="${INITIAL_SETUP_ADMIN_USER:-root}"
+    local cur_pass
+    cur_pass="$(ssh_get_effective_param "passwordauthentication" "${target_user}")"
+    if [[ "${cur_pass,,}" == "no" ]]; then
+        printf_tr "M_0479"
+        INITIAL_SETUP_PASSAUTH_DISABLED="true"
+        save_initial_setup_state
+        return 0
+    fi
+
+    local cur_pub
+    cur_pub="$(ssh_get_effective_param "pubkeyauthentication" "${target_user}")"
+    if [[ "${cur_pub,,}" != "yes" ]]; then
+        printf_err_tr "M_0480" "PubkeyAuthentication != yes"
+        return 1
+    fi
+
+    local target_home
+    target_home="$(getent passwd "${target_user}" | cut -d: -f6)"
+    local auth_file="${target_home}/.ssh/authorized_keys"
+    local key_cnt
+    key_cnt="$(ssh_count_valid_keys "${auth_file}")"
+    if [[ "${key_cnt}" -lt 1 ]]; then
+        printf_err_tr "M_0480" "no valid keys in ${auth_file}"
+        return 1
+    fi
+
+    if [[ "${INITIAL_SETUP_SSH_KEY_CONFIRMED}" != "true" ]]; then
+        printf_err_tr "M_0480" "SSH key login has not been confirmed by user (run step [7] first)"
+        return 1
+    fi
+
+    local conf_dp=""
+    read_tr "M_0481" conf_dp
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${conf_dp:-N}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    local prev_pa="${SSH_DESIRED_PASSAUTH}"
+    SSH_DESIRED_PASSAUTH="no"
+    if ssh_validate_and_apply "passwordauthentication" "no" "${target_user}"; then
+        INITIAL_SETUP_PASSAUTH_DISABLED="true"
+        initial_setup_record_action "ssh_password_auth_disabled"
+        initial_setup_record_check "passwordauth=no"
+        printf_tr "M_0482"
+        return 0
+    else
+        SSH_DESIRED_PASSAUTH="${prev_pa}"
+        return 1
+    fi
+}
+
+# --- Step 9: Disable SSH Root Login ---
+initial_setup_disable_root_login() {
+    printf_tr "M_0483"
+    if ! ssh_is_installed; then
+        initial_setup_ssh_base || return 1
+    fi
+    ssh_detect_state
+
+    local cur_rl
+    cur_rl="$(ssh_get_effective_param "permitrootlogin" "root")"
+    if [[ "${cur_rl,,}" == "no" ]]; then
+        printf_tr "M_0484"
+        INITIAL_SETUP_ROOTLOGIN_DISABLED="true"
+        save_initial_setup_state
+        return 0
+    fi
+
+    if [[ -z "${INITIAL_SETUP_ADMIN_USER}" ]] || ! id -u "${INITIAL_SETUP_ADMIN_USER}" >/dev/null 2>&1; then
+        printf_err_tr "M_0485" "no alternative administrative user configured (run step [4] first)"
+        return 1
+    fi
+    if ! user_in_sudo_group "${INITIAL_SETUP_ADMIN_USER}"; then
+        printf_err_tr "M_0485" "user ${INITIAL_SETUP_ADMIN_USER} is not in the sudo group"
+        return 1
+    fi
+
+    local admin_home
+    admin_home="$(getent passwd "${INITIAL_SETUP_ADMIN_USER}" | cut -d: -f6)"
+    local admin_keys
+    admin_keys="$(ssh_count_valid_keys "${admin_home}/.ssh/authorized_keys")"
+    if [[ "${admin_keys}" -lt 1 ]]; then
+        printf_err_tr "M_0485" "no valid SSH key found for ${INITIAL_SETUP_ADMIN_USER}"
+        return 1
+    fi
+    if [[ "${INITIAL_SETUP_SSH_KEY_CONFIRMED}" != "true" ]]; then
+        printf_err_tr "M_0485" "SSH key login for ${INITIAL_SETUP_ADMIN_USER} has not been confirmed"
+        return 1
+    fi
+
+    local conf_dr=""
+    read_tr "M_0486" conf_dr "${INITIAL_SETUP_ADMIN_USER}"
+    if [[ "${LAST_READ_EOF}" -eq 1 || ! "${conf_dr:-N}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    local prev_rl="${SSH_DESIRED_ROOTLOGIN}"
+    SSH_DESIRED_ROOTLOGIN="no"
+    if ssh_validate_and_apply "permitrootlogin" "no" "root"; then
+        INITIAL_SETUP_ROOTLOGIN_DISABLED="true"
+        initial_setup_record_action "ssh_root_login_disabled"
+        initial_setup_record_check "permitrootlogin=no"
+        printf_tr "M_0487"
+        return 0
+    else
+        SSH_DESIRED_ROOTLOGIN="${prev_rl}"
+        return 1
+    fi
 }
 
 # ------------------------------ Initial Backup & Manifest ---------------------
