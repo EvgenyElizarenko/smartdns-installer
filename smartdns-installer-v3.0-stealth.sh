@@ -2447,6 +2447,7 @@ init_reboot_lock() {
     audit_external_reboot_triggers
     save_reboot_lock_state
     log_info_tr "installation.log" "M_0376" "${REBOOT_LOCK_FILE}"
+    check_reboot_required || true
 }
 
 check_reboot_required() {
