@@ -734,8 +734,8 @@ MSG_RU[M_0332]='Различия недоступны: до установки �
 MSG_EN[M_0332]='Diff unavailable: %s did not exist prior to installation.\n'
 MSG_RU[M_0333]='\nЗагрузка и индексация групп доменов GeoHideDNS...\n'
 MSG_EN[M_0333]='\nFetching and indexing GeoHideDNS domain groups...\n'
-MSG_RU[M_0334]='ПРЕДУПРЕЖДЕНИЕ: Не удалось загрузить свежий GeoHideDNS для подсчёта счётчиков; используются локальные данные или 0.\n'
-MSG_EN[M_0334]='WARNING: Failed to fetch fresh GeoHideDNS for domain counts; using local cache or 0.\n'
+MSG_RU[M_0334]='ПРЕДУПРЕЖДЕНИЕ: Не удалось загрузить свежий GeoHideDNS (%s); используются локальные данные или 0.\n'
+MSG_EN[M_0334]='WARNING: Failed to fetch fresh GeoHideDNS (%s); using local cache or 0.\n'
 MSG_RU[M_0335]='\n==================== ГРУППЫ ПРОКСИРУЕМЫХ ДОМЕНОВ ====================\n'
 MSG_EN[M_0335]='\n==================== PROXY DOMAIN GROUPS ====================\n'
 MSG_RU[M_0336]='Выберите необходимые группы ([x] — включена, [ ] — отключена):\n\n'
@@ -869,7 +869,7 @@ tr_msg() {
     fi
     if [[ "$#" -gt 0 ]]; then
         # shellcheck disable=SC2059
-        printf "${__i18n_tpl}" "$@"
+        printf -- "${__i18n_tpl}" "$@"
     else
         printf '%s' "${__i18n_tpl}"
     fi
@@ -887,7 +887,7 @@ printf_tr() {
         __i18n_fmt="${__i18n_key}"
     fi
     # shellcheck disable=SC2059
-    printf "${__i18n_fmt}" "$@"
+    printf -- "${__i18n_fmt}" "$@"
 }
 
 printf_err_tr() {
@@ -927,8 +927,16 @@ echo_err_tr() {
 read_tr() {
     local __i18n_key="$1" __i18n_var="$2"
     shift 2 || true
-    local __i18n_prompt __i18n_ans=""
-    __i18n_prompt="$(tr_msg "${__i18n_key}" "$@")"
+    local __i18n_tpl="" __i18n_prompt="" __i18n_ans=""
+    if [[ "${SCRIPT_LANG:-ru}" == "en" && -n "${MSG_EN[${__i18n_key}]+x}" ]]; then
+        __i18n_tpl="${MSG_EN[${__i18n_key}]}"
+    elif [[ -n "${MSG_RU[${__i18n_key}]+x}" ]]; then
+        __i18n_tpl="${MSG_RU[${__i18n_key}]}"
+    else
+        __i18n_tpl="${__i18n_key}"
+    fi
+    # shellcheck disable=SC2059
+    printf -v __i18n_prompt -- "${__i18n_tpl}" "$@"
     IFS= read -r -p "${__i18n_prompt}" __i18n_ans || true
     printf -v "${__i18n_var}" '%s' "${__i18n_ans}"
 }
@@ -1369,19 +1377,41 @@ fetch_and_index_domain_groups() {
 
     printf_tr "M_0333"
     INDEXED_GEOHIDE_RAW="$(mktemp /tmp/geohide-index.XXXXXX)"
-    local http_code="000"
+    local dl_ok=0
+    local dl_reason="no curl/wget/python3"
+
     if command -v curl >/dev/null 2>&1; then
+        local http_code
         http_code="$(curl -sSL --retry 2 --connect-timeout 10 --max-time 30 -w '%{http_code}' -o "${INDEXED_GEOHIDE_RAW}" "${GEOHIDE_RAW_URL}" 2>/dev/null || echo "000")"
+        if [[ "${http_code}" == "200" && -s "${INDEXED_GEOHIDE_RAW}" ]]; then
+            dl_ok=1
+        else
+            dl_reason="curl HTTP=${http_code}"
+        fi
+    fi
+    if [[ "${dl_ok}" -eq 0 ]] && command -v wget >/dev/null 2>&1; then
+        if wget -q --timeout=15 --tries=2 -O "${INDEXED_GEOHIDE_RAW}" "${GEOHIDE_RAW_URL}" 2>/dev/null && [[ -s "${INDEXED_GEOHIDE_RAW}" ]]; then
+            dl_ok=1
+        else
+            dl_reason="wget failed"
+        fi
+    fi
+    if [[ "${dl_ok}" -eq 0 ]] && command -v python3 >/dev/null 2>&1; then
+        if python3 -c 'import urllib.request, sys; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "${GEOHIDE_RAW_URL}" "${INDEXED_GEOHIDE_RAW}" 2>/dev/null && [[ -s "${INDEXED_GEOHIDE_RAW}" ]]; then
+            dl_ok=1
+        else
+            dl_reason="python3 urllib failed"
+        fi
     fi
 
-    if [[ "${http_code}" == "200" && -s "${INDEXED_GEOHIDE_RAW}" ]]; then
+    if [[ "${dl_ok}" -eq 1 ]]; then
         classify_geohide_to_tsv "${INDEXED_GEOHIDE_RAW}" "${INDEXED_GEOHIDE_RAW}.grouped"
         local g cnt
         while read -r cnt g; do
             [[ -n "${g}" ]] && DOMAIN_GROUP_COUNTS["${g}"]="${cnt}"
-        done < <(awk -F'\t' '{print $1}' "${INDEXED_GEOHIDE_RAW}.grouped" | sort | uniq -c)
+        done < <(awk -F'\t' '{print $1}' "${INDEXED_GEOHIDE_RAW}.grouped" | LC_ALL=C sort | uniq -c)
     else
-        printf_tr "M_0334"
+        printf_tr "M_0334" "${dl_reason}"
         : > "${INDEXED_GEOHIDE_RAW}.grouped"
         if [[ -s "${DOMAIN_GROUPS_MAP_FILE}" ]]; then
             local g cnt
@@ -1451,7 +1481,7 @@ print_domain_groups_menu() {
         [[ "${DOMAIN_GROUP_SELECTED[${gid}]:-0}" -eq 1 ]] && mark="x"
         cnt="${DOMAIN_GROUP_COUNTS[${gid}]:-0}"
         label="$(domain_group_label "${gid}")"
-        printf '  [%s] [%2d] %-72s (%s)\n' "${mark}" "${i}" "${label}" "${cnt}"
+        printf '  [%s] [%2d] %s (%s)\n' "${mark}" "${i}" "${label}" "${cnt}"
     done
 }
 
@@ -1643,7 +1673,20 @@ prompt_custom_domains_import() {
         if [[ "${src_input}" =~ ^https?:// ]]; then
             printf_tr "M_0343" "${src_input}"
             tmp_dl="$(mktemp /tmp/smartdns-custom-dl.XXXXXX)"
-            if ! curl -fsSL --retry 2 --connect-timeout 10 --max-time 30 --max-filesize 10485760 -o "${tmp_dl}" "${src_input}" 2>/dev/null || [[ ! -s "${tmp_dl}" ]]; then
+            local c_dl_ok=0
+            if command -v curl >/dev/null 2>&1; then
+                if curl -fsSL --retry 2 --connect-timeout 10 --max-time 30 --max-filesize 10485760 -o "${tmp_dl}" "${src_input}" 2>/dev/null && [[ -s "${tmp_dl}" ]]; then
+                    c_dl_ok=1
+                fi
+            fi
+            if [[ "${c_dl_ok}" -eq 0 ]] && command -v wget >/dev/null 2>&1; then
+                if wget -q --timeout=15 --tries=2 -O "${tmp_dl}" "${src_input}" 2>/dev/null && [[ -s "${tmp_dl}" ]]; then
+                    local dl_sz
+                    dl_sz="$(stat -c%s "${tmp_dl}" 2>/dev/null || echo 0)"
+                    [[ "${dl_sz}" -le 10485760 ]] && c_dl_ok=1
+                fi
+            fi
+            if [[ "${c_dl_ok}" -ne 1 ]]; then
                 rm -f "${tmp_dl}"
                 printf_err_tr "M_0344" "${src_input}"
                 continue
@@ -1674,7 +1717,7 @@ prompt_custom_domains_import() {
                 if ($0 == "") next
                 n = split($0, f, /[[:space:]]+/)
                 start_i = 1
-                if (f[1] ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || f[1] ~ /:/) {
+                if (f[1] ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || (f[1] ~ /^[0-9a-fA-F:]+$/ && f[1] ~ /:/)) {
                     start_i = 2
                 }
                 if (start_i > n) {
@@ -1696,9 +1739,10 @@ prompt_custom_domains_import() {
             }
         ' "${raw_src}" > "${tmp_parsed}"
 
-        invalid_cnt="$(grep -c '^INVALID$' "${tmp_parsed}" || echo 0)"
+        invalid_cnt="$(grep -c '^INVALID$' "${tmp_parsed}" || true)"
+        invalid_cnt="${invalid_cnt:-0}"
         awk -F'\t' '$1 == "OK" { print $2 }' "${tmp_parsed}" > "${tmp_valid_all}"
-        sort -u "${tmp_valid_all}" > "${tmp_valid_uniq}"
+        LC_ALL=C sort -u "${tmp_valid_all}" > "${tmp_valid_uniq}"
 
         local valid_all_cnt valid_uniq_cnt internal_dups
         valid_all_cnt="$(wc -l < "${tmp_valid_all}" | tr -d ' ')"
@@ -1718,9 +1762,9 @@ prompt_custom_domains_import() {
         ' "${tmp_valid_uniq}" > "${tmp_safe_uniq}.1"
 
         if [[ -s "${CUSTOM_DENY_FILE}" ]]; then
-            grep -vFf "${CUSTOM_DENY_FILE}" "${tmp_safe_uniq}.1" | sort -u > "${tmp_safe_uniq}" || true
+            grep -vFf "${CUSTOM_DENY_FILE}" "${tmp_safe_uniq}.1" | LC_ALL=C sort -u > "${tmp_safe_uniq}" || true
         else
-            sort -u "${tmp_safe_uniq}.1" > "${tmp_safe_uniq}"
+            LC_ALL=C sort -u "${tmp_safe_uniq}.1" > "${tmp_safe_uniq}"
         fi
         rm -f "${tmp_safe_uniq}.1"
 
@@ -1730,7 +1774,8 @@ prompt_custom_domains_import() {
 
         # Сравнение с выбранными группами + существующим custom-allow + уже подготовленными доменами
         build_selected_baseline_domains_file "${tmp_base}"
-        comm -23 "${tmp_safe_uniq}" "${tmp_base}" > "${tmp_new_uniq}"
+        LC_ALL=C sort -u "${tmp_base}" -o "${tmp_base}"
+        LC_ALL=C comm -23 "${tmp_safe_uniq}" "${tmp_base}" > "${tmp_new_uniq}"
 
         local new_uniq_cnt overlap_cnt
         new_uniq_cnt="$(wc -l < "${tmp_new_uniq}" | tr -d ' ')"
