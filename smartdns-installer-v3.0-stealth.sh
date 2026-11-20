@@ -567,6 +567,7 @@ MSG_RU[M_0273]='Использование: ${SCRIPT_NAME} [РЕЖИМ]
 Доступные режимы работы:
   --help                           Вывести эту справку
   --preflight                      Проверка готовности сервера в режиме только чтения (без изменений)
+  --initial-setup                  Initial Server Setup & SSH Security Hardening
   --install                        Полная интерактивная транзакционная установка стека
   --switch-engine [oxidns|adguardhome]
                                    Транзакционное переключение DNS backend с сохранением сертификатов и OxiDNS
@@ -594,6 +595,7 @@ MSG_EN[M_0273]='Usage: sudo ./smartdns-installer-v3.0-stealth.sh <COMMAND>
 Commands:
   --help, -h                       Show this help message and exit
   --preflight                      Run read-only system, network, and port preflight checks
+  --initial-setup                  Initial Server Setup & SSH Security Hardening
   --install                        Run interactive transactional installation of the full stack
   --status                         Show active DNS engine, systemd services/timers, and ipset state
   --test                           Run 25 functional and negative self-tests
@@ -1044,6 +1046,50 @@ MSG_RU[M_0487]='PermitRootLogin no успешно применён и подтв
 MSG_EN[M_0487]='PermitRootLogin no applied and verified via sshd -T (local root account preserved).\n'
 MSG_RU[M_0488]='ОШИБКА: Эффективное значение sshd -T для %s не совпало (ожидалось: %s, получено: %s).'
 MSG_EN[M_0488]='ERROR: Effective sshd -T value for %s mismatch (expected: %s, got: %s).'
+MSG_RU[M_0489]='\n--- [10] ДОПОЛНИТЕЛЬНЫЕ МЕРЫ БЕЗОПАСНОСТИ (ДИАГНОСТИКА И ОПЦИИ) ---\n'
+MSG_EN[M_0489]='\n--- [10] ADDITIONAL SECURITY MEASURES (DIAGNOSTICS & OPTIONS) ---\n'
+MSG_RU[M_0490]='\nВыберите дополнительную меру (ничего не применяется автоматически):\n  [1] Установить и настроить Fail2ban (защита SSH от brute-force, backend=systemd)\n  [2] Включить автоматические security-обновления (unattended-upgrades, без auto-reboot)\n  [3] Усилить криптографические алгоритмы SSH (KexAlgorithms / Ciphers / MACs)\n  [4] Исправить права доступа ~/.ssh (0700) и authorized_keys (0600)\n  [5] Включить синхронизацию системного времени (NTP / timedatectl)\n  [6] Создать swap-файл 1 ГБ (рекомендуется при RAM < 2 ГБ)\n  [0] Завершить и вернуться в меню Initial Server Setup\n\nВаш выбор [0]: '
+MSG_EN[M_0490]='\nSelect an optional security measure (nothing is applied automatically):\n  [1] Install & configure Fail2ban (SSH brute-force protection, backend=systemd)\n  [2] Enable automatic security updates (unattended-upgrades, no auto-reboot)\n  [3] Harden SSH cryptographic algorithms (KexAlgorithms / Ciphers / MACs)\n  [4] Fix ~/.ssh (0700) and authorized_keys (0600) permissions\n  [5] Enable system time synchronization (NTP / timedatectl)\n  [6] Create a 1 GB swap file (recommended when RAM < 2 GB)\n  [0] Finish and return to Initial Server Setup menu\n\nYour choice [0]: '
+MSG_RU[M_0491]='Fail2ban защищает только SSH-порт (%s) через journald и не конфликтует с Xray/Nginx/OxiDNS.\nУстановить и включить fail2ban? [y/N]: '
+MSG_EN[M_0491]='Fail2ban protects only the SSH port (%s) via journald and does not conflict with Xray/Nginx/OxiDNS.\nInstall and enable fail2ban? [y/N]: '
+MSG_RU[M_0492]='Fail2ban успешно настроен для порта SSH %s и запущен.\n'
+MSG_EN[M_0492]='Fail2ban successfully configured for SSH port %s and started.\n'
+MSG_RU[M_0493]='unattended-upgrades устанавливает только security-обновления со строгим запретом автоматической перезагрузки (Automatic-Reboot=false).\nУстановить и настроить unattended-upgrades? [y/N]: '
+MSG_EN[M_0493]='unattended-upgrades installs security updates only with Automatic-Reboot=false strictly enforced.\nInstall and configure unattended-upgrades? [y/N]: '
+MSG_RU[M_0494]='unattended-upgrades успешно настроен (Automatic-Reboot "false").\n'
+MSG_EN[M_0494]='unattended-upgrades configured successfully (Automatic-Reboot "false").\n'
+MSG_RU[M_0495]='Усиление криптографии SSH ограничивает KEX/Ciphers/MACs современными алгоритмами (совместимо с OpenSSH 8.x+, PuTTY 0.78+, macOS/Linux).\nПрименить современные криптографические настройки SSH? [y/N]: '
+MSG_EN[M_0495]='SSH crypto hardening restricts KEX/Ciphers/MACs to modern algorithms (compatible with OpenSSH 8.x+, PuTTY 0.78+, macOS/Linux).\nApply modern SSH cryptographic settings? [y/N]: '
+MSG_RU[M_0496]='Права доступа к каталогам и файлам SSH проверены и приведены к безопасным значениям (0700 / 0600).\n'
+MSG_EN[M_0496]='SSH directory and file permissions checked and set to secure modes (0700 / 0600).\n'
+MSG_RU[M_0497]='Синхронизация времени NTP включена (timedatectl set-ntp true).\n'
+MSG_EN[M_0497]='NTP time synchronization enabled (timedatectl set-ntp true).\n'
+MSG_RU[M_0498]='Swap уже активен (%s МБ) или недостаточно места на диске для создания swap-файла.\n'
+MSG_EN[M_0498]='Swap is already active (%s MB) or insufficient free disk space to create a swap file.\n'
+MSG_RU[M_0499]='Создать swap-файл /swapfile размером 1024 МБ (без перезагрузки)? [y/N]: '
+MSG_EN[M_0499]='Create a 1024 MB /swapfile (without rebooting)? [y/N]: '
+MSG_RU[M_0500]='Swap-файл /swapfile (1024 МБ) успешно создан, активирован и добавлен в /etc/fstab.\n'
+MSG_EN[M_0500]='Swap file /swapfile (1024 MB) created, activated, and added to /etc/fstab.\n'
+MSG_RU[M_0501]='\nВыберите действие:\n  [ A ] Выполнить рекомендуемую настройку (пошагово с подтверждением)\n  [ S ] Пропустить первоначальную настройку и перейти далее\n  [ C ] Настроить выборочно (отдельные пункты 1..10)\n  [ Q ] Выход (отмена)\n\nВаш выбор [A]: '
+MSG_EN[M_0501]='\nSelect an action:\n  [ A ] Run recommended setup (step-by-step with confirmation)\n  [ S ] Skip initial setup and proceed\n  [ C ] Customize selectively (individual items 1..10)\n  [ Q ] Quit (cancel)\n\nYour choice [A]: '
+MSG_RU[M_0502]='\nОбнаружена ранее выполненная первоначальная настройка сервера (%s).\nПовторное создание пользователя, перезапись ключей и обновление ОС без согласия НЕ выполняются.\n  [ S ] Сохранить текущие настройки и продолжить\n  [ C ] Проверить или изменить отдельные параметры\n  [ Q ] Выход\n\nВаш выбор [S]: '
+MSG_EN[M_0502]='\nPreviously completed Initial Server Setup detected (%s).\nUser creation, key overwrite, and OS upgrades will NOT be re-run without consent.\n  [ S ] Keep existing settings and continue\n  [ C ] Inspect or modify specific settings\n  [ Q ] Quit\n\nYour choice [S]: '
+MSG_RU[M_0503]='Введите номер пункта [1-10], [D] — завершить и продолжить, [Q] — выход: '
+MSG_EN[M_0503]='Enter item number [1-10], [D] — finish and continue, [Q] — quit: '
+MSG_RU[M_0504]='\n[Шаг %s/10 — Пункт [%s]: %s]\nНавигация: [Enter] — выполнить/настроить, [S] — пропустить, [B] — назад, [Q] — отмена: '
+MSG_EN[M_0504]='\n[Step %s/10 — Item [%s]: %s]\nNavigation: [Enter] — run/configure, [S] — skip, [B] — back, [Q] — cancel: '
+MSG_RU[M_0505]='Первоначальная настройка сервера завершена; параметры сохранены в %s.\n'
+MSG_EN[M_0505]='Initial server setup completed; settings saved to %s.\n'
+MSG_RU[M_0506]='Первоначальная настройка пропущена пользователем.\n'
+MSG_EN[M_0506]='Initial server setup skipped by user.\n'
+MSG_RU[M_0507]='Выход из установщика по запросу пользователя на этапе Initial Server Setup.\n'
+MSG_EN[M_0507]='Installer exited by user during Initial Server Setup.\n'
+MSG_RU[M_0508]='Разрешён порт SSH %s/tcp в UFW до включения блокирующих правил firewall.'
+MSG_EN[M_0508]='Allowed SSH port %s/tcp in UFW prior to enabling blocking firewall rules.'
+MSG_RU[M_0509]='ПРЕДУПРЕЖДЕНИЕ: Правило или сокет SSH на порту %s/tcp требует проверки; применено резервное разрешение UFW.'
+MSG_EN[M_0509]='WARNING: SSH rule or socket on port %s/tcp needs attention; emergency UFW allow applied.'
+MSG_RU[M_0510]='ПРЕДУПРЕЖДЕНИЕ: Fail2ban установлен, но запуск службы сейчас не удался (будет активирован после настройки firewall в основной фазе).\n'
+MSG_EN[M_0510]='WARNING: Fail2ban was installed, but starting the service failed now (it can start once firewall packages are installed in the main phase).\n'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -3955,6 +4001,562 @@ initial_setup_disable_root_login() {
     fi
 }
 
+# ------------------------------ Extra Security Measures (Module 6) ------------
+initial_setup_extra_security() {
+    printf_tr "M_0489"
+    ssh_detect_state
+
+    local ufw_state="not-installed"
+    if command -v ufw >/dev/null 2>&1; then
+        ufw_state="$(LC_ALL=C ufw status 2>/dev/null | head -n1 || echo installed)"
+    fi
+    local nft_state="missing"
+    if command -v nft >/dev/null 2>&1; then nft_state="available"; fi
+
+    local f2b_state="not-installed"
+    if systemctl is-active --quiet fail2ban 2>/dev/null; then
+        f2b_state="active"
+    elif dpkg-query -W -f='${Status}' fail2ban 2>/dev/null | grep -q 'install ok installed'; then
+        f2b_state="installed (inactive)"
+    fi
+
+    local ua_state="not-installed"
+    if dpkg-query -W -f='${Status}' unattended-upgrades 2>/dev/null | grep -q 'install ok installed'; then
+        local ar_val
+        ar_val="$(grep -RhE 'Automatic-Reboot[[:space:]]+' /etc/apt/apt.conf.d/ 2>/dev/null | tail -n1 | tr -d ' ";' || echo "unset")"
+        ua_state="installed (${ar_val})"
+    fi
+
+    local extra_svcs
+    extra_svcs="$(systemctl list-units --type=service --state=running --no-legend 2>/dev/null | awk '{print $1}' | grep -E '^(rpcbind|avahi-daemon|cups|telnet|vsftpd|smbd|nmbd)\.service$' | paste -sd ',' - || true)"
+    extra_svcs="${extra_svcs:-none}"
+
+    local open_ports
+    open_ports="$(ss -tulnp 2>/dev/null | awk 'NR>1 {print $1 ":" $5}' | sort -u | paste -sd ' ' - || true)"
+
+    local ipv6_disabled="0"
+    ipv6_disabled="$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null || echo 0)"
+    local ipv6_info="enabled"
+    if [[ "${ipv6_disabled}" == "1" ]]; then ipv6_info="disabled via sysctl"; fi
+
+    local ssh_perm_ok="OK"
+    local users_to_chk=(root)
+    if [[ -n "${INITIAL_SETUP_ADMIN_USER}" ]]; then
+        users_to_chk+=("${INITIAL_SETUP_ADMIN_USER}")
+    fi
+    local chk_u
+    for chk_u in "${users_to_chk[@]}"; do
+        id -u "${chk_u}" >/dev/null 2>&1 || continue
+        local h_dir
+        h_dir="$(getent passwd "${chk_u}" | cut -d: -f6)"
+        if [[ -d "${h_dir}/.ssh" ]]; then
+            local dm
+            dm="$(stat -c '%a' "${h_dir}/.ssh" 2>/dev/null || echo 0)"
+            if [[ "${dm}" != "700" ]]; then
+                ssh_perm_ok="WARN(${h_dir}/.ssh=${dm})"
+            fi
+        fi
+        if [[ -f "${h_dir}/.ssh/authorized_keys" ]]; then
+            local fm
+            fm="$(stat -c '%a' "${h_dir}/.ssh/authorized_keys" 2>/dev/null || echo 0)"
+            if [[ "${fm}" != "600" ]]; then
+                ssh_perm_ok="WARN(authorized_keys=${fm})"
+            fi
+        fi
+    done
+
+    local visudo_st="OK"
+    if command -v visudo >/dev/null 2>&1 && ! visudo -c >/dev/null 2>&1; then
+        visudo_st="WARN"
+    fi
+
+    local kex_v
+    kex_v="$(ssh_get_effective_param "kexalgorithms" | cut -c1-48)"
+    kex_v="${kex_v:-n/a}"
+
+    local human_users
+    human_users="$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1 "(" $3 ")"}' /etc/passwd | paste -sd ',' - || true)"
+    human_users="${human_users:-none}"
+
+    local ntp_st="unknown"
+    if command -v timedatectl >/dev/null 2>&1; then
+        ntp_st="$(timedatectl show -p NTPSynchronized --value 2>/dev/null || timedatectl status 2>/dev/null | awk -F: '/NTP|synchronized/ {gsub(/^[ \t]+/,"",$2); print $2; exit}' || echo unknown)"
+    fi
+
+    local jrnl_st="inactive"
+    if systemctl is-active --quiet systemd-journald 2>/dev/null; then jrnl_st="active"; fi
+
+    local disk_free_mb swap_total_mb
+    disk_free_mb="$(df -Pm / 2>/dev/null | awk 'NR==2 {print $4}')"
+    swap_total_mb="$(free -m 2>/dev/null | awk '/^Swap:/ {print $2}')"
+    swap_total_mb="${swap_total_mb:-0}"
+
+    local rb_st="no"
+    if [[ -f /var/run/reboot-required ]] || [[ "${REBOOT_REQUIRED}" == "true" ]]; then
+        rb_st="YES (deferred until SmartDNS)"
+    fi
+
+    local psym phard aslr
+    psym="$(sysctl -n fs.protected_symlinks 2>/dev/null || echo ?)"
+    phard="$(sysctl -n fs.protected_hardlinks 2>/dev/null || echo ?)"
+    aslr="$(sysctl -n kernel.randomize_va_space 2>/dev/null || echo ?)"
+
+    cat <<EOF
+==============================================================================
+  SECURITY & SYSTEM READINESS AUDIT (16 CHECKS)
+==============================================================================
+  [ 1] Firewall readiness       : ufw=${ufw_state}, nftables=${nft_state} (configured in main phase)
+  [ 2] Brute-force protection   : fail2ban=${f2b_state}
+  [ 3] Auto security updates    : unattended-upgrades=${ua_state}
+  [ 4] Unnecessary services     : ${extra_svcs}
+  [ 5] Open listening ports     : ${open_ports}
+  [ 6] IPv6 status              : ${ipv6_info}
+  [ 7] SSH key permissions      : ${ssh_perm_ok}
+  [ 8] Sudo configuration       : visudo=${visudo_st}, sudo_user=${INITIAL_SETUP_ADMIN_USER:-none}
+  [ 9] SSH cryptography         : hardened=${SSH_HARDENING_CRYPTO}, kex=${kex_v}...
+  [10] Non-system users (>=1000): ${human_users}
+  [11] System time & NTP        : NTPSynchronized=${ntp_st}
+  [12] Logging                  : systemd-journald=${jrnl_st}
+  [13] Free disk space (/)      : ${disk_free_mb:-0} MB
+  [14] Swap memory              : ${swap_total_mb} MB
+  [15] Kernel & reboot state    : kernel=$(uname -r), reboot_required=${rb_st}
+  [16] OS kernel protections    : protected_symlinks=${psym}, protected_hardlinks=${phard}, ASLR=${aslr}
+==============================================================================
+EOF
+
+    while true; do
+        local opt=""
+        read_tr "M_0490" opt
+        if [[ "${LAST_READ_EOF}" -eq 1 || -z "${opt}" || "${opt}" == "0" ]]; then
+            break
+        fi
+        case "${opt}" in
+            1)
+                local p_list="${SSH_CURRENT_PORTS// /,}"
+                local c_f2b=""
+                read_tr "M_0491" c_f2b "${p_list}"
+                if [[ "${LAST_READ_EOF}" -eq 0 && "${c_f2b:-N}" =~ ^[Yy]$ ]]; then
+                    if DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get update -y -q \
+                        && DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get install -y -q fail2ban; then
+                        install -d -m 0755 /etc/fail2ban/jail.d
+                        cat > /etc/fail2ban/jail.d/smartdns-sshd.local <<F2B_EOF
+[sshd]
+enabled = true
+port = ${p_list}
+backend = systemd
+maxretry = 5
+findtime = 10m
+bantime = 1h
+F2B_EOF
+                        chmod 0644 /etc/fail2ban/jail.d/smartdns-sshd.local
+                        if systemctl enable --now fail2ban 2>/dev/null; then
+                            initial_setup_record_action "fail2ban_enabled(ports=${p_list})"
+                            printf_tr "M_0492" "${p_list}"
+                        else
+                            systemctl enable fail2ban 2>/dev/null || true
+                            initial_setup_record_action "fail2ban_configured(ports=${p_list})"
+                            printf_tr "M_0510"
+                        fi
+                        check_reboot_required 1 || true
+                    fi
+                fi
+                ;;
+            2)
+                local c_ua=""
+                read_tr "M_0493" c_ua
+                if [[ "${LAST_READ_EOF}" -eq 0 && "${c_ua:-N}" =~ ^[Yy]$ ]]; then
+                    if DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get update -y -q \
+                        && DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l NEEDRESTART_SUSPEND=1 apt-get install -y -q unattended-upgrades; then
+                        install -d -m 0755 /etc/apt/apt.conf.d
+                        cat > /etc/apt/apt.conf.d/51smartdns-unattended-upgrades <<UA_EOF
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+UA_EOF
+                        chmod 0644 /etc/apt/apt.conf.d/51smartdns-unattended-upgrades
+                        initial_setup_record_action "unattended_upgrades_enabled(no_reboot)"
+                        printf_tr "M_0494"
+                        check_reboot_required 1 || true
+                    fi
+                fi
+                ;;
+            3)
+                local c_cr=""
+                read_tr "M_0495" c_cr
+                if [[ "${LAST_READ_EOF}" -eq 0 && "${c_cr:-N}" =~ ^[Yy]$ ]]; then
+                    local prev_cr="${SSH_HARDENING_CRYPTO}"
+                    SSH_HARDENING_CRYPTO="true"
+                    if ssh_validate_and_apply; then
+                        initial_setup_record_action "ssh_crypto_hardened"
+                    else
+                        SSH_HARDENING_CRYPTO="${prev_cr}"
+                    fi
+                fi
+                ;;
+            4)
+                local u_fix
+                for u_fix in "${users_to_chk[@]}"; do
+                    id -u "${u_fix}" >/dev/null 2>&1 || continue
+                    local hd ug
+                    hd="$(getent passwd "${u_fix}" | cut -d: -f6)"
+                    ug="$(id -gn "${u_fix}")"
+                    if [[ -d "${hd}/.ssh" ]]; then
+                        chown -R "${u_fix}:${ug}" "${hd}/.ssh"
+                        chmod 0700 "${hd}/.ssh"
+                        if [[ -f "${hd}/.ssh/authorized_keys" ]]; then
+                            chmod 0600 "${hd}/.ssh/authorized_keys"
+                        fi
+                    fi
+                done
+                initial_setup_record_action "ssh_permissions_fixed"
+                printf_tr "M_0496"
+                ;;
+            5)
+                if command -v timedatectl >/dev/null 2>&1; then
+                    timedatectl set-ntp true 2>/dev/null || true
+                    initial_setup_record_action "ntp_enabled"
+                    printf_tr "M_0497"
+                fi
+                ;;
+            6)
+                local cur_sw df_m
+                cur_sw="$(free -m 2>/dev/null | awk '/^Swap:/ {print $2}')"
+                df_m="$(df -Pm / 2>/dev/null | awk 'NR==2 {print $4}')"
+                if [[ "${cur_sw:-0}" -gt 0 || "${df_m:-0}" -lt 3000 || -e /swapfile ]]; then
+                    printf_tr "M_0498" "${cur_sw:-0}"
+                else
+                    local c_sw=""
+                    read_tr "M_0499" c_sw
+                    if [[ "${LAST_READ_EOF}" -eq 0 && "${c_sw:-N}" =~ ^[Yy]$ ]]; then
+                        if dd if=/dev/zero of=/swapfile bs=1M count=1024 status=none \
+                            && chmod 0600 /swapfile \
+                            && mkswap /swapfile >/dev/null \
+                            && swapon /swapfile; then
+                            if ! grep -q '^/swapfile ' /etc/fstab 2>/dev/null; then
+                                printf '/swapfile none swap sw 0 0\n' >> /etc/fstab
+                            fi
+                            initial_setup_record_action "swapfile_1024m_created"
+                            printf_tr "M_0500"
+                        fi
+                    fi
+                fi
+                ;;
+        esac
+    done
+    return 0
+}
+
+# ------------------------------ Initial Server Setup Menu (Module 2) ----------
+initial_setup_item_title() {
+    local item_id="$1"
+    if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
+        case "${item_id}" in
+            1)  printf 'Full system update' ;;
+            2)  printf 'Check / install sudo' ;;
+            3)  printf 'Change root password' ;;
+            4)  printf 'Create / select administrative user' ;;
+            5)  printf 'SSH server audit & base setup' ;;
+            6)  printf 'Configure SSH port' ;;
+            7)  printf 'Configure SSH key authentication' ;;
+            8)  printf 'Disable PasswordAuthentication' ;;
+            9)  printf 'Disable Root Login over SSH' ;;
+            10) printf 'Additional security measures' ;;
+        esac
+    else
+        case "${item_id}" in
+            1)  printf 'Полное обновление системы' ;;
+            2)  printf 'Проверка / установка sudo' ;;
+            3)  printf 'Изменение пароля root' ;;
+            4)  printf 'Создание / выбор административного пользователя' ;;
+            5)  printf 'Настройка и аудит SSH' ;;
+            6)  printf 'Настройка SSH port' ;;
+            7)  printf 'Настройка SSH key authentication' ;;
+            8)  printf 'Отключение PasswordAuthentication' ;;
+            9)  printf 'Отключение Root Login по SSH' ;;
+            10) printf 'Дополнительные меры безопасности' ;;
+        esac
+    fi
+}
+
+print_initial_server_setup_menu() {
+    ssh_detect_state
+    local st_upd="[ ]" st_sudo="[ ]" st_rp="[ ]" st_usr="[ ]" st_ssh="[ ]"
+    local st_port="[ ]" st_key="[ ]" st_pa="[ ]" st_rl="[ ]" st_ext="[ ]"
+
+    if [[ "${INITIAL_SETUP_OS_UPDATED}" == "true" ]]; then st_upd="[x]"; fi
+    if [[ "${INITIAL_SETUP_SUDO_OK}" == "true" ]] || command -v sudo >/dev/null 2>&1; then st_sudo="[x]"; fi
+    if [[ "${INITIAL_SETUP_ROOT_PASS_CHANGED}" == "true" ]]; then st_rp="[x]"; fi
+    if [[ -n "${INITIAL_SETUP_ADMIN_USER}" ]] && id -u "${INITIAL_SETUP_ADMIN_USER}" >/dev/null 2>&1; then st_usr="[x]"; fi
+    if ssh_is_installed; then st_ssh="[x]"; fi
+    if [[ -n "${INITIAL_SETUP_SSH_PORT}" && "${INITIAL_SETUP_SSH_PORT}" != "22" ]]; then st_port="[x]"; fi
+    if [[ "${INITIAL_SETUP_SSH_KEY_OK}" == "true" ]]; then st_key="[x]"; fi
+    if [[ "${INITIAL_SETUP_PASSAUTH_DISABLED}" == "true" ]]; then st_pa="[x]"; fi
+    if [[ "${INITIAL_SETUP_ROOTLOGIN_DISABLED}" == "true" ]]; then st_rl="[x]"; fi
+    if [[ "${INITIAL_SETUP_ACTIONS_DONE}" == *"fail2ban"* || "${INITIAL_SETUP_ACTIONS_DONE}" == *"unattended_upgrades"* || "${INITIAL_SETUP_ACTIONS_DONE}" == *"ssh_crypto"* ]]; then
+        st_ext="[x]"
+    fi
+
+    if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
+        cat <<EOF
+
+==============================================================================
+  INITIAL SERVER SETUP & SECURITY HARDENING (v${INSTALLER_VERSION})
+==============================================================================
+Before installing the main SmartDNS + SNI Proxy stack, it is recommended
+to perform initial server setup and SSH security hardening.
+Reboot lock is ACTIVE (REBOOT_LOCKED=${REBOOT_LOCKED}) until SmartDNS passes checks.
+
+  ${st_upd} [ 1] Full system update (non-interactive, no reboot)
+  ${st_sudo} [ 2] Check / install sudo
+  ${st_rp} [ 3] Change root password
+  ${st_usr} [ 4] Create / select administrative user (current: ${INITIAL_SETUP_ADMIN_USER:-none}, sudo: ${INITIAL_SETUP_ADMIN_IN_SUDO})
+  ${st_ssh} [ 5] SSH server audit & base setup
+  ${st_port} [ 6] Configure SSH port (current: ${SSH_CURRENT_PORTS})
+  ${st_key} [ 7] Configure SSH key authentication (confirmed: ${INITIAL_SETUP_SSH_KEY_CONFIRMED})
+  ${st_pa} [ 8] Disable PasswordAuthentication (disabled: ${INITIAL_SETUP_PASSAUTH_DISABLED})
+  ${st_rl} [ 9] Disable Root Login over SSH (disabled: ${INITIAL_SETUP_ROOTLOGIN_DISABLED})
+  ${st_ext} [10] Additional security measures (16-point audit & optional tools)
+==============================================================================
+EOF
+    else
+        cat <<EOF
+
+==============================================================================
+  INITIAL SERVER SETUP & SECURITY HARDENING (v${INSTALLER_VERSION})
+==============================================================================
+Перед установкой основного функционала SmartDNS + SNI Proxy рекомендуется
+выполнить первоначальную настройку и усиление безопасности сервера.
+Запрет перезагрузки АКТИВЕН (REBOOT_LOCKED=${REBOOT_LOCKED}) до проверки SmartDNS.
+
+  ${st_upd} [ 1] Полное обновление системы (non-interactive, без reboot)
+  ${st_sudo} [ 2] Проверка / установка sudo
+  ${st_rp} [ 3] Изменение пароля root
+  ${st_usr} [ 4] Создание / выбор административного пользователя (текущий: ${INITIAL_SETUP_ADMIN_USER:-нет}, sudo: ${INITIAL_SETUP_ADMIN_IN_SUDO})
+  ${st_ssh} [ 5] Настройка и аудит SSH
+  ${st_port} [ 6] Настройка SSH port (активные: ${SSH_CURRENT_PORTS})
+  ${st_key} [ 7] Настройка SSH key authentication (подтверждено: ${INITIAL_SETUP_SSH_KEY_CONFIRMED})
+  ${st_pa} [ 8] Отключение PasswordAuthentication (отключено: ${INITIAL_SETUP_PASSAUTH_DISABLED})
+  ${st_rl} [ 9] Отключение Root Login по SSH (отключено: ${INITIAL_SETUP_ROOTLOGIN_DISABLED})
+  ${st_ext} [10] Дополнительные меры безопасности (аудит 16 пунктов и опции)
+==============================================================================
+EOF
+    fi
+}
+
+run_initial_setup_item() {
+    local item_id="$1"
+    local rc=0
+    case "${item_id}" in
+        1) initial_setup_os_update || rc=$? ;;
+        2) initial_setup_check_sudo || rc=$? ;;
+        3) initial_setup_root_password || rc=$? ;;
+        4) initial_setup_admin_user || rc=$? ;;
+        5) initial_setup_ssh_base || rc=$? ;;
+        6) initial_setup_ssh_port || rc=$? ;;
+        7) initial_setup_ssh_keys || rc=$? ;;
+        8) initial_setup_disable_password_auth || rc=$? ;;
+        9) initial_setup_disable_root_login || rc=$? ;;
+        10) initial_setup_extra_security || rc=$? ;;
+    esac
+    if [[ "${rc}" -eq 2 || "${INSTALL_PAUSED}" == "true" ]]; then
+        exit 0
+    fi
+    return 0
+}
+
+run_initial_setup_selective_loop() {
+    while true; do
+        print_initial_server_setup_menu
+        local sub_choice=""
+        read_tr "M_0503" sub_choice
+        if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+            save_initial_setup_state
+            return 0
+        fi
+        case "${sub_choice^^}" in
+            D)
+                INITIAL_SETUP_COMPLETED="true"
+                save_initial_setup_state
+                printf_tr "M_0505" "${INITIAL_SETUP_STATE_FILE}"
+                return 0
+                ;;
+            Q)
+                printf_tr "M_0507"
+                exit 0
+                ;;
+            1|2|3|4|5|6|7|8|9|10)
+                run_initial_setup_item "${sub_choice}"
+                ;;
+        esac
+    done
+}
+
+run_initial_server_setup() {
+    local call_context="${1:-install}"
+    load_initial_setup_state
+    ssh_detect_state
+    log_info "installation.log" "Запуск этапа Initial Server Setup (context=${call_context}, completed=${INITIAL_SETUP_COMPLETED})."
+
+    # Non-interactive / закрытый stdin: безопасно пропускаем интерактивное меню
+    if [[ ! -t 0 ]]; then
+        save_initial_setup_state
+        return 0
+    fi
+
+    if [[ "${INITIAL_SETUP_COMPLETED}" == "true" ]]; then
+        print_initial_server_setup_menu
+        local prev_choice=""
+        read_tr "M_0502" prev_choice "${INITIAL_SETUP_UPDATED_AT:-previous run}"
+        if [[ "${LAST_READ_EOF}" -eq 1 || "${prev_choice^^}" == "S" || -z "${prev_choice}" ]]; then
+            return 0
+        elif [[ "${prev_choice^^}" == "Q" ]]; then
+            printf_tr "M_0507"
+            exit 0
+        elif [[ "${prev_choice^^}" == "C" ]]; then
+            run_initial_setup_selective_loop
+            return 0
+        fi
+    fi
+
+    while true; do
+        print_initial_server_setup_menu
+        local main_choice=""
+        read_tr "M_0501" main_choice
+        if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+            save_initial_setup_state
+            return 0
+        fi
+        main_choice="${main_choice:-A}"
+
+        case "${main_choice^^}" in
+            A)
+                # Рекомендуемый безопасный порядок: сначала ключи (7), затем смена порта (6), затем отключение паролей (8) и root (9)
+                local rec_steps=(1 2 3 4 5 7 6 8 9 10)
+                local idx=0
+                local total="${#rec_steps[@]}"
+                while [[ "${idx}" -lt "${total}" ]]; do
+                    local step_num=$((idx + 1))
+                    local target_item="${rec_steps[${idx}]}"
+                    local item_title
+                    item_title="$(initial_setup_item_title "${target_item}")"
+                    local nav=""
+                    read_tr "M_0504" nav "${step_num}" "${target_item}" "${item_title}"
+                    if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+                        break
+                    fi
+                    case "${nav^^}" in
+                        S)
+                            idx=$((idx + 1))
+                            continue
+                            ;;
+                        B)
+                            if [[ "${idx}" -gt 0 ]]; then
+                                idx=$((idx - 1))
+                            fi
+                            continue
+                            ;;
+                        Q)
+                            printf_tr "M_0507"
+                            exit 0
+                            ;;
+                        *)
+                            run_initial_setup_item "${target_item}"
+                            idx=$((idx + 1))
+                            ;;
+                    esac
+                done
+                INITIAL_SETUP_COMPLETED="true"
+                save_initial_setup_state
+                printf_tr "M_0505" "${INITIAL_SETUP_STATE_FILE}"
+                return 0
+                ;;
+            S)
+                save_initial_setup_state
+                printf_tr "M_0506"
+                return 0
+                ;;
+            C)
+                run_initial_setup_selective_loop
+                return 0
+                ;;
+            Q)
+                printf_tr "M_0507"
+                exit 0
+                ;;
+        esac
+    done
+}
+
+# ------------------------------ Firewall SSH Guard & Report (Module 7) --------
+firewall_collect_all_ssh_ports() {
+    load_initial_setup_state
+    ssh_detect_state
+    local raw_ports="${SSH_CURRENT_PORTS} ${INITIAL_SETUP_SSH_PORT:-}"
+    local ss_ports
+    ss_ports="$(ss -tlnp 2>/dev/null | awk '/(sshd|ssh\.socket)/ {split($4,a,":"); print a[length(a)]}' | paste -sd ' ' - || true)"
+    raw_ports="${raw_ports} ${ss_ports}"
+    tr ' ' '\n' <<<"${raw_ports}" | awk '/^[0-9]+$/ && $1 >= 1 && $1 <= 65535' | sort -nu | paste -sd ' ' -
+}
+
+firewall_allow_all_ssh_ports_ufw() {
+    command -v ufw >/dev/null 2>&1 || return 0
+    local all_ssh_ports
+    all_ssh_ports="$(firewall_collect_all_ssh_ports)"
+    all_ssh_ports="${all_ssh_ports:-22}"
+    local -a ssh_port_arr=()
+    read -r -a ssh_port_arr <<<"${all_ssh_ports}"
+    local sp
+    for sp in "${ssh_port_arr[@]}"; do
+        ufw allow "${sp}/tcp" comment 'SSH Access' >/dev/null 2>&1 || ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
+        if ! LC_ALL=C ufw show added 2>/dev/null | grep -Eq "allow[[:space:]]+${sp}/tcp"; then
+            ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
+        fi
+        log_info_tr "installation.log" "M_0508" "${sp}"
+    done
+}
+
+firewall_verify_ssh_ports_open() {
+    command -v ufw >/dev/null 2>&1 || return 0
+    local all_ssh_ports
+    all_ssh_ports="$(firewall_collect_all_ssh_ports)"
+    all_ssh_ports="${all_ssh_ports:-22}"
+    local -a ssh_port_arr=()
+    read -r -a ssh_port_arr <<<"${all_ssh_ports}"
+    local sp
+    for sp in "${ssh_port_arr[@]}"; do
+        if ! LC_ALL=C ufw status 2>/dev/null | grep -Eq "^${sp}/tcp([[:space:]]+\(v6\))?[[:space:]]+ALLOW"; then
+            log_warn_tr "installation.log" "M_0509" "${sp}"
+            ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
+        fi
+        if ! ss -tlnp 2>/dev/null | grep -Eq ":${sp}[[:space:]]"; then
+            log_warn_tr "installation.log" "M_0509" "${sp}"
+        fi
+    done
+}
+
+print_initial_setup_report_summary() {
+    load_initial_setup_state
+    load_reboot_lock_state
+    ssh_detect_state
+    local pa_eff rl_eff
+    pa_eff="$(ssh_get_effective_param "passwordauthentication")"
+    rl_eff="$(ssh_get_effective_param "permitrootlogin")"
+    cat <<EOF
+------------------------------------------------------------------------------
+Initial Server Setup & Security Hardening:
+  Completed              : ${INITIAL_SETUP_COMPLETED}
+  Admin user (sudo)      : ${INITIAL_SETUP_ADMIN_USER:-none} (in sudo: ${INITIAL_SETUP_ADMIN_IN_SUDO})
+  Active SSH ports       : ${SSH_CURRENT_PORTS}
+  SSH key auth confirmed : ${INITIAL_SETUP_SSH_KEY_CONFIRMED}
+  PasswordAuthentication : ${pa_eff:-n/a}
+  PermitRootLogin        : ${rl_eff:-n/a}
+  Reboot lock state      : REBOOT_LOCKED=${REBOOT_LOCKED}, SMARTDNS_VERIFIED=${SMARTDNS_VERIFIED}
+  Deferred reboot needed : ${REBOOT_REQUIRED} (${REBOOT_REASONS:-none})
+------------------------------------------------------------------------------
+EOF
+}
+
 # ------------------------------ Initial Backup & Manifest ---------------------
 init_install_manifest() {
     install -d -m 0700 -o root -g root "${STATE_DIR}"
@@ -4510,6 +5112,8 @@ install_system_packages() {
     log_info_tr "installation.log" "M_0088"
     umask 022
     export DEBIAN_FRONTEND=noninteractive
+    export NEEDRESTART_MODE=l
+    export NEEDRESTART_SUSPEND=1
     apt-get update -y -q
     apt-get install -y -q curl ca-certificates gnupg2 lsb-release jq ufw ipset conntrack \
         dnsutils openssl tar unzip socat cron logrotate python3-bcrypt
@@ -4551,6 +5155,7 @@ EOF
     umask 027
     NGINX_INSTALLED_VER="$(nginx -v 2>&1 | awk -F'/' '{print $2}')"
     log_info_tr "installation.log" "M_0089" "${NGINX_INSTALLED_VER}"
+    check_reboot_required 1 || true
 }
 
 # ------------------------------ Users & Permissions ---------------------------
@@ -7485,11 +8090,13 @@ EOF
     ufw allow 80/tcp comment 'HTTP Redirect' >/dev/null
     ufw allow 443/tcp comment 'SmartDNS HTTPS / SNI Proxy' >/dev/null
     ufw allow 853/tcp comment 'SmartDNS DoT' >/dev/null
+    firewall_allow_all_ssh_ports_ufw
     ufw --force enable >/dev/null
 
     /usr/local/bin/smartdns-firewall-apply.sh
     seed_initial_admin_ip
     log_info_tr "firewall.log" "M_0143" "${IPTABLES_BACKEND}" "${DOT_WHITELIST_ENABLED}" "${DOT_WHITELIST_MODE}"
+    firewall_verify_ssh_ports_open
 }
 
 seed_initial_admin_ip() {
@@ -8795,6 +9402,7 @@ EOF
     if [[ "${show_sec:-N}" =~ ^[Yy]$ ]]; then
         cat "${secret_report_file}"
     fi
+    print_initial_setup_report_summary
 }
 
 run_regenerate_cover() {
@@ -9634,6 +10242,9 @@ uninstall_component_firewall() {
     fi
 
     uninstall_safe_remove_or_restore_file "/usr/local/bin/smartdns-firewall-apply.sh" 1
+    if command -v ufw >/dev/null 2>&1 && LC_ALL=C ufw status 2>/dev/null | grep -qi '^Status:[[:space:]]*active'; then
+        firewall_allow_all_ssh_ports_ufw
+    fi
 }
 
 run_uninstall() {
@@ -9858,6 +10469,9 @@ run_uninstall() {
 run_install() {
     detect_environment
     validate_os_and_resources
+    init_logging
+    init_reboot_lock "enforce"
+    run_initial_server_setup "install"
     run_interactive_wizard
 
     init_logging
@@ -9902,11 +10516,13 @@ run_install() {
 
     verify_dns_backend_isolated
     run_test_suite
+    unlock_reboot_after_smartdns "1" || true
     record_postinstall_packages_and_accounts
     record_full_install_manifest
     seal_initial_backup
     TRANSACTION_ACTIVE=0
     generate_installation_report
+    prompt_deferred_reboot_if_needed
 }
 
 # ------------------------------ CLI Argument Parser ---------------------------
@@ -9930,6 +10546,15 @@ main() {
             ACTION_MODE="preflight"
             check_root
             run_preflight
+            ;;
+        --initial-setup)
+            check_root
+            acquire_lock
+            detect_environment
+            validate_os_and_resources
+            init_logging
+            init_reboot_lock "enforce"
+            run_initial_server_setup "standalone"
             ;;
         --install)
             ACTION_MODE="install"
