@@ -614,6 +614,26 @@ Commands:
   --whitelist-flush                Flush all authorized IPv4/IPv6 addresses from DoT whitelist'
 MSG_RU[M_0274]='Неизвестный параметр: %s\n'
 MSG_EN[M_0274]='Unknown option: %s\n'
+MSG_RU[M_0275]='Инициализация защищённого хранилища первоначального backup в %s...'
+MSG_EN[M_0275]='Initializing protected initial backup store in %s...'
+MSG_RU[M_0276]='Первоначальный backup уже запечатан (%s). Повторная перезапись запрещена.'
+MSG_EN[M_0276]='Initial backup is already sealed (%s). Overwriting is prohibited.'
+MSG_RU[M_0277]='ОШИБКА backup перед изменением %s: контрольная сумма или метаданные не подтверждены. Изменение файла заблокировано.'
+MSG_EN[M_0277]='Backup error before modifying %s: checksum or metadata verification failed. File modification aborted.'
+MSG_RU[M_0278]='Выполнен pre-modify backup файла %s (SHA-256: %s).'
+MSG_EN[M_0278]='Completed pre-modify backup of %s (SHA-256: %s).'
+MSG_RU[M_0279]='Первоначальный backup проверен и запечатан (%s).'
+MSG_EN[M_0279]='Initial backup verified and sealed (%s).'
+MSG_RU[M_0280]='Проверка целостности backup не пройдена для %s (ожидался SHA-256: %s, получен: %s).'
+MSG_EN[M_0280]='Backup integrity check failed for %s (expected SHA-256: %s, got: %s).'
+MSG_RU[M_0281]='Проверка целостности backup в %s успешно пройдена (проверено записей: %s).'
+MSG_EN[M_0281]='Backup integrity check in %s passed successfully (verified entries: %s).'
+MSG_RU[M_0282]='Инициализирован installation manifest: %s'
+MSG_EN[M_0282]='Initialized installation manifest: %s'
+MSG_RU[M_0283]='Installation manifest обновлён (%s).'
+MSG_EN[M_0283]='Installation manifest updated (%s).'
+MSG_RU[M_0284]='Не удалось запечатать первоначальный backup: проверка целостности завершилась ошибкой.'
+MSG_EN[M_0284]='Failed to seal initial backup: integrity verification failed.'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -736,6 +756,10 @@ read_tr() {
 readonly LOCK_FILE="/run/lock/unified-smartdns-installer.lock"
 readonly STATE_DIR="/var/lib/oxidns-installer"
 readonly BACKUP_ROOT="${STATE_DIR}/backups"
+readonly INITIAL_BACKUP_DIR="${STATE_DIR}/initial-backup"
+readonly INITIAL_BACKUP_MANIFEST="${INITIAL_BACKUP_DIR}/backup-manifest.tsv"
+readonly INITIAL_BACKUP_SEAL="${INITIAL_BACKUP_DIR}/.sealed"
+readonly INSTALL_MANIFEST_FILE="${STATE_DIR}/install-manifest.tsv"
 readonly SETTINGS_FILE="${STATE_DIR}/settings"
 readonly VERSIONS_FILE="${STATE_DIR}/versions.env"
 readonly SECRETS_FILE="${STATE_DIR}/secrets.env"
@@ -1222,6 +1246,445 @@ run_interactive_wizard() {
     fi
 }
 
+# ------------------------------ Initial Backup & Manifest ---------------------
+init_install_manifest() {
+    install -d -m 0700 -o root -g root "${STATE_DIR}"
+    if [[ ! -f "${INSTALL_MANIFEST_FILE}" ]]; then
+        cat > "${INSTALL_MANIFEST_FILE}" <<EOF
+# FORMAT=v1
+# INSTALLER_VERSION=${INSTALLER_VERSION}
+# INSTALL_DATE=$(date -Is)
+# TYPE	COMPONENT	OBJECT	META	SHA256
+EOF
+        chmod 0600 "${INSTALL_MANIFEST_FILE}"
+        log_info_tr "installation.log" "M_0282" "${INSTALL_MANIFEST_FILE}"
+    fi
+}
+
+manifest_record() {
+    local rec_type="$1"
+    local rec_comp="$2"
+    local rec_obj="$3"
+    local rec_meta="${4:--}"
+    local rec_sha="${5:-}"
+
+    [[ -f "${INSTALL_MANIFEST_FILE}" ]] || init_install_manifest
+
+    if [[ -z "${rec_sha}" ]]; then
+        if [[ -L "${rec_obj}" ]]; then
+            rec_sha="symlink:$(readlink "${rec_obj}" 2>/dev/null || echo unknown)"
+        elif [[ -f "${rec_obj}" ]]; then
+            rec_sha="$(sha256sum "${rec_obj}" 2>/dev/null | awk '{print $1}' || echo "-")"
+        else
+            rec_sha="-"
+        fi
+    fi
+
+    local tmp_mf="${INSTALL_MANIFEST_FILE}.tmp"
+    awk -F'\t' -v t="${rec_type}" -v c="${rec_comp}" -v o="${rec_obj}" '
+        /^#/ { print; next }
+        ($1 == t && $2 == c && $3 == o) { next }
+        { print }
+    ' "${INSTALL_MANIFEST_FILE}" > "${tmp_mf}"
+    printf '%s\t%s\t%s\t%s\t%s\n' "${rec_type}" "${rec_comp}" "${rec_obj}" "${rec_meta}" "${rec_sha}" >> "${tmp_mf}"
+    chmod 0600 "${tmp_mf}"
+    mv -f "${tmp_mf}" "${INSTALL_MANIFEST_FILE}"
+}
+
+init_initial_backup_store() {
+    install -d -m 0700 -o root -g root "${STATE_DIR}" "${BACKUP_ROOT}"
+    if [[ -f "${INITIAL_BACKUP_SEAL}" ]]; then
+        log_info_tr "rollback.log" "M_0276" "${INITIAL_BACKUP_DIR}"
+        return 0
+    fi
+
+    log_info_tr "rollback.log" "M_0275" "${INITIAL_BACKUP_DIR}"
+    install -d -m 0700 -o root -g root "${INITIAL_BACKUP_DIR}" "${INITIAL_BACKUP_DIR}/fs"
+
+    if [[ ! -f "${INITIAL_BACKUP_MANIFEST}" ]]; then
+        cat > "${INITIAL_BACKUP_MANIFEST}" <<EOF
+# FORMAT=v1
+# INSTALLER_VERSION=${INSTALLER_VERSION}
+# CREATED_AT=$(date -Is)
+# TIMESTAMP	PATH	TYPE	MODE	OWNER	GROUP	LINK_TARGET	SHA256	BACKUP_REL
+EOF
+        chmod 0600 "${INITIAL_BACKUP_MANIFEST}"
+    fi
+
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/meta.env" ]]; then
+        cat > "${INITIAL_BACKUP_DIR}/meta.env" <<EOF
+INITIAL_BACKUP_DATE="$(date -Is)"
+INSTALLER_VERSION="${INSTALLER_VERSION}"
+OS_ID="${OS_ID:-unknown}"
+OS_VERSION_ID="${OS_VERSION_ID:-unknown}"
+KERNEL_VER="${KERNEL_VER:-unknown}"
+EOF
+        chmod 0600 "${INITIAL_BACKUP_DIR}/meta.env"
+    fi
+
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-packages.list" ]]; then
+        dpkg-query -W -f='${Package}\n' 2>/dev/null | sort -u > "${INITIAL_BACKUP_DIR}/preinstall-packages.list" || true
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-packages.list"
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-users.list" ]]; then
+        getent passwd | cut -d: -f1 | sort -u > "${INITIAL_BACKUP_DIR}/preinstall-users.list"
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-users.list"
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-groups.list" ]]; then
+        getent group | cut -d: -f1 | sort -u > "${INITIAL_BACKUP_DIR}/preinstall-groups.list"
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-groups.list"
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-ufw-state.txt" ]]; then
+        if command -v ufw >/dev/null 2>&1; then
+            local ufw_stat
+            ufw_stat="$(ufw status 2>/dev/null | head -n 1 || echo "Status: inactive")"
+            printf 'UFW_INSTALLED=yes\n%s\n' "${ufw_stat}" > "${INITIAL_BACKUP_DIR}/preinstall-ufw-state.txt"
+        else
+            printf 'UFW_INSTALLED=no\nStatus: not-installed\n' > "${INITIAL_BACKUP_DIR}/preinstall-ufw-state.txt"
+        fi
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-ufw-state.txt"
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-iptables.v4" ]] && command -v iptables-save >/dev/null 2>&1; then
+        iptables-save > "${INITIAL_BACKUP_DIR}/preinstall-iptables.v4" 2>/dev/null || true
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-iptables.v4"
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-iptables.v6" ]] && command -v ip6tables-save >/dev/null 2>&1; then
+        ip6tables-save > "${INITIAL_BACKUP_DIR}/preinstall-iptables.v6" 2>/dev/null || true
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-iptables.v6"
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_DIR}/preinstall-ipset.rules" ]] && command -v ipset >/dev/null 2>&1; then
+        ipset save > "${INITIAL_BACKUP_DIR}/preinstall-ipset.rules" 2>/dev/null || true
+        chmod 0600 "${INITIAL_BACKUP_DIR}/preinstall-ipset.rules"
+    fi
+}
+
+backup_single_entry_before_modify() {
+    local orig_path="$1"
+    local component="${2:-system}"
+
+    if [[ -f "${INITIAL_BACKUP_SEAL}" ]]; then
+        return 0
+    fi
+    if [[ ! -e "${orig_path}" && ! -L "${orig_path}" ]]; then
+        return 0
+    fi
+    [[ -f "${INITIAL_BACKUP_MANIFEST}" ]] || init_initial_backup_store
+
+    # Не перезаписывать уже сохранённый оригинал
+    if awk -F'\t' -v p="${orig_path}" '!/^#/ && $2 == p { found=1 } END { exit !found }' "${INITIAL_BACKUP_MANIFEST}"; then
+        return 0
+    fi
+
+    local rel_path="${orig_path#/}"
+    local dest_path="${INITIAL_BACKUP_DIR}/fs/${rel_path}"
+    local dest_parent
+    dest_parent="$(dirname "${dest_path}")"
+    mkdir -p "${dest_parent}"
+
+    local ftype="file"
+    local link_target="-"
+    local orig_sha="-"
+    local mode_val owner_val group_val
+    mode_val="$(stat -c '%a' "${orig_path}" 2>/dev/null || echo "0644")"
+    owner_val="$(stat -c '%U' "${orig_path}" 2>/dev/null || echo "root")"
+    group_val="$(stat -c '%G' "${orig_path}" 2>/dev/null || echo "root")"
+
+    if [[ -L "${orig_path}" ]]; then
+        ftype="symlink"
+        link_target="$(readlink "${orig_path}")"
+        orig_sha="symlink"
+        if ! cp -a --no-dereference "${orig_path}" "${dest_path}"; then
+            log_error_tr "rollback.log" "M_0277" "${orig_path}"
+            return 1
+        fi
+        local bak_target
+        bak_target="$(readlink "${dest_path}" 2>/dev/null || true)"
+        if [[ "${bak_target}" != "${link_target}" ]]; then
+            rm -f "${dest_path}"
+            log_error_tr "rollback.log" "M_0277" "${orig_path}"
+            return 1
+        fi
+    elif [[ -f "${orig_path}" ]]; then
+        ftype="file"
+        orig_sha="$(sha256sum "${orig_path}" | awk '{print $1}')"
+        if ! cp -a "${orig_path}" "${dest_path}"; then
+            log_error_tr "rollback.log" "M_0277" "${orig_path}"
+            return 1
+        fi
+        local bak_sha
+        bak_sha="$(sha256sum "${dest_path}" 2>/dev/null | awk '{print $1}' || true)"
+        if [[ -z "${bak_sha}" || "${bak_sha}" != "${orig_sha}" ]]; then
+            rm -f "${dest_path}"
+            log_error_tr "rollback.log" "M_0277" "${orig_path}"
+            return 1
+        fi
+        if command -v getfacl >/dev/null 2>&1; then
+            getfacl -p "${orig_path}" > "${dest_path}.acl" 2>/dev/null || rm -f "${dest_path}.acl"
+        fi
+    else
+        return 0
+    fi
+
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$(date -Is)" "${orig_path}" "${ftype}" "${mode_val}" "${owner_val}" "${group_val}" "${link_target}" "${orig_sha}" "fs/${rel_path}" \
+        >> "${INITIAL_BACKUP_MANIFEST}"
+
+    manifest_record "MODIFIED_FILE" "${component}" "${orig_path}" "initial-backup:fs/${rel_path}" "${orig_sha}"
+    log_info_tr "rollback.log" "M_0278" "${orig_path}" "${orig_sha}"
+    return 0
+}
+
+backup_file_before_modify() {
+    local target_path="$1"
+    local component="${2:-system}"
+
+    if [[ -f "${INITIAL_BACKUP_SEAL}" ]]; then
+        return 0
+    fi
+    if [[ ! -e "${target_path}" && ! -L "${target_path}" ]]; then
+        return 0
+    fi
+
+    if [[ -d "${target_path}" && ! -L "${target_path}" ]]; then
+        local entry
+        while IFS= read -r -d '' entry; do
+            backup_single_entry_before_modify "${entry}" "${component}" || return 1
+        done < <(find "${target_path}" \( -type f -o -type l \) -print0 2>/dev/null)
+        return 0
+    fi
+
+    backup_single_entry_before_modify "${target_path}" "${component}"
+}
+
+verify_backup_integrity() {
+    local bdir="${1:-${INITIAL_BACKUP_DIR}}"
+    local bmanifest="${bdir}/backup-manifest.tsv"
+    if [[ ! -f "${bmanifest}" ]]; then
+        return 1
+    fi
+
+    local checked=0
+    local errors=0
+    local ts orig_path ftype mode_val owner_val group_val link_target orig_sha rel_bak
+    while IFS=$'\t' read -r ts orig_path ftype mode_val owner_val group_val link_target orig_sha rel_bak; do
+        [[ -z "${ts}" || "${ts}" == \#* ]] && continue
+        local full_bak="${bdir}/${rel_bak}"
+        if [[ "${ftype}" == "file" ]]; then
+            if [[ ! -f "${full_bak}" ]]; then
+                log_error_tr "rollback.log" "M_0280" "${orig_path}" "${orig_sha}" "MISSING"
+                errors=$((errors + 1))
+                continue
+            fi
+            local cur_sha
+            cur_sha="$(sha256sum "${full_bak}" | awk '{print $1}')"
+            if [[ "${cur_sha}" != "${orig_sha}" ]]; then
+                log_error_tr "rollback.log" "M_0280" "${orig_path}" "${orig_sha}" "${cur_sha}"
+                errors=$((errors + 1))
+                continue
+            fi
+            checked=$((checked + 1))
+        elif [[ "${ftype}" == "symlink" ]]; then
+            if [[ ! -L "${full_bak}" || "$(readlink "${full_bak}" 2>/dev/null || true)" != "${link_target}" ]]; then
+                log_error_tr "rollback.log" "M_0280" "${orig_path}" "${link_target}" "SYMLINK_MISMATCH"
+                errors=$((errors + 1))
+                continue
+            fi
+            checked=$((checked + 1))
+        fi
+    done < "${bmanifest}"
+
+    if [[ "${errors}" -ne 0 ]]; then
+        return 1
+    fi
+    log_info_tr "rollback.log" "M_0281" "${bdir}" "${checked}"
+    return 0
+}
+
+seal_initial_backup() {
+    if [[ -f "${INITIAL_BACKUP_SEAL}" ]]; then
+        return 0
+    fi
+    if [[ ! -f "${INITIAL_BACKUP_MANIFEST}" ]]; then
+        return 0
+    fi
+    if ! verify_backup_integrity "${INITIAL_BACKUP_DIR}"; then
+        log_error_tr "rollback.log" "M_0284"
+        return 1
+    fi
+    local mf_sha
+    mf_sha="$(sha256sum "${INITIAL_BACKUP_MANIFEST}" | awk '{print $1}')"
+    cat > "${INITIAL_BACKUP_SEAL}" <<EOF
+SEALED_AT=$(date -Is)
+INSTALLER_VERSION=${INSTALLER_VERSION}
+MANIFEST_SHA256=${mf_sha}
+EOF
+    chmod 0400 "${INITIAL_BACKUP_SEAL}"
+    log_info_tr "rollback.log" "M_0279" "${INITIAL_BACKUP_DIR}"
+}
+
+record_postinstall_packages_and_accounts() {
+    [[ -f "${INSTALL_MANIFEST_FILE}" ]] || init_install_manifest
+
+    if [[ -f "${INITIAL_BACKUP_DIR}/preinstall-packages.list" ]]; then
+        local pkg
+        while IFS= read -r pkg; do
+            [[ -n "${pkg}" ]] || continue
+            local pkg_comp="packages"
+            [[ "${pkg}" == "nginx" ]] && pkg_comp="nginx"
+            manifest_record "PACKAGE" "${pkg_comp}" "${pkg}" "apt-installed" "-"
+        done < <(comm -13 "${INITIAL_BACKUP_DIR}/preinstall-packages.list" <(dpkg-query -W -f='${Package}\n' 2>/dev/null | sort -u) 2>/dev/null || true)
+    fi
+
+    if [[ -f "${INITIAL_BACKUP_DIR}/preinstall-users.list" ]]; then
+        local usr
+        while IFS= read -r usr; do
+            case "${usr}" in
+                xray)    manifest_record "USER" "xray" "${usr}" "system-user" "-" ;;
+                oxidns)  manifest_record "USER" "oxidns" "${usr}" "system-user" "-" ;;
+                adguard) manifest_record "USER" "adguardhome" "${usr}" "system-user" "-" ;;
+            esac
+        done < <(comm -13 "${INITIAL_BACKUP_DIR}/preinstall-users.list" <(getent passwd | cut -d: -f1 | sort -u) 2>/dev/null || true)
+    fi
+
+    if [[ -f "${INITIAL_BACKUP_DIR}/preinstall-groups.list" ]]; then
+        local grp
+        while IFS= read -r grp; do
+            case "${grp}" in
+                xray)         manifest_record "GROUP" "xray" "${grp}" "system-group" "-" ;;
+                oxidns)       manifest_record "GROUP" "oxidns" "${grp}" "system-group" "-" ;;
+                adguard)      manifest_record "GROUP" "adguardhome" "${grp}" "system-group" "-" ;;
+                ssl-smartdns) manifest_record "GROUP" "certificates" "${grp}" "system-group" "-" ;;
+            esac
+        done < <(comm -13 "${INITIAL_BACKUP_DIR}/preinstall-groups.list" <(getent group | cut -d: -f1 | sort -u) 2>/dev/null || true)
+    fi
+}
+
+record_full_install_manifest() {
+    init_install_manifest
+
+    # Компоненты
+    [[ -f /etc/nginx/nginx.conf ]] && manifest_record "COMPONENT" "nginx" "nginx" "installed" "-"
+    [[ -x /usr/local/bin/xray ]] && manifest_record "COMPONENT" "xray" "xray" "installed" "-"
+    [[ -x /usr/local/bin/oxidns || -f /etc/oxidns/config.yaml ]] && manifest_record "COMPONENT" "oxidns" "oxidns" "installed" "-"
+    [[ -x /usr/local/bin/AdGuardHome || -f /etc/adguardhome/AdGuardHome.yaml ]] && manifest_record "COMPONENT" "adguardhome" "adguardhome" "installed" "-"
+    [[ -x /usr/local/bin/doh-ipset-watcher.sh || -x /usr/local/bin/dot-ipset-watcher.sh ]] && manifest_record "COMPONENT" "ipset-watchers" "ipset-watchers" "installed" "-"
+    [[ -x /usr/local/bin/smartdns-firewall-apply.sh ]] && manifest_record "COMPONENT" "firewall" "firewall" "installed" "-"
+    manifest_record "COMPONENT" "systemd-timers" "systemd-timers" "installed" "-"
+    [[ -f "${CERT_DIR}/fullchain.pem" || -x /root/.acme.sh/acme.sh ]] && manifest_record "COMPONENT" "certificates" "certificates" "installed" "-"
+    [[ -d "${DNS_ASSETS_DIR}" ]] && manifest_record "COMPONENT" "domain-rules" "domain-rules" "installed" "-"
+    [[ -f "${WEB_ROOT}/index.html" ]] && manifest_record "COMPONENT" "cover-site" "cover-site" "installed" "-"
+    manifest_record "COMPONENT" "installer-core" "installer-core" "installed" "-"
+
+    # Nginx
+    for f in /etc/nginx/nginx.conf /etc/systemd/system/nginx.service.d/hardening.conf \
+             /etc/apt/keyrings/nginx-archive-keyring.gpg /etc/apt/sources.list.d/nginx-official.list \
+             /etc/apt/preferences.d/99nginx-official /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "nginx" "${f}" "managed"
+    done
+
+    # Xray
+    for f in /usr/local/bin/xray /usr/local/bin/xray-safe-reload.sh "${XRAY_CONF_DIR}/00-base.json"; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "xray" "${f}" "managed"
+    done
+    [[ -L /etc/xray/conf.d/10-smartdns-routing.json ]] && manifest_record "SYMLINK" "xray" "/etc/xray/conf.d/10-smartdns-routing.json" "target:${XRAY_ROUTING_JSON}"
+    for u in /etc/systemd/system/xray.service /etc/systemd/system/xray-reload.service; do
+        [[ -f "${u}" ]] && manifest_record "UNIT" "xray" "${u}" "systemd-service"
+    done
+    [[ -f /etc/systemd/system/xray-reload.path ]] && manifest_record "PATH_UNIT" "xray" "/etc/systemd/system/xray-reload.path" "systemd-path"
+    for d in /etc/xray "${XRAY_CONF_DIR}" "${XRAY_RULES_DIR}" /var/log/xray; do
+        [[ -d "${d}" ]] && manifest_record "DIR" "xray" "${d}" "managed" "-"
+    done
+
+    # OxiDNS
+    for f in /usr/local/bin/oxidns /etc/oxidns/config.yaml; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "oxidns" "${f}" "managed"
+    done
+    [[ -f /etc/systemd/system/oxidns.service ]] && manifest_record "UNIT" "oxidns" "/etc/systemd/system/oxidns.service" "systemd-service"
+    for d in /etc/oxidns /var/lib/oxidns; do
+        [[ -d "${d}" ]] && manifest_record "DIR" "oxidns" "${d}" "managed" "-"
+    done
+
+    # AdGuardHome
+    for f in /usr/local/bin/AdGuardHome /etc/adguardhome/AdGuardHome.yaml; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "adguardhome" "${f}" "managed"
+    done
+    [[ -f /etc/systemd/system/adguardhome.service ]] && manifest_record "UNIT" "adguardhome" "/etc/systemd/system/adguardhome.service" "systemd-service"
+    for d in /etc/adguardhome /var/lib/adguardhome; do
+        [[ -d "${d}" ]] && manifest_record "DIR" "adguardhome" "${d}" "managed" "-"
+    done
+
+    # Watchers
+    for f in /usr/local/bin/doh-ipset-watcher.sh /usr/local/bin/dot-ipset-watcher.sh; do
+        [[ -e "${f}" ]] && manifest_record "SCRIPT" "ipset-watchers" "${f}" "managed"
+    done
+    for u in /etc/systemd/system/doh-ipset-watcher.service /etc/systemd/system/dot-ipset-watcher.service; do
+        [[ -f "${u}" ]] && manifest_record "UNIT" "ipset-watchers" "${u}" "systemd-service"
+    done
+
+    # Firewall & Sysctl
+    for f in /usr/local/bin/smartdns-firewall-apply.sh /etc/sysctl.d/90-smartdns-keepalive.conf; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "firewall" "${f}" "managed"
+    done
+    [[ -f /etc/systemd/system/smartdns-firewall.service ]] && manifest_record "UNIT" "firewall" "/etc/systemd/system/smartdns-firewall.service" "systemd-service"
+    for ch in "ipv4:nat:SMARTDNS_PREROUTING" "ipv4:filter:SMARTDNS_INPUT" "ipv4:filter:SMARTDNS_OUTPUT" \
+              "ipv6:nat:SMARTDNS6_PREROUTING" "ipv6:filter:SMARTDNS6_INPUT" "ipv6:filter:SMARTDNS6_OUTPUT"; do
+        manifest_record "FIREWALL_CHAIN" "firewall" "${ch}" "iptables-chain" "-"
+    done
+    for iset in smartdns_clients smartdns_clients6 dot_clients dot_clients6; do
+        manifest_record "IPSET" "firewall" "${iset}" "ipset-table" "-"
+    done
+    for u_port in "80/tcp" "443/tcp" "853/tcp"; do
+        manifest_record "UFW_RULE" "firewall" "${u_port}" "allow" "-"
+    done
+
+    # Domain Rules & Timers
+    for f in /usr/local/bin/update-geosite.sh /usr/local/bin/update-geohide-domains.sh \
+             "${XRAY_ROUTING_JSON}" "${ROUTING_VARS_FILE}" "${GEOHIDE_LIST_FILE}" \
+             "${GEOHIDE_HOSTS_FILE}" "${AGH_RULES_FILE}" "${DNS_ASSETS_DIR}/geosite.dat"; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "domain-rules" "${f}" "managed"
+    done
+    for f in "${CUSTOM_ALLOW_FILE}" "${CUSTOM_DENY_FILE}"; do
+        [[ -e "${f}" ]] && manifest_record "USER_DATA" "domain-rules" "${f}" "custom-rules"
+    done
+    [[ -d "${DNS_ASSETS_DIR}" ]] && manifest_record "DIR" "domain-rules" "${DNS_ASSETS_DIR}" "managed" "-"
+    for u in /etc/systemd/system/geosite-update.service /etc/systemd/system/geohide-update.service; do
+        [[ -f "${u}" ]] && manifest_record "UNIT" "systemd-timers" "${u}" "systemd-service"
+    done
+    for t in /etc/systemd/system/geosite-update.timer /etc/systemd/system/geohide-update.timer; do
+        [[ -f "${t}" ]] && manifest_record "TIMER" "systemd-timers" "${t}" "systemd-timer"
+    done
+
+    # Certificates
+    for f in /usr/local/bin/verify-tls-keys.sh /usr/local/bin/smartdns-cert-deploy.sh /usr/local/bin/smartdns-cert-renew.sh; do
+        [[ -e "${f}" ]] && manifest_record "SCRIPT" "certificates" "${f}" "managed"
+    done
+    for f in "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem"; do
+        [[ -e "${f}" ]] && manifest_record "CERT" "certificates" "${f}" "tls-material"
+    done
+    [[ -f /etc/systemd/system/smartdns-cert-renew.service ]] && manifest_record "UNIT" "certificates" "/etc/systemd/system/smartdns-cert-renew.service" "systemd-service"
+    [[ -f /etc/systemd/system/smartdns-cert-renew.timer ]] && manifest_record "TIMER" "certificates" "/etc/systemd/system/smartdns-cert-renew.timer" "systemd-timer"
+    [[ -d "${CERT_DIR}" ]] && manifest_record "DIR" "certificates" "${CERT_DIR}" "managed" "-"
+
+    # Cover Site
+    for f in "${WEB_ROOT}/index.html" "${WEB_ROOT}/404.html" "${WEB_ROOT}/favicon.svg" \
+             "${WEB_ROOT}/robots.txt" "${WEB_ROOT}/sitemap.xml" \
+             "${WEB_ROOT}/assets/style.css" "${WEB_ROOT}/assets/app.js"; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "cover-site" "${f}" "managed"
+    done
+    [[ -d "${WEB_ROOT}" ]] && manifest_record "DIR" "cover-site" "${WEB_ROOT}" "managed" "-"
+
+    # Installer Core State
+    for f in "${SETTINGS_FILE}" "${VERSIONS_FILE}" "${SECRETS_FILE}" "${IPSET_SAVE_FILE}" \
+             "${STATE_DIR}/geohide-stats.env" "${STATE_DIR}/cover-site.sha256" \
+             "${STATE_DIR}/10-smartdns-routing.json.lastgood" "${STATE_DIR}/latest_backup"; do
+        [[ -e "${f}" ]] && manifest_record "FILE" "installer-core" "${f}" "state"
+    done
+    manifest_record "DIR" "installer-core" "${STATE_DIR}" "state-dir" "-"
+    manifest_record "DIR" "installer-core" "${LOG_DIR}" "log-dir" "-"
+
+    log_info_tr "installation.log" "M_0283" "${INSTALL_MANIFEST_FILE}"
+}
+
 # ------------------------------ Backup & Rollback -----------------------------
 create_system_backup() {
     CURRENT_BACKUP_DIR="${BACKUP_ROOT}/backup-${TIMESTAMP}"
@@ -1230,7 +1693,7 @@ create_system_backup() {
     install -d -m 0755 "${CURRENT_BACKUP_DIR}/fs"
     log_info_tr "rollback.log" "M_0083" "${CURRENT_BACKUP_DIR}"
 
-    for path in /etc/nginx /etc/xray /etc/oxidns /etc/adguardhome /etc/ufw "${CERT_DIR}" "${STATE_DIR}/settings" "${DNS_ASSETS_DIR}" "${IPSET_SAVE_FILE}"; do
+    for path in /etc/nginx /etc/xray /etc/oxidns /etc/adguardhome /etc/ufw /etc/sysctl.d/90-smartdns-keepalive.conf /etc/systemd/system/nginx.service.d "${CERT_DIR}" "${STATE_DIR}/settings" "${DNS_ASSETS_DIR}" "${IPSET_SAVE_FILE}"; do
         if [[ -e "${path}" ]]; then
             local rel_path="${path#/}"
             local parent_dir
@@ -1244,7 +1707,7 @@ create_system_backup() {
     mkdir -p "${CURRENT_BACKUP_DIR}/systemd"
     for unit in xray.service xray-reload.path xray-reload.service oxidns.service adguardhome.service \
                 doh-ipset-watcher.service dot-ipset-watcher.service geohide-update.service geohide-update.timer \
-                geosite-update.service geosite-update.timer smartdns-firewall.service; do
+                geosite-update.service geosite-update.timer smartdns-firewall.service smartdns-cert-renew.service smartdns-cert-renew.timer; do
         if [[ -f "/etc/systemd/system/${unit}" ]]; then
             cp -a "/etc/systemd/system/${unit}" "${CURRENT_BACKUP_DIR}/systemd/"
         fi
@@ -1259,6 +1722,11 @@ create_system_backup() {
     if command -v ipset >/dev/null 2>&1; then
         ipset save > "${CURRENT_BACKUP_DIR}/ipset.rules" 2>/dev/null || true
     fi
+
+    (
+        cd "${CURRENT_BACKUP_DIR}" && find fs systemd -type f -print0 2>/dev/null | xargs -0 -r sha256sum > "${CURRENT_BACKUP_DIR}/checksums.sha256"
+    ) || true
+    chmod 0600 "${CURRENT_BACKUP_DIR}/checksums.sha256" 2>/dev/null || true
 
     printf '%s\n' "${CURRENT_BACKUP_DIR}" > "${STATE_DIR}/latest_backup"
     log_info_tr "rollback.log" "M_0084" "${CURRENT_BACKUP_DIR}"
@@ -1339,6 +1807,11 @@ install_system_packages() {
     find /usr/share/ca-certificates -type f -exec chmod 0644 {} + 2>/dev/null || true
     update-ca-certificates --fresh >/dev/null 2>&1 || true
     chmod 0644 /etc/ssl/certs/ca-certificates.crt /etc/resolv.conf 2>/dev/null || true
+
+    backup_file_before_modify "/etc/apt/keyrings/nginx-archive-keyring.gpg" "nginx" || return 1
+    backup_file_before_modify "/etc/apt/sources.list.d/nginx-official.list" "nginx" || return 1
+    backup_file_before_modify "/etc/apt/preferences.d/99nginx-official" "nginx" || return 1
+    backup_file_before_modify "/etc/nginx/nginx.conf" "nginx" || return 1
 
     install -d -m 0755 /etc/apt/keyrings
     if [[ ! -f /etc/apt/keyrings/nginx-archive-keyring.gpg ]]; then
@@ -1832,6 +2305,8 @@ EOF
 }
 
 issue_wildcard_certificate() {
+    backup_file_before_modify "${CERT_DIR}/fullchain.pem" "certificates" || return 1
+    backup_file_before_modify "${CERT_DIR}/privkey.pem" "certificates" || return 1
     install_tls_verification_helper
     log_info_tr "certificate.log" "M_0117" "${ROOT_DOMAIN}"
 
@@ -2328,6 +2803,7 @@ plugins:
         - path: "/dns-query"
           exec: "main"
 EOF
+        backup_file_before_modify "/etc/oxidns/config.yaml" "oxidns" || return 1
         chown oxidns:oxidns /etc/oxidns/config.yaml.tmp
         chmod 0640 /etc/oxidns/config.yaml.tmp
         mv -f /etc/oxidns/config.yaml.tmp /etc/oxidns/config.yaml
@@ -2412,6 +2888,7 @@ filters:
     id: 2
 schema_version: 29
 EOF
+        backup_file_before_modify "/etc/adguardhome/AdGuardHome.yaml" "adguardhome" || return 1
         chown adguard:adguard /etc/adguardhome/AdGuardHome.yaml.tmp
         chmod 0640 /etc/adguardhome/AdGuardHome.yaml.tmp
         mv -f /etc/adguardhome/AdGuardHome.yaml.tmp /etc/adguardhome/AdGuardHome.yaml
@@ -2524,6 +3001,7 @@ configure_xray_base() {
   ]
 }
 EOF
+    backup_file_before_modify "${XRAY_CONF_DIR}/00-base.json" "xray" || return 1
     chown root:xray "${XRAY_CONF_DIR}/00-base.json.tmp"
     chmod 0640 "${XRAY_CONF_DIR}/00-base.json.tmp"
     mv -f "${XRAY_CONF_DIR}/00-base.json.tmp" "${XRAY_CONF_DIR}/00-base.json"
@@ -3708,6 +4186,7 @@ http {
     }
 }
 EOF
+    backup_file_before_modify "/etc/nginx/nginx.conf" "nginx" || return 1
     mv -f /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
     nginx -t
 }
@@ -3856,6 +4335,7 @@ EOF
 configure_firewall_and_sysctl() {
     log_info_tr "firewall.log" "M_0142"
 
+    backup_file_before_modify "/etc/sysctl.d/90-smartdns-keepalive.conf" "firewall" || return 1
     cat > /etc/sysctl.d/90-smartdns-keepalive.conf <<'EOF'
 net.ipv4.tcp_keepalive_time = 120
 net.ipv4.tcp_keepalive_intvl = 30
@@ -4033,6 +4513,7 @@ EOF
     ssh_port="$(ss -tlnp | awk '/sshd/ {split($4,a,":"); print a[length(a)]; exit}')"
     ssh_port="${ssh_port:-22}"
 
+    backup_file_before_modify "/etc/ufw" "firewall" || return 1
     ufw allow "${ssh_port}/tcp" comment 'SSH Access' >/dev/null
     ufw allow 80/tcp comment 'HTTP Redirect' >/dev/null
     ufw allow 443/tcp comment 'SmartDNS HTTPS / SNI Proxy' >/dev/null
@@ -4261,6 +4742,7 @@ Type=oneshot
 ExecStart=/usr/local/bin/xray-safe-reload.sh
 EOF
 
+    backup_file_before_modify "/etc/systemd/system/nginx.service.d/hardening.conf" "nginx" || return 1
     install -d -m 0755 /etc/systemd/system/nginx.service.d
     cat > /etc/systemd/system/nginx.service.d/hardening.conf <<'EOF'
 [Service]
@@ -4577,6 +5059,7 @@ run_switch_engine() {
     verify_dns_backend_isolated
     nginx -t && systemctl reload nginx
     run_test_suite
+    record_full_install_manifest
 
     TRANSACTION_ACTIVE=0
     log_info_tr "dns.log" "M_0172" "${target_engine}"
@@ -5381,6 +5864,7 @@ run_update() {
     systemctl restart "${DNS_ENGINE}" xray nginx doh-ipset-watcher dot-ipset-watcher
     verify_dns_backend_isolated
     run_test_suite
+    record_full_install_manifest
     TRANSACTION_ACTIVE=0
     log_info_tr "update.log" "M_0267"
 }
@@ -5411,8 +5895,10 @@ run_install() {
     init_logging
     log_info_tr "installation.log" "M_0270" "${INSTALLER_VERSION}"
 
-    setup_users_and_dirs
+    init_initial_backup_store
+    init_install_manifest
     create_system_backup
+    setup_users_and_dirs
     TRANSACTION_ACTIVE=1
 
     save_persistent_settings
@@ -5445,6 +5931,9 @@ run_install() {
 
     verify_dns_backend_isolated
     run_test_suite
+    record_postinstall_packages_and_accounts
+    record_full_install_manifest
+    seal_initial_backup
     TRANSACTION_ACTIVE=0
     generate_installation_report
 }
