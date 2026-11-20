@@ -1,4 +1,4 @@
-# Unified SmartDNS + Transparent SNI Proxy Installer (`v3.0-stealth`)
+# Unified SmartDNS + Transparent SNI Proxy Installer
 
 [![Поддержать проект — CloudTips / СБП](https://img.shields.io/badge/Поддержать_проект-CloudTips_%2F_СБП-0066FF?style=for-the-badge)](https://pay.cloudtips.ru/p/9785e813)
 
@@ -18,10 +18,11 @@
 
 ## Что нового в v3.0-stealth
 
-- **Initial Backup и Installation Manifest:** автоматическое резервирование изменяемых системных файлов до внесения правок (`/var/lib/oxidns-installer/initial-backup/`, защита маркером `.sealed`, проверка `SHA-256`) и структурированный реестр установленных объектов (`install-manifest.tsv`).
-- **Интерактивный выборочный `--uninstall`:** удаление только выбранных компонентов с проверкой графа зависимостей, защитой пользовательских данных, просмотром `diff -u` / восстановлением изменённых файлов из `initial-backup` и безопасным удалением пакетов (`apt-get remove`).
-- **10 групп проксируемых доменов `GeoHideDNS` + импорт своих списков:** выбор нужных категорий при установке и управление ими на работающем сервере (`--domain-groups`), а также импорт локальных файлов или URL со списком доменов с анализом пересечений и дедупликацией.
-- **Автопродление TLS-сертификатов (`acme.sh` + `systemd.timer`):** ежедневная проверка `smartdns-cert-renew.timer` (03:30 MSK) и атомарный `smartdns-cert-deploy.sh` через постоянный staging-каталог без риска повреждения рабочего TLS в Nginx.
+- **Интерактивное стартовое меню (Launcher):** запуск без аргументов (`sudo ./smartdns-installer-v3.0-stealth.sh`) открывает меню со всеми режимами (`Initial Server Setup`, установка SmartDNS, статус, тесты, обновления, группы доменов, переключение DNS backend, DoT whitelist, синхронизация IP, смена домена, Cover Site, бэкап, откат и удаление) с однократным выбором языка.
+- **Initial Server Setup (`--initial-setup`):** предварительный интерактивный этап из 10 пунктов перед основной установкой — non-interactive обновление ОС, проверка/установка `sudo`, смена пароля `root`, создание/выбор административного пользователя в группе `sudo`, аудит SSH и 16-пунктовый чек-лист дополнительных мер безопасности (`fail2ban` с `backend=systemd`, `unattended-upgrades`, NTP, `swap`). Состояние сохраняется в `/var/lib/oxidns-installer/initial-setup.env` (`0600`) без хранения паролей, passphrase и приватных ключей.
+- **Безопасный SSH Hardening (`Backup → Validate → Apply/Rollback`):** единый механизм резервирования в `/var/lib/oxidns-installer/ssh-backup/` (`initial/.sealed` + `SHA-256`), записи в `/etc/ssh/sshd_config.d/00-smartdns-hardening.conf` (и drop-in `ssh.socket.d/override.conf` при socket activation), проверки `sshd -t` и `sshd -T -C` с автооткатом при ошибке. Включает генерацию ключей (`Ed25519` / `RSA 4096`) с инструкциями переноса для Windows, Linux и macOS, двухфазную смену SSH-порта, защиту зарезервированных портов стека и строгие pre-checks перед отключением `PasswordAuthentication` и `PermitRootLogin` (локальный аккаунт `root` не блокируется).
+- **Централизованный `Reboot Lock`:** строгий запрет перезагрузки (`/var/lib/oxidns-installer/reboot-lock.env`, `0600`, подавление `needrestart`, отслеживание `/var/run/reboot-required` и внешних триггеров) на всех этапах до успешной установки, запуска и прохождения DNS-проверок SmartDNS; после снятия блокировки перезагрузка предлагается только с явным подтверждением `YES`.
+- **Защита SSH-портов в Firewall и стабильность старта:** автоматическое разрешение всех активных SSH-портов в UFW до включения блокирующих правил, `TimeoutStartSec=60s` и ожидание готовности DNS backend перед запуском `xray.service`.
 
 ## Содержание
 
