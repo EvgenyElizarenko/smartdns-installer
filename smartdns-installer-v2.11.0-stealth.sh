@@ -572,6 +572,7 @@ MSG_RU[M_0273]='Использование: ${SCRIPT_NAME} [РЕЖИМ]
                                    Транзакционное переключение DNS backend с сохранением сертификатов и OxiDNS
   --sync-ip                        Автоматическое обновление IP сервера в локальных конфигах и Cloudflare DNS
   --change-domain [DOM]            Быстрая смена домена и перевыпуск сертификата без смены префикса DoT и путей
+  --domain-groups                  Управление группами проксируемых доменов и импорт пользовательского списка
   --update                         Безопасное обновление компонентов и списков (с сохранением Cover Site)
   --regenerate-cover               Осознанная перегенерация уникального Cover Site с резервным копированием
   --status                         Просмотр текущего состояния служб, DNS_ENGINE и ipset
@@ -601,6 +602,7 @@ Commands:
   --regenerate-cover               Explicitly regenerate a new unique Cover Site with backup
   --sync-ip                        Auto-detect new server IPv4/IPv6 and sync configs, firewall & Cloudflare
   --change-domain [NEW_DOMAIN]     Change primary domain (ROOT_DOMAIN) and reissue TLS certificate
+  --domain-groups                  Manage proxied domain groups and import custom domain lists
   --update                         Safely update Xray/DNS binaries and domain lists (preserves Cover Site)
   --backup                         Create an on-demand full backup of configs, TLS, and firewall rules
   --rollback [PATH]                Roll back system state to the latest (or specified) backup
@@ -730,6 +732,78 @@ MSG_RU[M_0331]='Удалить также локальный клиент /root/
 MSG_EN[M_0331]='Also remove local /root/.acme.sh client (if no other domains exist)? [y/N]: '
 MSG_RU[M_0332]='Различия недоступны: до установки файла %s не существовало.\n'
 MSG_EN[M_0332]='Diff unavailable: %s did not exist prior to installation.\n'
+MSG_RU[M_0333]='\nЗагрузка и индексация групп доменов GeoHideDNS...\n'
+MSG_EN[M_0333]='\nFetching and indexing GeoHideDNS domain groups...\n'
+MSG_RU[M_0334]='ПРЕДУПРЕЖДЕНИЕ: Не удалось загрузить свежий GeoHideDNS для подсчёта счётчиков; используются локальные данные или 0.\n'
+MSG_EN[M_0334]='WARNING: Failed to fetch fresh GeoHideDNS for domain counts; using local cache or 0.\n'
+MSG_RU[M_0335]='\n==================== ГРУППЫ ПРОКСИРУЕМЫХ ДОМЕНОВ ====================\n'
+MSG_EN[M_0335]='\n==================== PROXY DOMAIN GROUPS ====================\n'
+MSG_RU[M_0336]='Выберите необходимые группы ([x] — включена, [ ] — отключена):\n\n'
+MSG_EN[M_0336]='Select required groups ([x] — enabled, [ ] — disabled):\n\n'
+MSG_RU[M_0337]='\nВыберите действие:\n  [ A ] Все группы\n  [ N ] Ни одной группы\n  [ C ] Настроить выборочно\n  [ Q ] Отмена\n\nВаш выбор: '
+MSG_EN[M_0337]='\nSelect an action:\n  [ A ] All groups\n  [ N ] None (no upstream groups)\n  [ C ] Custom selection\n  [ Q ] Cancel\n\nYour choice: '
+MSG_RU[M_0338]='Введите номера групп через пробел для переключения, [D] — подтвердить, [A] — все, [N] — ни одной, [Q] — отмена: '
+MSG_EN[M_0338]='Enter group numbers separated by spaces to toggle, [D] confirm, [A] all, [N] none, [Q] cancel: '
+MSG_RU[M_0339]='Выбор групп доменов: %s\n'
+MSG_EN[M_0339]='Selected domain groups: %s\n'
+MSG_RU[M_0340]='Выбор групп отменён пользователем.\n'
+MSG_EN[M_0340]='Domain group selection cancelled by user.\n'
+MSG_RU[M_0341]='\nЖелаете добавить свой файл со списком доменов для проксирования? [y/N]: '
+MSG_EN[M_0341]='\nWould you like to add your own file with a list of domains to proxy? [y/N]: '
+MSG_RU[M_0342]='Введите локальный путь к файлу или ссылку (http:// / https://) [Enter — отмена]: '
+MSG_EN[M_0342]='Enter local file path or URL (http:// / https://) [Enter to cancel]: '
+MSG_RU[M_0343]='Загрузка пользовательского списка доменов по URL: %s...\n'
+MSG_EN[M_0343]='Downloading custom domain list from URL: %s...\n'
+MSG_RU[M_0344]='ОШИБКА: Не удалось скачать файл по URL %s (проверьте доступность и размер <= 10 МБ).\n'
+MSG_EN[M_0344]='ERROR: Failed to download file from URL %s (check availability and size <= 10 MB).\n'
+MSG_RU[M_0345]='ОШИБКА: Локальный файл не найден или недоступен для чтения: %s\n'
+MSG_EN[M_0345]='ERROR: Local file not found or not readable: %s\n'
+MSG_RU[M_0346]='\n---------- АНАЛИЗ ПОЛЬЗОВАТЕЛЬСКОГО СПИСКА ДОМЕНОВ ----------\n'
+MSG_EN[M_0346]='\n---------- CUSTOM DOMAIN LIST ANALYSIS ----------\n'
+MSG_RU[M_0347]='Источник                                          : %s\n'
+MSG_EN[M_0347]='Source                                            : %s\n'
+MSG_RU[M_0348]='Валидных уникальных доменов в файле               : %s\n'
+MSG_EN[M_0348]='Valid unique domains in file                      : %s\n'
+MSG_RU[M_0349]='Исключено внутренних дубликатов внутри файла      : %s\n'
+MSG_EN[M_0349]='Removed duplicate entries within file             : %s\n'
+MSG_RU[M_0350]='Отброшено невалидных строк                        : %s\n'
+MSG_EN[M_0350]='Discarded invalid lines                           : %s\n'
+MSG_RU[M_0351]='Исключено пересечений с выбранными группами/allow : %s\n'
+MSG_EN[M_0351]='Excluded overlaps with selected groups/custom     : %s\n'
+MSG_RU[M_0352]='Отклонено системными исключениями / custom-deny   : %s\n'
+MSG_EN[M_0352]='Excluded by system safety rules / custom-deny     : %s\n'
+MSG_RU[M_0353]='Новых уникальных доменов к добавлению             : %s\n'
+MSG_EN[M_0353]='New unique domains to be added                    : %s\n'
+MSG_RU[M_0354]='-------------------------------------------------------------\n'
+MSG_EN[M_0354]='-------------------------------------------------------------\n'
+MSG_RU[M_0355]='Новых уникальных доменов для добавления не найдено (все домены уже присутствуют или невалидны).\n'
+MSG_EN[M_0355]='No new unique domains to add (all domains already exist or were invalid).\n'
+MSG_RU[M_0356]='Добавить эти %s уникальных доменов в пользовательский список проксирования? [Y/n]: '
+MSG_EN[M_0356]='Add these %s unique domains to the custom proxy list? [Y/n]: '
+MSG_RU[M_0357]='Подготовлено к добавлению %s уникальных доменов (без дубликатов).\n'
+MSG_EN[M_0357]='Staged %s unique domains for addition (deduplicated).\n'
+MSG_RU[M_0358]='Добавить ещё один файл или URL со списком доменов? [y/N]: '
+MSG_EN[M_0358]='Add another file or URL with a domain list? [y/N]: '
+MSG_RU[M_0359]='В пользовательский список %s добавлено новых уникальных доменов: %s (итого в custom-allow: %s).'
+MSG_EN[M_0359]='Added %s new unique domains to %s (total in custom-allow: %s).'
+MSG_RU[M_0360]='Выбранные группы доменов   : %s\n'
+MSG_EN[M_0360]='Selected domain groups     : %s\n'
+MSG_RU[M_0361]='Новых доменов из файла     : %s\n'
+MSG_EN[M_0361]='Custom domains from file   : %s\n'
+MSG_RU[M_0362]='Текущие выбранные группы   : %s\n'
+MSG_EN[M_0362]='Current selected groups    : %s\n'
+MSG_RU[M_0363]='Текущих доменов в custom-allow.txt : %s\n'
+MSG_EN[M_0363]='Current domains in custom-allow.txt: %s\n'
+MSG_RU[M_0364]='Применить обновлённый выбор групп (%s) и пересобрать правила Xray/DNS? [y/N]: '
+MSG_EN[M_0364]='Apply updated domain groups (%s) and rebuild Xray/DNS rules? [y/N]: '
+MSG_RU[M_0365]='Обновление групп доменов (%s) успешно применено и проверено.'
+MSG_EN[M_0365]='Domain group update (%s) applied and verified successfully.'
+MSG_RU[M_0366]='[ SKIP ] Список проксируемых доменов пуст (режим групп: %s) — проверки подмены A/AAAA/HTTPS пропущены\n'
+MSG_EN[M_0366]='[ SKIP ] Proxied domain list is empty (groups mode: %s) — A/AAAA/HTTPS rewrite checks skipped\n'
+MSG_RU[M_0367]='Список проксируемых доменов пуст (выбраны группы: %s) — пропуск теста подмены'
+MSG_EN[M_0367]='Proxied domain list is empty (selected groups: %s) — rewrite test skipped'
+MSG_RU[M_0368]='Выберите корректный пункт меню (A, N, C или Q).\n'
+MSG_EN[M_0368]='Please select a valid menu option (A, N, C, or Q).\n'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -867,6 +941,8 @@ readonly GEOHIDE_HOSTS_FILE="${DNS_ASSETS_DIR}/geohide-hosts.txt"
 readonly AGH_RULES_FILE="${DNS_ASSETS_DIR}/ag-smartdns-rules.txt"
 readonly CUSTOM_ALLOW_FILE="${DNS_ASSETS_DIR}/custom-allow.txt"
 readonly CUSTOM_DENY_FILE="${DNS_ASSETS_DIR}/custom-deny.txt"
+readonly DOMAIN_GROUPS_MAP_FILE="${DNS_ASSETS_DIR}/domain-groups.map"
+readonly -a DOMAIN_GROUP_IDS=("ai" "microsoft" "dev_cloud" "hardware" "media" "gaming" "tools" "lifestyle" "google_sys" "other")
 readonly XRAY_CONF_DIR="/etc/xray/conf.d"
 readonly XRAY_RULES_DIR="/etc/xray/rules.d"
 readonly XRAY_ROUTING_JSON="${XRAY_RULES_DIR}/10-smartdns-routing.json"
@@ -892,6 +968,12 @@ TRANSACTION_ACTIVE=0
 CURRENT_BACKUP_DIR=""
 DOT_WHITELIST_ENABLED="false"
 DOT_WHITELIST_MODE="shared"
+SELECTED_DOMAIN_GROUPS="ALL"
+PENDING_CUSTOM_DOMAINS_FILE=""
+PENDING_CUSTOM_DOMAINS_COUNT=0
+INDEXED_GEOHIDE_RAW=""
+declare -A DOMAIN_GROUP_COUNTS=()
+declare -A DOMAIN_GROUP_SELECTED=()
 
 # ------------------------------ Logging Helpers -------------------------------
 init_logging() {
@@ -1153,6 +1235,568 @@ validate_single_ipv6() {
     return 0
 }
 
+# ------------------------------ Domain Groups & Custom Import -----------------
+domain_group_label() {
+    local gid="$1"
+    if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
+        case "${gid}" in
+            ai)         printf '%s' "AI Services (OpenAI, Claude, Gemini, Cursor, Grok, OpenRouter, etc.)" ;;
+            microsoft)  printf '%s' "Microsoft & Xbox (Copilot, Designer, Xbox Live)" ;;
+            dev_cloud)  printf '%s' "Dev, Cloud & SaaS (JetBrains, Atlassian, Notion, Slack, Tailscale, etc.)" ;;
+            hardware)   printf '%s' "Hardware & Electronics (AMD, Intel, Nvidia, Dell, Arduino, Corsair, etc.)" ;;
+            media)      printf '%s' "Media, Streaming & Design (Spotify, Twitch, Canva, Deezer, Crunchyroll, etc.)" ;;
+            gaming)     printf '%s' "Gaming Platforms (Supercell, Chess, Guilded, Game8, Stumble Guys)" ;;
+            tools)      printf '%s' "Browsers, Tools & Security (Brave, DeepL, Avast, Tuta, Web Archive, etc.)" ;;
+            lifestyle)  printf '%s' "Social, Retail, Finance & Weather (Ikea, Lego, Strava, Aave, Weather, etc.)" ;;
+            google_sys) printf '%s' "Google/Android Background Services (apis/clients/googleapis.com)" ;;
+            other)      printf '%s' "Other & New Upstream Services (catch-all for remaining sections)" ;;
+            *)          printf '%s' "${gid}" ;;
+        esac
+    else
+        case "${gid}" in
+            ai)         printf '%s' "AI-сервисы (OpenAI, Claude, Gemini, Cursor, Grok, OpenRouter и др.)" ;;
+            microsoft)  printf '%s' "Microsoft и Xbox (Copilot, Designer, Xbox Live)" ;;
+            dev_cloud)  printf '%s' "Разработка, облака и SaaS (JetBrains, Atlassian, Notion, Slack, Tailscale и др.)" ;;
+            hardware)   printf '%s' "Железо, электроника и CAD (AMD, Intel, Nvidia, Dell, Arduino, Corsair и др.)" ;;
+            media)      printf '%s' "Медиа, стриминг и дизайн (Spotify, Twitch, Canva, Deezer, Crunchyroll и др.)" ;;
+            gaming)     printf '%s' "Игры и игровые сервисы (Supercell, Chess, Guilded, Game8, Stumble Guys)" ;;
+            tools)      printf '%s' "Браузеры, инструменты и безопасность (Brave, DeepL, Avast, Tuta, Web Archive и др.)" ;;
+            lifestyle)  printf '%s' "Соцсети, шопинг, финансы и погода (Ikea, Lego, Strava, Aave, Weather и др.)" ;;
+            google_sys) printf '%s' "Фоновые сервисы Google/Android (apis/clients/googleapis.com)" ;;
+            other)      printf '%s' "Остальное и новые секции upstream (авто-fallback)" ;;
+            *)          printf '%s' "${gid}" ;;
+        esac
+    fi
+}
+
+cleanup_domain_index_tmp() {
+    if [[ -n "${INDEXED_GEOHIDE_RAW:-}" && -f "${INDEXED_GEOHIDE_RAW}" ]]; then
+        rm -f "${INDEXED_GEOHIDE_RAW}" "${INDEXED_GEOHIDE_RAW}.grouped" 2>/dev/null || true
+    fi
+    INDEXED_GEOHIDE_RAW=""
+}
+
+classify_geohide_to_tsv() {
+    local src_hosts="$1"
+    local out_tsv="$2"
+    awk '
+        function classify_section(sec,    s) {
+            s = tolower(sec)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+            if (s == "" || s ~ /^geohide\.ru/ || s ~ /^последнее обновление/ || s ~ /^регион серверов/ || s ~ /^эти ip-адреса/ || s ~ /^остальные ip-адреса/ || s ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) {
+                return ""
+            }
+            if (s ~ /^работающие ip/ || s ~ /^остальное$/) {
+                return "other"
+            }
+            if (s ~ /(^|[[:space:](])ai([[:space:])]|$)/ || s ~ /(chatgpt|openai|claude|gemini|grok|groq|cursor|elevenlabs|cerebras|genspark|hume|camel|dola|kaleido|manus|monica|opencode|openrouter|reve|trae\.ai|windsurf)/) {
+                return "ai"
+            }
+            if (s ~ /(microsoft|xbox)/) {
+                return "microsoft"
+            }
+            if (s ~ /(37signals|atlassian|autodesk|chaos|clickup|coreweave|framer|jetbrains|linear\.app|make|mongodb|notion|oracle|posthog|slack|sketchup|tableau|tailscale|teamviewer|wix|workos|zerossl)/) {
+                return "dev_cloud"
+            }
+            if (s ~ /(amd|analog|arduino|arrow|broadcom|corsair|cummins|dell|digikey|dyson|elgato|fitbit|intel|makita|microchip|nvidia|xerox)/) {
+                return "hardware"
+            }
+            if (s ~ /(affinity studio|canva|capcut|crunchyroll|deezer|formula 1|imgur|last\.fm|scribd|spotify|twitch)/) {
+                return "media"
+            }
+            if (s ~ /(chess|game8|guilded|stumble guys|supercell)/) {
+                return "gaming"
+            }
+            if (s ~ /(arkoselabs|avast|brave|deepl|fmhy|guidedhacking|qwant|tria\.ge|tuta|web archive)/) {
+                return "tools"
+            }
+            if (s ~ /(aave|badoo|bestbuy|bike24|ikea|lego|modivo|naukri|pump\.fun|strava|truth social|weather\.com|weather underground)/) {
+                return "lifestyle"
+            }
+            return "other"
+        }
+        BEGIN { cur_grp = "other" }
+        {
+            sub(/\r$/, "")
+            if ($0 ~ /^[[:space:]]*$/) next
+            if ($0 ~ /^[[:space:]]*#/) {
+                hdr = $0
+                sub(/^[[:space:]]*#+[[:space:]]*/, "", hdr)
+                g = classify_section(hdr)
+                if (g != "") cur_grp = g
+                next
+            }
+            if ($1 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || $1 ~ /:/) {
+                for (i = 2; i <= NF; i++) {
+                    if ($i ~ /^#/) break
+                    d = tolower($i)
+                    sub(/^\*\./, "", d)
+                    sub(/^\./, "", d)
+                    if (d ~ /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/) {
+                        print cur_grp "\t" d
+                    }
+                }
+            } else {
+                d = tolower($1)
+                sub(/^\*\./, "", d)
+                sub(/^\./, "", d)
+                if (d ~ /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/) {
+                    print cur_grp "\t" d
+                }
+            }
+        }
+    ' "${src_hosts}" | sort -u > "${out_tsv}"
+}
+
+fetch_and_index_domain_groups() {
+    cleanup_domain_index_tmp
+    local gid
+    for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+        DOMAIN_GROUP_COUNTS["${gid}"]=0
+    done
+    DOMAIN_GROUP_COUNTS["google_sys"]=8
+
+    printf_tr "M_0333"
+    INDEXED_GEOHIDE_RAW="$(mktemp /tmp/geohide-index.XXXXXX)"
+    local http_code="000"
+    if command -v curl >/dev/null 2>&1; then
+        http_code="$(curl -sSL --retry 2 --connect-timeout 10 --max-time 30 -w '%{http_code}' -o "${INDEXED_GEOHIDE_RAW}" "${GEOHIDE_RAW_URL}" 2>/dev/null || echo "000")"
+    fi
+
+    if [[ "${http_code}" == "200" && -s "${INDEXED_GEOHIDE_RAW}" ]]; then
+        classify_geohide_to_tsv "${INDEXED_GEOHIDE_RAW}" "${INDEXED_GEOHIDE_RAW}.grouped"
+        local g cnt
+        while read -r cnt g; do
+            [[ -n "${g}" ]] && DOMAIN_GROUP_COUNTS["${g}"]="${cnt}"
+        done < <(awk -F'\t' '{print $1}' "${INDEXED_GEOHIDE_RAW}.grouped" | sort | uniq -c)
+    else
+        printf_tr "M_0334"
+        : > "${INDEXED_GEOHIDE_RAW}.grouped"
+        if [[ -s "${DOMAIN_GROUPS_MAP_FILE}" ]]; then
+            local g cnt
+            while IFS=$'\t' read -r g cnt; do
+                [[ -z "${g}" || "${g}" == \#* ]] && continue
+                DOMAIN_GROUP_COUNTS["${g}"]="${cnt}"
+            done < "${DOMAIN_GROUPS_MAP_FILE}"
+        fi
+    fi
+}
+
+domain_group_is_selected() {
+    local target="$1"
+    [[ "${DOMAIN_GROUP_SELECTED[${target}]:-0}" -eq 1 ]]
+}
+
+init_domain_group_selection_from_string() {
+    local csv="${1:-}"
+    local gid
+    for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+        DOMAIN_GROUP_SELECTED["${gid}"]=0
+    done
+    if [[ "${csv}" == "ALL" ]]; then
+        for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+            DOMAIN_GROUP_SELECTED["${gid}"]=1
+        done
+    elif [[ -n "${csv}" && "${csv}" != "NONE" ]]; then
+        local tok
+        for tok in ${csv//,/ }; do
+            if [[ -n "${DOMAIN_GROUP_SELECTED[${tok}]+x}" ]]; then
+                DOMAIN_GROUP_SELECTED["${tok}"]=1
+            fi
+        done
+    fi
+}
+
+build_selected_groups_csv() {
+    local all_on=1
+    local any_on=0
+    local out=""
+    local gid
+    for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+        if [[ "${DOMAIN_GROUP_SELECTED[${gid}]:-0}" -eq 1 ]]; then
+            any_on=1
+            out+="${out:+,}${gid}"
+        else
+            all_on=0
+        fi
+    done
+    if [[ "${any_on}" -eq 0 ]]; then
+        printf 'NONE'
+    elif [[ "${all_on}" -eq 1 ]]; then
+        printf 'ALL'
+    else
+        printf '%s' "${out}"
+    fi
+}
+
+print_domain_groups_menu() {
+    printf_tr "M_0335"
+    printf_tr "M_0336"
+    local i=0
+    local gid mark cnt label
+    for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+        i=$((i + 1))
+        mark=" "
+        [[ "${DOMAIN_GROUP_SELECTED[${gid}]:-0}" -eq 1 ]] && mark="x"
+        cnt="${DOMAIN_GROUP_COUNTS[${gid}]:-0}"
+        label="$(domain_group_label "${gid}")"
+        printf '  [%s] [%2d] %-72s (%s)\n' "${mark}" "${i}" "${label}" "${cnt}"
+    done
+}
+
+prompt_domain_groups_selection() {
+    local initial_csv="${1:-}"
+    fetch_and_index_domain_groups
+    init_domain_group_selection_from_string "${initial_csv}"
+
+    local choice=""
+    local gid
+    while true; do
+        print_domain_groups_menu
+        read_tr "M_0337" choice
+        choice="${choice^^}"
+        choice="${choice//$'\r'/}"
+
+        case "${choice}" in
+            A)
+                for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+                    DOMAIN_GROUP_SELECTED["${gid}"]=1
+                done
+                break
+                ;;
+            N)
+                for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+                    DOMAIN_GROUP_SELECTED["${gid}"]=0
+                done
+                break
+                ;;
+            Q)
+                printf_tr "M_0340"
+                cleanup_domain_index_tmp
+                return 1
+                ;;
+            C)
+                local custom_in=""
+                while true; do
+                    print_domain_groups_menu
+                    printf '\n'
+                    read_tr "M_0338" custom_in
+                    custom_in="${custom_in//$'\r'/}"
+                    case "${custom_in^^}" in
+                        Q)
+                            printf_tr "M_0340"
+                            cleanup_domain_index_tmp
+                            return 1
+                            ;;
+                        A)
+                            for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+                                DOMAIN_GROUP_SELECTED["${gid}"]=1
+                            done
+                            ;;
+                        N)
+                            for gid in "${DOMAIN_GROUP_IDS[@]}"; do
+                                DOMAIN_GROUP_SELECTED["${gid}"]=0
+                            done
+                            ;;
+                        D)
+                            break 2
+                            ;;
+                        *)
+                            local tok idx target_gid
+                            for tok in ${custom_in//,/ }; do
+                                if [[ "${tok}" =~ ^[0-9]+$ ]] && [[ "${tok}" -ge 1 && "${tok}" -le "${#DOMAIN_GROUP_IDS[@]}" ]]; then
+                                    idx=$((tok - 1))
+                                    target_gid="${DOMAIN_GROUP_IDS[${idx}]}"
+                                    if [[ "${DOMAIN_GROUP_SELECTED[${target_gid}]:-0}" -eq 1 ]]; then
+                                        DOMAIN_GROUP_SELECTED["${target_gid}"]=0
+                                    else
+                                        DOMAIN_GROUP_SELECTED["${target_gid}"]=1
+                                    fi
+                                fi
+                            done
+                            ;;
+                    esac
+                done
+                ;;
+            *)
+                printf_tr "M_0368"
+                ;;
+        esac
+    done
+
+    SELECTED_DOMAIN_GROUPS="$(build_selected_groups_csv)"
+    if domain_group_is_selected "google_sys"; then
+        EXCLUDE_GOOGLE_SYS="N"
+    else
+        EXCLUDE_GOOGLE_SYS="y"
+    fi
+
+    if domain_group_is_selected "microsoft"; then
+        printf_tr "M_0064"
+        printf_tr "M_0065"
+        printf_tr "M_0066"
+        local incl_xbox=""
+        read_tr "M_0067" incl_xbox
+        if [[ "${incl_xbox:-N}" =~ ^[Yy]$ ]]; then
+            INCLUDE_XBOX_IPIFY="y"
+        else
+            INCLUDE_XBOX_IPIFY="N"
+        fi
+    else
+        INCLUDE_XBOX_IPIFY="N"
+    fi
+
+    printf_tr "M_0339" "${SELECTED_DOMAIN_GROUPS}"
+    return 0
+}
+
+build_selected_baseline_domains_file() {
+    local out_file="$1"
+    local tmp_base
+    tmp_base="$(mktemp /tmp/smartdns-base-doms.XXXXXX)"
+
+    if [[ "${SELECTED_DOMAIN_GROUPS}" != "NONE" && -n "${INDEXED_GEOHIDE_RAW:-}" && -s "${INDEXED_GEOHIDE_RAW}.grouped" ]]; then
+        awk -F'\t' -v sel="${SELECTED_DOMAIN_GROUPS}" '
+            BEGIN {
+                if (sel == "ALL") {
+                    all_mode = 1
+                } else {
+                    n = split(sel, arr, ",")
+                    for (i = 1; i <= n; i++) want[arr[i]] = 1
+                }
+            }
+            all_mode || ($1 in want) { print $2 }
+        ' "${INDEXED_GEOHIDE_RAW}.grouped" >> "${tmp_base}"
+    fi
+
+    if domain_group_is_selected "google_sys"; then
+        cat >> "${tmp_base}" <<'GDOMS'
+apis.google.com
+suggestqueries.google.com
+clients6.google.com
+clients.google.com
+withgoogle.com
+o.pki.goog
+googleapis.com
+generativelanguage.googleapis.com
+GDOMS
+    fi
+    if domain_group_is_selected "ai"; then
+        printf 'generativelanguage.googleapis.com\n' >> "${tmp_base}"
+    fi
+    if domain_group_is_selected "microsoft" && [[ "${INCLUDE_XBOX_IPIFY:-N}" == "y" ]]; then
+        cat >> "${tmp_base}" <<'XDOMS'
+xboxlive.com
+xbox.com
+sfx.ms
+msgamestudios.com
+XDOMS
+    fi
+    if [[ -s "${CUSTOM_ALLOW_FILE}" ]]; then
+        grep -E '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' "${CUSTOM_ALLOW_FILE}" >> "${tmp_base}" || true
+    fi
+    if [[ -n "${PENDING_CUSTOM_DOMAINS_FILE:-}" && -s "${PENDING_CUSTOM_DOMAINS_FILE}" ]]; then
+        cat "${PENDING_CUSTOM_DOMAINS_FILE}" >> "${tmp_base}"
+    fi
+
+    sort -u "${tmp_base}" > "${out_file}"
+    rm -f "${tmp_base}"
+}
+
+prompt_custom_domains_import() {
+    local want_custom=""
+    read_tr "M_0341" want_custom
+    if [[ ! "${want_custom:-N}" =~ ^[Yy]$ ]]; then
+        return 0
+    fi
+
+    if [[ -z "${PENDING_CUSTOM_DOMAINS_FILE:-}" || ! -f "${PENDING_CUSTOM_DOMAINS_FILE}" ]]; then
+        PENDING_CUSTOM_DOMAINS_FILE="$(mktemp /tmp/smartdns-custom-import.XXXXXX)"
+        chmod 0600 "${PENDING_CUSTOM_DOMAINS_FILE}"
+        PENDING_CUSTOM_DOMAINS_COUNT=0
+    fi
+
+    while true; do
+        local src_input=""
+        read_tr "M_0342" src_input
+        src_input="${src_input//$'\r'/}"
+        src_input="${src_input#"${src_input%%[![:space:]]*}"}"
+        src_input="${src_input%"${src_input##*[![:space:]]}"}"
+
+        if [[ -z "${src_input}" ]]; then
+            break
+        fi
+
+        local raw_src=""
+        local tmp_dl=""
+        if [[ "${src_input}" =~ ^https?:// ]]; then
+            printf_tr "M_0343" "${src_input}"
+            tmp_dl="$(mktemp /tmp/smartdns-custom-dl.XXXXXX)"
+            if ! curl -fsSL --retry 2 --connect-timeout 10 --max-time 30 --max-filesize 10485760 -o "${tmp_dl}" "${src_input}" 2>/dev/null || [[ ! -s "${tmp_dl}" ]]; then
+                rm -f "${tmp_dl}"
+                printf_err_tr "M_0344" "${src_input}"
+                continue
+            fi
+            raw_src="${tmp_dl}"
+        else
+            if [[ ! -f "${src_input}" || ! -r "${src_input}" ]]; then
+                printf_err_tr "M_0345" "${src_input}"
+                continue
+            fi
+            raw_src="${src_input}"
+        fi
+
+        local tmp_parsed tmp_valid_all tmp_valid_uniq tmp_safe_uniq tmp_base tmp_new_uniq
+        tmp_parsed="$(mktemp /tmp/smartdns-cparse.XXXXXX)"
+        tmp_valid_all="$(mktemp /tmp/smartdns-cvalid.XXXXXX)"
+        tmp_valid_uniq="$(mktemp /tmp/smartdns-cuniq.XXXXXX)"
+        tmp_safe_uniq="$(mktemp /tmp/smartdns-csafe.XXXXXX)"
+        tmp_base="$(mktemp /tmp/smartdns-cbase.XXXXXX)"
+        tmp_new_uniq="$(mktemp /tmp/smartdns-cnew.XXXXXX)"
+
+        local invalid_cnt=0
+        awk '
+            {
+                sub(/\r$/, "")
+                sub(/#.*$/, "")
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+                if ($0 == "") next
+                n = split($0, f, /[[:space:]]+/)
+                start_i = 1
+                if (f[1] ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || f[1] ~ /:/) {
+                    start_i = 2
+                }
+                if (start_i > n) {
+                    print "INVALID"
+                    next
+                }
+                for (i = start_i; i <= n; i++) {
+                    d = tolower(f[i])
+                    sub(/^(domain:|full:)/, "", d)
+                    sub(/^\*\./, "", d)
+                    sub(/^\./, "", d)
+                    sub(/\.$/, "", d)
+                    if (d ~ /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/ && length(d) <= 253) {
+                        print "OK\t" d
+                    } else {
+                        print "INVALID"
+                    }
+                }
+            }
+        ' "${raw_src}" > "${tmp_parsed}"
+
+        invalid_cnt="$(grep -c '^INVALID$' "${tmp_parsed}" || echo 0)"
+        awk -F'\t' '$1 == "OK" { print $2 }' "${tmp_parsed}" > "${tmp_valid_all}"
+        sort -u "${tmp_valid_all}" > "${tmp_valid_uniq}"
+
+        local valid_all_cnt valid_uniq_cnt internal_dups
+        valid_all_cnt="$(wc -l < "${tmp_valid_all}" | tr -d ' ')"
+        valid_uniq_cnt="$(wc -l < "${tmp_valid_uniq}" | tr -d ' ')"
+        internal_dups=$((valid_all_cnt - valid_uniq_cnt))
+
+        # Фильтруем безусловные системные исключения и custom-deny.txt
+        awk '
+            $0 == "x.com" || $0 ~ /\.x\.com$/ { next }
+            $0 == "meta.ai" || $0 ~ /\.meta\.ai$/ { next }
+            $0 == "connectivitycheck.gstatic.com" || $0 == "connectivitycheck.android.com" { next }
+            $0 ~ /^clients[0-9]*\.google\.com$/ { next }
+            $0 == "captive.apple.com" || $0 == "connect.rom.miui.com" { next }
+            $0 == "msftconnecttest.com" || $0 ~ /\.msftconnecttest\.com$/ { next }
+            $0 == "msftncsi.com" || $0 ~ /\.msftncsi\.com$/ { next }
+            { print }
+        ' "${tmp_valid_uniq}" > "${tmp_safe_uniq}.1"
+
+        if [[ -s "${CUSTOM_DENY_FILE}" ]]; then
+            grep -vFf "${CUSTOM_DENY_FILE}" "${tmp_safe_uniq}.1" | sort -u > "${tmp_safe_uniq}" || true
+        else
+            sort -u "${tmp_safe_uniq}.1" > "${tmp_safe_uniq}"
+        fi
+        rm -f "${tmp_safe_uniq}.1"
+
+        local safe_uniq_cnt blocked_sys_cnt
+        safe_uniq_cnt="$(wc -l < "${tmp_safe_uniq}" | tr -d ' ')"
+        blocked_sys_cnt=$((valid_uniq_cnt - safe_uniq_cnt))
+
+        # Сравнение с выбранными группами + существующим custom-allow + уже подготовленными доменами
+        build_selected_baseline_domains_file "${tmp_base}"
+        comm -23 "${tmp_safe_uniq}" "${tmp_base}" > "${tmp_new_uniq}"
+
+        local new_uniq_cnt overlap_cnt
+        new_uniq_cnt="$(wc -l < "${tmp_new_uniq}" | tr -d ' ')"
+        overlap_cnt=$((safe_uniq_cnt - new_uniq_cnt))
+
+        printf_tr "M_0346"
+        printf_tr "M_0347" "${src_input}"
+        printf_tr "M_0348" "${valid_uniq_cnt}"
+        printf_tr "M_0349" "${internal_dups}"
+        printf_tr "M_0350" "${invalid_cnt}"
+        printf_tr "M_0351" "${overlap_cnt}"
+        printf_tr "M_0352" "${blocked_sys_cnt}"
+        printf_tr "M_0353" "${new_uniq_cnt}"
+        printf_tr "M_0354"
+
+        if [[ "${new_uniq_cnt}" -eq 0 ]]; then
+            printf_tr "M_0355"
+        else
+            local confirm_add=""
+            read_tr "M_0356" confirm_add "${new_uniq_cnt}"
+            if [[ "${confirm_add:-Y}" =~ ^[Yy]$ ]]; then
+                cat "${tmp_new_uniq}" >> "${PENDING_CUSTOM_DOMAINS_FILE}"
+                sort -u "${PENDING_CUSTOM_DOMAINS_FILE}" -o "${PENDING_CUSTOM_DOMAINS_FILE}"
+                PENDING_CUSTOM_DOMAINS_COUNT="$(wc -l < "${PENDING_CUSTOM_DOMAINS_FILE}" | tr -d ' ')"
+                printf_tr "M_0357" "${PENDING_CUSTOM_DOMAINS_COUNT}"
+            fi
+        fi
+
+        rm -f "${tmp_parsed}" "${tmp_valid_all}" "${tmp_valid_uniq}" "${tmp_safe_uniq}" "${tmp_base}" "${tmp_new_uniq}"
+        [[ -n "${tmp_dl}" ]] && rm -f "${tmp_dl}"
+
+        local add_more=""
+        read_tr "M_0358" add_more
+        if [[ ! "${add_more:-N}" =~ ^[Yy]$ ]]; then
+            break
+        fi
+    done
+}
+
+apply_pending_custom_domains() {
+    if [[ -z "${PENDING_CUSTOM_DOMAINS_FILE:-}" || ! -s "${PENDING_CUSTOM_DOMAINS_FILE}" ]]; then
+        rm -f "${PENDING_CUSTOM_DOMAINS_FILE:-}" 2>/dev/null || true
+        PENDING_CUSTOM_DOMAINS_FILE=""
+        PENDING_CUSTOM_DOMAINS_COUNT=0
+        return 0
+    fi
+
+    local added_cnt
+    added_cnt="$(wc -l < "${PENDING_CUSTOM_DOMAINS_FILE}" | tr -d ' ')"
+    local tmp_merge="${CUSTOM_ALLOW_FILE}.merge.tmp"
+    touch "${CUSTOM_ALLOW_FILE}"
+    cat "${CUSTOM_ALLOW_FILE}" "${PENDING_CUSTOM_DOMAINS_FILE}" | \
+        grep -E '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' | sort -u > "${tmp_merge}" || true
+    chown "${DNS_USER}:xray" "${tmp_merge}"
+    chmod 0640 "${tmp_merge}"
+    mv -f "${tmp_merge}" "${CUSTOM_ALLOW_FILE}"
+
+    local total_cnt
+    total_cnt="$(wc -l < "${CUSTOM_ALLOW_FILE}" | tr -d ' ')"
+    rm -f "${PENDING_CUSTOM_DOMAINS_FILE}"
+    PENDING_CUSTOM_DOMAINS_FILE=""
+    PENDING_CUSTOM_DOMAINS_COUNT=0
+    log_info_tr "dns.log" "M_0359" "${CUSTOM_ALLOW_FILE}" "${added_cnt}" "${total_cnt}"
+}
+
+get_test_proxied_domain() {
+    if [[ ! -s "${GEOHIDE_LIST_FILE}" ]]; then
+        printf ''
+        return 0
+    fi
+    if grep -qx 'generativelanguage.googleapis.com' "${GEOHIDE_LIST_FILE}" 2>/dev/null; then
+        printf 'generativelanguage.googleapis.com'
+        return 0
+    fi
+    grep -E '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' "${GEOHIDE_LIST_FILE}" | sed -n '1p' || true
+}
+
 # ------------------------------ Interactive Wizard ----------------------------
 run_interactive_wizard() {
     local existing_dot_wl=""
@@ -1273,25 +1917,15 @@ run_interactive_wizard() {
         DOT_WHITELIST_MODE="${existing_dot_mode:-shared}"
     fi
 
-    printf_tr "M_0060"
-    printf_tr "M_0061"
-    printf_tr "M_0062"
-    read_tr "M_0063" excl_google
-    if [[ "${excl_google:-N}" =~ ^[Yy]$ ]]; then
-        EXCLUDE_GOOGLE_SYS="y"
-    else
-        EXCLUDE_GOOGLE_SYS="N"
+    local existing_groups=""
+    if [[ -f "${SETTINGS_FILE}" ]]; then
+        existing_groups="$(awk -F'"' '/^SELECTED_DOMAIN_GROUPS=/ {print $2}' "${SETTINGS_FILE}" 2>/dev/null || true)"
     fi
-
-    printf_tr "M_0064"
-    printf_tr "M_0065"
-    printf_tr "M_0066"
-    read_tr "M_0067" incl_xbox
-    if [[ "${incl_xbox:-N}" =~ ^[Yy]$ ]]; then
-        INCLUDE_XBOX_IPIFY="y"
-    else
-        INCLUDE_XBOX_IPIFY="N"
+    if ! prompt_domain_groups_selection "${existing_groups}"; then
+        exit 0
     fi
+    prompt_custom_domains_import
+    cleanup_domain_index_tmp
 
     local saved_cf_token=""
     if [[ -f "${SECRETS_FILE}" ]]; then
@@ -1325,6 +1959,8 @@ run_interactive_wizard() {
     printf_tr "M_0074" "${DOT_HOST}"
     printf_tr "M_0075" "${#DOH_PATH}"
     printf_tr "M_0076" "${DOT_WHITELIST_ENABLED}" "${DOT_WHITELIST_MODE}"
+    printf_tr "M_0360" "${SELECTED_DOMAIN_GROUPS}"
+    printf_tr "M_0361" "${PENDING_CUSTOM_DOMAINS_COUNT}"
     printf 'EXCLUDE_GOOGLE_SYS         : %s\n' "${EXCLUDE_GOOGLE_SYS}"
     printf 'INCLUDE_XBOX_IPIFY         : %s\n' "${INCLUDE_XBOX_IPIFY}"
     printf_tr "M_0077"
@@ -1337,6 +1973,7 @@ run_interactive_wizard() {
 
     read_tr "M_0081" confirm_install
     if [[ ! "${confirm_install:-N}" =~ ^[Yy]$ ]]; then
+        rm -f "${PENDING_CUSTOM_DOMAINS_FILE:-}" 2>/dev/null || true
         printf_tr "M_0082"
         exit 0
     fi
@@ -1736,7 +2373,8 @@ record_full_install_manifest() {
     # Domain Rules & Timers
     for f in /usr/local/bin/update-geosite.sh /usr/local/bin/update-geohide-domains.sh \
              "${XRAY_ROUTING_JSON}" "${ROUTING_VARS_FILE}" "${GEOHIDE_LIST_FILE}" \
-             "${GEOHIDE_HOSTS_FILE}" "${AGH_RULES_FILE}" "${DNS_ASSETS_DIR}/geosite.dat"; do
+             "${GEOHIDE_HOSTS_FILE}" "${AGH_RULES_FILE}" "${DNS_ASSETS_DIR}/geosite.dat" \
+             "${DOMAIN_GROUPS_MAP_FILE}"; do
         [[ -e "${f}" ]] && manifest_record "FILE" "domain-rules" "${f}" "managed"
     done
     for f in "${CUSTOM_ALLOW_FILE}" "${CUSTOM_DENY_FILE}"; do
@@ -1992,6 +2630,7 @@ DOH_HOST="${ROOT_DOMAIN}"
 DOT_HOST="${DOT_HOST}"
 DOT_WHITELIST_ENABLED="${DOT_WHITELIST_ENABLED}"
 DOT_WHITELIST_MODE="${DOT_WHITELIST_MODE}"
+SELECTED_DOMAIN_GROUPS="${SELECTED_DOMAIN_GROUPS:-ALL}"
 EXCLUDE_GOOGLE_SYS="${EXCLUDE_GOOGLE_SYS}"
 INCLUDE_XBOX_IPIFY="${INCLUDE_XBOX_IPIFY}"
 SERVER_IPV4="${SERVER_IPV4}"
@@ -2008,6 +2647,7 @@ EOF
 DNS_ENGINE="${DNS_ENGINE}"
 DOT_WHITELIST_ENABLED="${DOT_WHITELIST_ENABLED}"
 DOT_WHITELIST_MODE="${DOT_WHITELIST_MODE}"
+SELECTED_DOMAIN_GROUPS="${SELECTED_DOMAIN_GROUPS:-ALL}"
 EXCLUDE_GOOGLE_SYS="${EXCLUDE_GOOGLE_SYS}"
 INCLUDE_XBOX_IPIFY="${INCLUDE_XBOX_IPIFY}"
 SERVER_IPV4="${SERVER_IPV4}"
@@ -2586,29 +3226,117 @@ if [[ "${HTTP_CODE}" != "200" || ! -s "${TMP_DOWNLOAD}" ]]; then
     exit 1
 fi
 
+SELECTED_GROUPS="${SELECTED_DOMAIN_GROUPS:-ALL}"
+GROUPS_MAP_FILE="${ASSETS_DIR}/domain-groups.map"
+
+group_enabled() {
+    local target="$1"
+    [[ "${SELECTED_GROUPS}" == "ALL" ]] && return 0
+    [[ "${SELECTED_GROUPS}" == "NONE" ]] && return 1
+    [[ ",${SELECTED_GROUPS}," == *",${target},"* ]]
+}
+
 awk '
-    sub(/\r$/, "") {}
-    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    function classify_section(sec,    s) {
+        s = tolower(sec)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+        if (s == "" || s ~ /^geohide\.ru/ || s ~ /^последнее обновление/ || s ~ /^регион серверов/ || s ~ /^эти ip-адреса/ || s ~ /^остальные ip-адреса/ || s ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/) {
+            return ""
+        }
+        if (s ~ /^работающие ip/ || s ~ /^остальное$/) {
+            return "other"
+        }
+        if (s ~ /(^|[[:space:](])ai([[:space:])]|$)/ || s ~ /(chatgpt|openai|claude|gemini|grok|groq|cursor|elevenlabs|cerebras|genspark|hume|camel|dola|kaleido|manus|monica|opencode|openrouter|reve|trae\.ai|windsurf)/) {
+            return "ai"
+        }
+        if (s ~ /(microsoft|xbox)/) {
+            return "microsoft"
+        }
+        if (s ~ /(37signals|atlassian|autodesk|chaos|clickup|coreweave|framer|jetbrains|linear\.app|make|mongodb|notion|oracle|posthog|slack|sketchup|tableau|tailscale|teamviewer|wix|workos|zerossl)/) {
+            return "dev_cloud"
+        }
+        if (s ~ /(amd|analog|arduino|arrow|broadcom|corsair|cummins|dell|digikey|dyson|elgato|fitbit|intel|makita|microchip|nvidia|xerox)/) {
+            return "hardware"
+        }
+        if (s ~ /(affinity studio|canva|capcut|crunchyroll|deezer|formula 1|imgur|last\.fm|scribd|spotify|twitch)/) {
+            return "media"
+        }
+        if (s ~ /(chess|game8|guilded|stumble guys|supercell)/) {
+            return "gaming"
+        }
+        if (s ~ /(arkoselabs|avast|brave|deepl|fmhy|guidedhacking|qwant|tria\.ge|tuta|web archive)/) {
+            return "tools"
+        }
+        if (s ~ /(aave|badoo|bestbuy|bike24|ikea|lego|modivo|naukri|pump\.fun|strava|truth social|weather\.com|weather underground)/) {
+            return "lifestyle"
+        }
+        return "other"
+    }
+    BEGIN { cur_grp = "other" }
     {
+        sub(/\r$/, "")
+        if ($0 ~ /^[[:space:]]*$/) next
+        if ($0 ~ /^[[:space:]]*#/) {
+            hdr = $0
+            sub(/^[[:space:]]*#+[[:space:]]*/, "", hdr)
+            g = classify_section(hdr)
+            if (g != "") cur_grp = g
+            next
+        }
         if ($1 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ || $1 ~ /:/) {
-            for (i=2; i<=NF; i++) {
+            for (i = 2; i <= NF; i++) {
                 if ($i ~ /^#/) break
-                print tolower($i)
+                d = tolower($i)
+                sub(/^\*\./, "", d)
+                sub(/^\./, "", d)
+                if (d ~ /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/) {
+                    print cur_grp "\t" d
+                }
             }
         } else {
-            print tolower($1)
+            d = tolower($1)
+            sub(/^\*\./, "", d)
+            sub(/^\./, "", d)
+            if (d ~ /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/) {
+                print cur_grp "\t" d
+            }
         }
     }
-' "${TMP_DOWNLOAD}" | sed -e 's/^\*\.//' -e 's/^\.//' | grep -E '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' | sort -u > "${TMP_DOMAINS}.raw"
+' "${TMP_DOWNLOAD}" | sort -u > "${TMP_DOMAINS}.grouped"
 
-RAW_COUNT="$(wc -l < "${TMP_DOMAINS}.raw" | tr -d ' ')"
+RAW_COUNT="$(awk -F'\t' '{print $2}' "${TMP_DOMAINS}.grouped" | sort -u | wc -l | tr -d ' ')"
 if [[ "${RAW_COUNT}" -lt 10 ]]; then
     log "ОШИБКА: Слишком мало валидных доменов в загруженном файле (${RAW_COUNT}). Отмена обновления."
-    rm -f "${TMP_DOMAINS}.raw"
+    rm -f "${TMP_DOMAINS}.grouped"
     exit 1
 fi
 
-if [[ "${EXCLUDE_GOOGLE_SYS}" == "N" ]]; then
+{
+    printf '# UPDATED_AT=%s\n' "$(date -Is)"
+    awk -F'\t' '{print $1}' "${TMP_DOMAINS}.grouped" | sort | uniq -c | awk '{printf "%s\t%s\n", $2, $1}'
+    printf 'google_sys\t8\n'
+} > "${GROUPS_MAP_FILE}.new"
+chown "${DNS_USER}:xray" "${GROUPS_MAP_FILE}.new"
+chmod 0640 "${GROUPS_MAP_FILE}.new"
+mv -f "${GROUPS_MAP_FILE}.new" "${GROUPS_MAP_FILE}"
+
+: > "${TMP_DOMAINS}.raw"
+if [[ "${SELECTED_GROUPS}" != "NONE" ]]; then
+    awk -F'\t' -v sel="${SELECTED_GROUPS}" '
+        BEGIN {
+            if (sel == "ALL") {
+                all_mode = 1
+            } else {
+                n = split(sel, arr, ",")
+                for (i = 1; i <= n; i++) want[arr[i]] = 1
+            }
+        }
+        all_mode || ($1 in want) { print $2 }
+    ' "${TMP_DOMAINS}.grouped" | sort -u > "${TMP_DOMAINS}.raw"
+fi
+rm -f "${TMP_DOMAINS}.grouped"
+
+if group_enabled "google_sys" && [[ "${EXCLUDE_GOOGLE_SYS}" == "N" ]]; then
     cat >> "${TMP_DOMAINS}.raw" <<'GDOMS'
 apis.google.com
 suggestqueries.google.com
@@ -2621,7 +3349,7 @@ generativelanguage.googleapis.com
 GDOMS
 fi
 
-if [[ "${INCLUDE_XBOX_IPIFY}" == "y" ]]; then
+if group_enabled "microsoft" && [[ "${INCLUDE_XBOX_IPIFY}" == "y" ]]; then
     cat >> "${TMP_DOMAINS}.raw" <<'XDOMS'
 xboxlive.com
 xbox.com
@@ -2634,8 +3362,13 @@ if [[ -s "${ASSETS_DIR}/custom-allow.txt" ]]; then
     grep -E '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$' "${ASSETS_DIR}/custom-allow.txt" >> "${TMP_DOMAINS}.raw" || true
 fi
 
-awk -v excl_google="${EXCLUDE_GOOGLE_SYS}" -v incl_xbox="${INCLUDE_XBOX_IPIFY}" '
-    $0 == "generativelanguage.googleapis.com" { print; next }
+KEEP_GENLANG="0"
+if group_enabled "ai" || { group_enabled "google_sys" && [[ "${EXCLUDE_GOOGLE_SYS}" == "N" ]]; }; then
+    KEEP_GENLANG="1"
+fi
+
+awk -v excl_google="${EXCLUDE_GOOGLE_SYS}" -v incl_xbox="${INCLUDE_XBOX_IPIFY}" -v keep_gen="${KEEP_GENLANG}" '
+    $0 == "generativelanguage.googleapis.com" { if (keep_gen == "1") print; next }
 
     # Unconditional exclusions (x.com, meta.ai + Wi-Fi Captive Portal detection domains)
     $0 == "x.com" || $0 ~ /\.x\.com$/ { next }
@@ -2664,18 +3397,20 @@ awk -v excl_google="${EXCLUDE_GOOGLE_SYS}" -v incl_xbox="${INCLUDE_XBOX_IPIFY}" 
     { print }
 ' "${TMP_DOMAINS}.raw" > "${TMP_DOMAINS}.filtered"
 
-printf 'generativelanguage.googleapis.com\n' >> "${TMP_DOMAINS}.filtered"
+if [[ "${KEEP_GENLANG}" == "1" ]]; then
+    printf 'generativelanguage.googleapis.com\n' >> "${TMP_DOMAINS}.filtered"
+fi
 
 if [[ -s "${ASSETS_DIR}/custom-deny.txt" ]]; then
-    grep -vFf "${ASSETS_DIR}/custom-deny.txt" "${TMP_DOMAINS}.filtered" | sort -u > "${TMP_DOMAINS}"
+    grep -vFf "${ASSETS_DIR}/custom-deny.txt" "${TMP_DOMAINS}.filtered" | sort -u > "${TMP_DOMAINS}" || true
 else
     sort -u "${TMP_DOMAINS}.filtered" > "${TMP_DOMAINS}"
 fi
 rm -f "${TMP_DOMAINS}.raw" "${TMP_DOMAINS}.filtered"
 
 FINAL_COUNT="$(wc -l < "${TMP_DOMAINS}" | tr -d ' ')"
-if [[ "${FINAL_COUNT}" -lt 5 ]]; then
-    log "ОШИБКА: Итоговый список доменов пуст или повреждён (${FINAL_COUNT})."
+if [[ "${SELECTED_GROUPS}" != "NONE" && "${FINAL_COUNT}" -lt 1 ]]; then
+    log "ОШИБКА: Итоговый список доменов пуст при активных группах (${SELECTED_GROUPS})."
     exit 1
 fi
 
@@ -2685,61 +3420,67 @@ jq -Rn --arg root_dom "${ROOT_DOMAIN}" --arg dot_dom "${DOT_HOST}" \
   {
     "routing": {
       "domainStrategy": "AsIs",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": ["dot-in"],
-          "domain": ["full:" + $dot_dom],
-          "outboundTag": "dot-backend"
-        },
-        {
-          "type": "field",
-          "inboundTag": ["dot-in"],
-          "port": "0-65535",
-          "outboundTag": "block"
-        },
-        {
-          "type": "field",
-          "inboundTag": ["https-in"],
-          "domain": [
-            "full:" + $root_dom,
-            "full:www." + $root_dom,
-            "full:" + $dot_dom
-          ],
-          "outboundTag": "nginx-local"
-        },
-        {
-          "type": "field",
-          "inboundTag": ["https-in"],
-          "domain": $allowed,
-          "outboundTag": "direct-v4"
-        },
-        {
-          "type": "field",
-          "inboundTag": ["https-in"],
-          "ip": (
-            [
-              $srv_ip4,
-              "127.0.0.0/8",
-              "10.0.0.0/8",
-              "172.16.0.0/12",
-              "192.168.0.0/16",
-              "100.64.0.0/10",
-              "169.254.0.0/16",
-              "::1/128",
-              "fc00::/7",
-              "fe80::/10"
-            ] + (if ($srv_ip6 != "" and $srv_ip6 != "::1") then [$srv_ip6] else [] end)
-          ),
-          "outboundTag": "block"
-        },
-        {
-          "type": "field",
-          "inboundTag": ["https-in"],
-          "port": "0-65535",
-          "outboundTag": "nginx-local"
-        }
-      ]
+      "rules": (
+        [
+          {
+            "type": "field",
+            "inboundTag": ["dot-in"],
+            "domain": ["full:" + $dot_dom],
+            "outboundTag": "dot-backend"
+          },
+          {
+            "type": "field",
+            "inboundTag": ["dot-in"],
+            "port": "0-65535",
+            "outboundTag": "block"
+          },
+          {
+            "type": "field",
+            "inboundTag": ["https-in"],
+            "domain": [
+              "full:" + $root_dom,
+              "full:www." + $root_dom,
+              "full:" + $dot_dom
+            ],
+            "outboundTag": "nginx-local"
+          }
+        ]
+        + (if ($allowed | length) > 0 then [
+          {
+            "type": "field",
+            "inboundTag": ["https-in"],
+            "domain": $allowed,
+            "outboundTag": "direct-v4"
+          }
+        ] else [] end)
+        + [
+          {
+            "type": "field",
+            "inboundTag": ["https-in"],
+            "ip": (
+              [
+                $srv_ip4,
+                "127.0.0.0/8",
+                "10.0.0.0/8",
+                "172.16.0.0/12",
+                "192.168.0.0/16",
+                "100.64.0.0/10",
+                "169.254.0.0/16",
+                "::1/128",
+                "fc00::/7",
+                "fe80::/10"
+              ] + (if ($srv_ip6 != "" and $srv_ip6 != "::1") then [$srv_ip6] else [] end)
+            ),
+            "outboundTag": "block"
+          },
+          {
+            "type": "field",
+            "inboundTag": ["https-in"],
+            "port": "0-65535",
+            "outboundTag": "nginx-local"
+          }
+        ]
+      )
     }
   }
 ' < "${TMP_DOMAINS}" > "${XRAY_JSON_NEW}"
@@ -2795,7 +3536,7 @@ EOF
 
 # ------------------------------ DNS Engine Adapters ---------------------------
 render_dns_domain_lists_from_cache() {
-    if [[ ! -s "${GEOHIDE_LIST_FILE}" ]]; then
+    if [[ ! -f "${GEOHIDE_LIST_FILE}" ]] || { [[ ! -s "${GEOHIDE_LIST_FILE}" ]] && [[ "${SELECTED_DOMAIN_GROUPS:-ALL}" != "NONE" ]]; }; then
         /usr/local/bin/update-geohide-domains.sh
         return 0
     fi
@@ -5009,35 +5750,40 @@ verify_dns_backend_isolated() {
     fi
     printf_tr "M_0155" "${upstream_ip}"
 
-    # 4. SmartDNS A spoofing (дожидаемся компиляции фильтров при первом запуске)
-    local spoofed_ip=""
-    for i in {1..15}; do
-        spoofed_ip="$(dig +time=2 +tries=1 +short @127.0.0.1 -p 5353 "probe-${i}.generativelanguage.googleapis.com" A | sed -n '1p' || true)"
-        if [[ "${spoofed_ip}" == "${SERVER_IPV4}" ]]; then
-            break
+    # 4-5. SmartDNS A spoofing, AAAA NODATA & HTTPS TYPE65 (динамический домен из активных групп)
+    local test_dom
+    test_dom="$(get_test_proxied_domain)"
+    if [[ -z "${test_dom}" ]]; then
+        printf_tr "M_0366" "${SELECTED_DOMAIN_GROUPS:-NONE}"
+    else
+        local spoofed_ip=""
+        for i in {1..15}; do
+            spoofed_ip="$(dig +time=2 +tries=1 +short @127.0.0.1 -p 5353 "probe-${i}.${test_dom}" A | sed -n '1p' || true)"
+            if [[ "${spoofed_ip}" == "${SERVER_IPV4}" ]]; then
+                break
+            fi
+            sleep 1
+        done
+        spoofed_ip="$(dig +time=3 +tries=2 +short @127.0.0.1 -p 5353 "${test_dom}" A | sed -n '1p' || true)"
+        if [[ "${spoofed_ip}" != "${SERVER_IPV4}" ]]; then
+            log_error_tr "dns.log" "M_0156" "${expected_engine}" "${SERVER_IPV4}" "${spoofed_ip:-пусто}"
+            return 1
         fi
-        sleep 1
-    done
-    spoofed_ip="$(dig +time=3 +tries=2 +short @127.0.0.1 -p 5353 generativelanguage.googleapis.com A | sed -n '1p' || true)"
-    if [[ "${spoofed_ip}" != "${SERVER_IPV4}" ]]; then
-        log_error_tr "dns.log" "M_0156" "${expected_engine}" "${SERVER_IPV4}" "${spoofed_ip:-пусто}"
-        return 1
-    fi
-    printf_tr "M_0157" "${SERVER_IPV4}"
+        printf_tr "M_0157" "${SERVER_IPV4}"
 
-    # 5. AAAA NODATA & HTTPS TYPE65
-    local aaaa_resp https_resp
-    aaaa_resp="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 generativelanguage.googleapis.com AAAA || true)"
-    https_resp="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 generativelanguage.googleapis.com TYPE65 || true)"
-    if ! grep -q "status: NOERROR" <<<"${aaaa_resp}" || ! grep -q "ANSWER: 0" <<<"${aaaa_resp}"; then
-        log_error_tr "dns.log" "M_0158" "${expected_engine}"
-        return 1
+        local aaaa_resp https_resp
+        aaaa_resp="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 "${test_dom}" AAAA || true)"
+        https_resp="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 "${test_dom}" TYPE65 || true)"
+        if ! grep -q "status: NOERROR" <<<"${aaaa_resp}" || ! grep -q "ANSWER: 0" <<<"${aaaa_resp}"; then
+            log_error_tr "dns.log" "M_0158" "${expected_engine}"
+            return 1
+        fi
+        if ! grep -Eq "status: (NOERROR|REFUSED)" <<<"${https_resp}" || ! grep -q "ANSWER: 0" <<<"${https_resp}"; then
+            log_error_tr "dns.log" "M_0159" "${expected_engine}"
+            return 1
+        fi
+        printf_tr "M_0160"
     fi
-    if ! grep -Eq "status: (NOERROR|REFUSED)" <<<"${https_resp}" || ! grep -q "ANSWER: 0" <<<"${https_resp}"; then
-        log_error_tr "dns.log" "M_0159" "${expected_engine}"
-        return 1
-    fi
-    printf_tr "M_0160"
 
     # 6. Ad-blocking filter test (allow up to 10s on first AdGuardHome start while filter list initializes)
     local ad_blocked=0
@@ -5605,27 +6351,32 @@ run_test_suite() {
     normal_a="$(printf '%s\n' "${normal_a}" | sed -n '1p')"
     check_step "$(tr_msg "M_0238" "${normal_a}")" "$( validate_single_ipv4 "${normal_a}" && [[ "${normal_a}" != "${SERVER_IPV4}" ]] && echo PASS || echo FAIL )"
 
-    # 4. SmartDNS A spoofing for proxied domain & subdomains
-    local spoof_a
-    spoof_a="$(dig +time=3 +tries=2 +short @127.0.0.1 -p 5353 generativelanguage.googleapis.com A || true)"
-    spoof_a="$(printf '%s\n' "${spoof_a}" | sed -n '1p')"
-    check_step "$(tr_msg "M_0239" "${SERVER_IPV4}")" "$( [[ "${spoof_a}" == "${SERVER_IPV4}" ]] && echo PASS || echo FAIL )"
-
-    # 5. NODATA (NOERROR + empty ANSWER) for AAAA and NOERROR/REFUSED for HTTPS (TYPE65)
-    local aaaa_out
-    aaaa_out="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 generativelanguage.googleapis.com AAAA || true)"
-    if grep -q "status: NOERROR" <<<"${aaaa_out}" && grep -q "ANSWER: 0" <<<"${aaaa_out}"; then
-        check_step "$(tr_msg "M_0240")" "PASS"
+    # 4-5. SmartDNS A spoofing, AAAA NODATA & HTTPS TYPE65 (динамический домен)
+    local suite_test_dom
+    suite_test_dom="$(get_test_proxied_domain)"
+    if [[ -z "${suite_test_dom}" ]]; then
+        check_step "$(tr_msg "M_0367" "${SELECTED_DOMAIN_GROUPS:-NONE}")" "PASS"
     else
-        check_step "$(tr_msg "M_0240")" "FAIL"
-    fi
+        local spoof_a
+        spoof_a="$(dig +time=3 +tries=2 +short @127.0.0.1 -p 5353 "${suite_test_dom}" A || true)"
+        spoof_a="$(printf '%s\n' "${spoof_a}" | sed -n '1p')"
+        check_step "$(tr_msg "M_0239" "${SERVER_IPV4}")" "$( [[ "${spoof_a}" == "${SERVER_IPV4}" ]] && echo PASS || echo FAIL )"
 
-    local https_out
-    https_out="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 generativelanguage.googleapis.com TYPE65 || true)"
-    if grep -Eq "status: (NOERROR|REFUSED)" <<<"${https_out}" && grep -q "ANSWER: 0" <<<"${https_out}"; then
-        check_step "$(tr_msg "M_0241")" "PASS"
-    else
-        check_step "$(tr_msg "M_0241")" "FAIL"
+        local aaaa_out
+        aaaa_out="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 "${suite_test_dom}" AAAA || true)"
+        if grep -q "status: NOERROR" <<<"${aaaa_out}" && grep -q "ANSWER: 0" <<<"${aaaa_out}"; then
+            check_step "$(tr_msg "M_0240")" "PASS"
+        else
+            check_step "$(tr_msg "M_0240")" "FAIL"
+        fi
+
+        local https_out
+        https_out="$(dig +time=3 +tries=2 @127.0.0.1 -p 5353 "${suite_test_dom}" TYPE65 || true)"
+        if grep -Eq "status: (NOERROR|REFUSED)" <<<"${https_out}" && grep -q "ANSWER: 0" <<<"${https_out}"; then
+            check_step "$(tr_msg "M_0241")" "PASS"
+        else
+            check_step "$(tr_msg "M_0241")" "FAIL"
+        fi
     fi
 
     # 6. Negative Test: Wrong DoH path on ROOT_DOMAIN returns disguised 404
@@ -5803,6 +6554,7 @@ generate_installation_report() {
    Последнее обновление      : ${LAST_UPDATE:-неизвестно}
    Количество исходных домен.: ${RAW_DOMAIN_COUNT:-0}
    Количество итоговых домен.: ${FINAL_DOMAIN_COUNT:-0}
+   Выбранные группы доменов  : ${SELECTED_DOMAIN_GROUPS:-ALL}
    EXCLUDE_GOOGLE_SYS        : ${EXCLUDE_GOOGLE_SYS}
    INCLUDE_XBOX_IPIFY        : ${INCLUDE_XBOX_IPIFY}
    Xray rules                : ${XRAY_RULES_STATUS:-VERIFIED_OK}
@@ -5831,6 +6583,7 @@ generate_installation_report() {
      - ${SCRIPT_NAME} --whitelist-flush
      - ${SCRIPT_NAME} --sync-ip
      - ${SCRIPT_NAME} --change-domain [NEW_DOMAIN]
+     - ${SCRIPT_NAME} --domain-groups
 
 5. XRAY TRANSPARENT SNI PROXY
    Статус службы             : $(systemctl is-active xray)
@@ -5904,6 +6657,56 @@ run_regenerate_cover() {
     run_test_suite
     TRANSACTION_ACTIVE=0
     log_info_tr "installation.log" "M_0263"
+}
+
+run_manage_domain_groups() {
+    detect_environment
+    if [[ ! -f "${SETTINGS_FILE}" || ! -f "${SECRETS_FILE}" ]]; then
+        printf_err_tr "M_0212"
+        exit 1
+    fi
+    # shellcheck disable=SC1091
+    source "${SETTINGS_FILE}"
+    # shellcheck disable=SC1091
+    source "${SECRETS_FILE}"
+
+    local current_groups="${SELECTED_DOMAIN_GROUPS:-ALL}"
+    local current_custom_cnt=0
+    if [[ -s "${CUSTOM_ALLOW_FILE}" ]]; then
+        current_custom_cnt="$(wc -l < "${CUSTOM_ALLOW_FILE}" | tr -d ' ')"
+    fi
+
+    printf_tr "M_0362" "${current_groups}"
+    printf_tr "M_0363" "${current_custom_cnt}"
+
+    if ! prompt_domain_groups_selection "${current_groups}"; then
+        return 0
+    fi
+    prompt_custom_domains_import
+    cleanup_domain_index_tmp
+
+    local confirm_apply=""
+    read_tr "M_0364" confirm_apply "${SELECTED_DOMAIN_GROUPS}"
+    if [[ ! "${confirm_apply:-N}" =~ ^[Yy]$ ]]; then
+        rm -f "${PENDING_CUSTOM_DOMAINS_FILE:-}" 2>/dev/null || true
+        printf_tr "M_0225"
+        return 0
+    fi
+
+    create_system_backup
+    TRANSACTION_ACTIVE=1
+
+    apply_pending_custom_domains
+    save_persistent_settings
+    install_domain_update_scripts
+    /usr/local/bin/update-geohide-domains.sh
+
+    systemctl restart "${DNS_ENGINE}" xray
+    verify_dns_backend_isolated
+    record_full_install_manifest
+
+    TRANSACTION_ACTIVE=0
+    log_info_tr "dns.log" "M_0365" "${SELECTED_DOMAIN_GROUPS}"
 }
 
 # ------------------------------ Status / Update / Uninstall -------------------
@@ -6895,6 +7698,7 @@ run_install() {
     setup_users_and_dirs
     TRANSACTION_ACTIVE=1
 
+    apply_pending_custom_domains
     save_persistent_settings
     install_system_packages
     install_xray_binary
@@ -6980,6 +7784,13 @@ main() {
             acquire_lock
             init_logging
             run_change_domain "${2:-}"
+            ;;
+        --domain-groups)
+            ACTION_MODE="domain-groups"
+            check_root
+            acquire_lock
+            init_logging
+            run_manage_domain_groups
             ;;
         --update)
             ACTION_MODE="update"
