@@ -1577,6 +1577,10 @@ detect_environment() {
     if command -v docker >/dev/null 2>&1 || systemctl is-active --quiet docker 2>/dev/null; then
         DOCKER_PRESENT=1
     fi
+
+    if [[ "${HOSTNAME_PROFILE_READY:-0}" == "1" ]]; then
+        restore_hostname_profile
+    fi
 }
 
 validate_os_and_resources() {
@@ -2463,6 +2467,15 @@ initialize_hostname_profile() {
     if [[ -f "${SETTINGS_FILE}" ]]; then
         load_settings_safely "${SETTINGS_FILE}" || return 1
         restore_hostname_profile
+    else
+        # Fresh hostname profile must never silently inherit auto-detected interface IPs
+        # (such as ULA/private IPv6 or NAT IPv4) populated earlier by detect_environment().
+        ROOT_DOMAIN=""
+        PROVIDER_HOSTNAME=""
+        PUBLIC_IPV4=""
+        PUBLIC_IPV6=""
+        SERVER_IPV4=""
+        SERVER_IPV6=""
     fi
 
     if [[ -n "${input_host}" && -n "${ROOT_DOMAIN:-}" ]]; then

@@ -121,6 +121,19 @@ with tempfile.TemporaryDirectory(prefix="smartdns-hostname-test-") as folder:
         ),
     )
 
+    check(
+        "fresh install does not inherit auto-detected interface SERVER_IPV4/SERVER_IPV6",
+        '''
+SERVER_IPV4="10.0.2.15"
+SERVER_IPV6="fd17:625c:f037::1"
+initialize_hostname_profile
+[[ "$PUBLIC_IPV4" == "192.0.2.25" && "$SERVER_IPV4" == "192.0.2.25" ]]
+[[ -z "$PUBLIC_IPV6" && -z "$SERVER_IPV6" && "$HAS_IPV6" == "0" ]]
+''',
+        inputs=generic,
+        initialize=False,
+    )
+
     # Validation & injection/path-traversal protection
     check("missing noninteractive inputs rejected", "", False, inputs={})
     check("invalid hostname (command injection) rejected", "", False, inputs=dict(generic, PROVIDER_HOSTNAME="bad;hostname"))
