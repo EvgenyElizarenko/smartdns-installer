@@ -6840,9 +6840,9 @@ run_manage_domain_groups() {
         printf_err_tr "M_0212"
         exit 1
     fi
-    # shellcheck disable=SC1091
+    # shellcheck disable=SC1090
     source "${SETTINGS_FILE}"
-    # shellcheck disable=SC1091
+    # shellcheck disable=SC1090
     source "${SECRETS_FILE}"
 
     local current_groups="${SELECTED_DOMAIN_GROUPS:-ALL}"
