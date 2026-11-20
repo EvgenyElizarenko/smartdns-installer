@@ -1096,6 +1096,23 @@ MSG_RU[M_0512]='Некорректный выбор. Введите 1, 2 или 
 MSG_EN[M_0512]='Invalid choice. Enter 1, 2, or 0.\n'
 MSG_RU[M_0513]='Выход из установщика.\n'
 MSG_EN[M_0513]='Exiting installer.\n'
+MSG_RU[M_0511]='Выберите пункт [0-15]: '
+MSG_EN[M_0511]='Select an option [0-15]: '
+MSG_RU[M_0512]='Некорректный выбор. Введите число от 0 до 15.\n'
+MSG_EN[M_0512]='Invalid choice. Enter a number from 0 to 15.\n'
+MSG_RU[M_0514]='\nНажмите Enter для возврата в главное меню...'
+MSG_EN[M_0514]='\nPress Enter to return to the main menu...'
+MSG_RU[M_0515]='\nОперация завершилась с кодом возврата: %s.\n'
+MSG_EN[M_0515]='\nOperation exited with status code: %s.\n'
+MSG_RU[M_0516]='\nПереключение DNS backend:\n  [1] OxiDNS (Rust)\n  [2] AdGuardHome (Go)\n  [0] Назад\nВаш выбор [0]: '
+MSG_EN[M_0516]='\nSwitch DNS backend:\n  [1] OxiDNS (Rust)\n  [2] AdGuardHome (Go)\n  [0] Back\nYour choice [0]: '
+MSG_RU[M_0517]='\nУправление DoT IP-whitelist:\n  [1] Включить DoT IP-whitelist\n  [2] Отключить DoT IP-whitelist\n  [3] Режим shared (общий ipset для DoH и DoT)\n  [4] Режим separate (отдельный ipset для DoT)\n  [0] Назад\nВаш выбор [0]: '
+MSG_EN[M_0517]='\nDoT IP-whitelist management:\n  [1] Enable DoT IP-whitelist\n  [2] Disable DoT IP-whitelist\n  [3] Mode: shared (shared ipset for DoH & DoT)\n  [4] Mode: separate (dedicated ipset for DoT)\n  [0] Back\nYour choice [0]: '
+MSG_RU[M_0518]='Введите путь к резервной копии (Enter — откат к последней, 0 — отмена): '
+MSG_EN[M_0518]='Enter backup path (Enter for latest backup, 0 to cancel): '
+MSG_RU[M_0519]='Доступные резервные копии в /var/lib/oxidns-installer/backups:\n'
+MSG_EN[M_0519]='Available backups in /var/lib/oxidns-installer/backups:\n'
+
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -1315,7 +1332,8 @@ SSH_DESIRED_PASSAUTH=""
 SSH_DESIRED_ROOTLOGIN=""
 SSH_HARDENING_CRYPTO="false"
 SSH_LAST_BACKUP_DIR=""
-SKIP_INITIAL_SETUP_IN_INSTALL=0
+SKIP_INITIAL_SETUP_IN_INSTALL="${SKIP_INITIAL_SETUP_IN_INSTALL:-0}"
+LANGUAGE_SELECTED="${LANGUAGE_SELECTED:-0}"
 LAUNCHER_LOCK_ACQUIRED=0
 SELECTED_DOMAIN_GROUPS="ALL"
 PENDING_CUSTOM_DOMAINS_FILE=""
@@ -4567,6 +4585,69 @@ EOF
 }
 
 # ------------------------------ Interactive Main Launcher Menu ----------------
+run_launcher_exec() {
+    check_root
+    local rc=0
+    LANGUAGE_SELECTED=1 SCRIPT_LANG="${SCRIPT_LANG:-ru}" \
+        SKIP_INITIAL_SETUP_IN_INSTALL="${SKIP_INITIAL_SETUP_IN_INSTALL:-0}" \
+        bash "${BASH_SOURCE[0]}" "$@" || rc=$?
+    SKIP_INITIAL_SETUP_IN_INSTALL=0
+    if [[ "${rc}" -ne 0 ]]; then
+        printf_tr "M_0515" "${rc}"
+    fi
+    local _pause=""
+    read_tr "M_0514" _pause
+    if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+        return 1
+    fi
+    return 0
+}
+
+run_launcher_switch_engine_submenu() {
+    local eng_choice=""
+    read_tr "M_0516" eng_choice
+    if [[ "${LAST_READ_EOF}" -eq 1 || -z "${eng_choice}" || "${eng_choice}" == "0" ]]; then
+        return 0
+    fi
+    case "${eng_choice}" in
+        1) run_launcher_exec --switch-engine oxidns ;;
+        2) run_launcher_exec --switch-engine adguardhome ;;
+        *) printf_tr "M_0512" ;;
+    esac
+}
+
+run_launcher_whitelist_submenu() {
+    local wl_choice=""
+    read_tr "M_0517" wl_choice
+    if [[ "${LAST_READ_EOF}" -eq 1 || -z "${wl_choice}" || "${wl_choice}" == "0" ]]; then
+        return 0
+    fi
+    case "${wl_choice}" in
+        1) run_launcher_exec --whitelist-enable ;;
+        2) run_launcher_exec --whitelist-disable ;;
+        3) run_launcher_exec --whitelist-mode shared ;;
+        4) run_launcher_exec --whitelist-mode separate ;;
+        *) printf_tr "M_0512" ;;
+    esac
+}
+
+run_launcher_rollback_submenu() {
+    if [[ -d "${BACKUP_ROOT}" ]]; then
+        printf_tr "M_0519"
+        ls -1dt "${BACKUP_ROOT}"/backup-* 2>/dev/null | head -n 10 | sed 's/^/  - /' || true
+    fi
+    local rb_path=""
+    read_tr "M_0518" rb_path
+    if [[ "${LAST_READ_EOF}" -eq 1 || "${rb_path}" == "0" ]]; then
+        return 0
+    fi
+    if [[ -n "${rb_path}" ]]; then
+        run_launcher_exec --rollback "${rb_path}"
+    else
+        run_launcher_exec --rollback
+    fi
+}
+
 run_main_launcher_menu() {
     while true; do
         if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
@@ -4575,9 +4656,30 @@ run_main_launcher_menu() {
 ==============================================================================
   UNIFIED SMARTDNS INSTALLER (v${INSTALLER_VERSION})
 ==============================================================================
-  1. Initial server setup
-  2. Install SmartDNS
-  0. Exit
+  Setup & Installation:
+    [ 1] Initial server setup & SSH hardening (--initial-setup)
+    [ 2] Install SmartDNS + SNI Proxy         (--install)
+
+  Diagnostics & Maintenance:
+    [ 3] Service status & DoT whitelist       (--status)
+    [ 4] Run full verification test suite     (--test)
+    [ 5] Server preflight check               (--preflight)
+    [ 6] Update binaries, rules & TLS renewal (--update)
+
+  Configuration Management:
+    [ 7] Manage proxied domain groups         (--domain-groups)
+    [ 8] Switch DNS backend (OxiDNS/AdGuard)  (--switch-engine)
+    [ 9] Manage DoT IP-whitelist              (--whitelist-*)
+    [10] Sync server IP & Cloudflare DNS      (--sync-ip)
+    [11] Change root domain & certificate     (--change-domain)
+    [12] Regenerate procedural Cover Site     (--regenerate-cover)
+
+  Backup & Removal:
+    [13] Create full system backup            (--backup)
+    [14] Rollback to a previous backup        (--rollback)
+    [15] Selective / full uninstall           (--uninstall)
+
+    [ 0] Exit
 ==============================================================================
 MENU_EN
         else
@@ -4586,9 +4688,30 @@ MENU_EN
 ==============================================================================
   УСТАНОВЩИК UNIFIED SMARTDNS (v${INSTALLER_VERSION})
 ==============================================================================
-  1. Начальная настройка сервера
-  2. Установка SmartDNS
-  0. Выход
+  Настройка и установка:
+    [ 1] Начальная настройка сервера и SSH    (--initial-setup)
+    [ 2] Установка SmartDNS + SNI Proxy       (--install)
+
+  Диагностика и обслуживание:
+    [ 3] Статус служб и DoT whitelist         (--status)
+    [ 4] Комплексное тестирование стека       (--test)
+    [ 5] Предварительная проверка сервера     (--preflight)
+    [ 6] Обновление компонентов, правил и TLS (--update)
+
+  Управление конфигурацией:
+    [ 7] Группы проксируемых доменов и импорт (--domain-groups)
+    [ 8] Переключение DNS backend             (--switch-engine)
+    [ 9] Управление DoT IP-whitelist          (--whitelist-*)
+    [10] Синхронизация IP и Cloudflare DNS    (--sync-ip)
+    [11] Смена корневого домена и сертификата (--change-domain)
+    [12] Перегенерация сайта-заглушки         (--regenerate-cover)
+
+  Резервные копии и удаление:
+    [13] Создать резервную копию              (--backup)
+    [14] Откат к резервной копии              (--rollback)
+    [15] Выборочное / полное удаление         (--uninstall)
+
+    [ 0] Выход
 ==============================================================================
 MENU_RU
         fi
@@ -4600,28 +4723,24 @@ MENU_RU
         fi
 
         case "${menu_choice}" in
-            1)
-                check_root
-                if [[ "${LAUNCHER_LOCK_ACQUIRED:-0}" -ne 1 ]]; then
-                    acquire_lock
-                    LAUNCHER_LOCK_ACQUIRED=1
-                fi
-                detect_environment
-                validate_os_and_resources
-                init_logging
-                init_reboot_lock "enforce"
-                run_initial_server_setup "standalone"
-                ;;
+            1)  run_launcher_exec --initial-setup || return 0 ;;
             2)
-                check_root
-                if [[ "${LAUNCHER_LOCK_ACQUIRED:-0}" -ne 1 ]]; then
-                    acquire_lock
-                    LAUNCHER_LOCK_ACQUIRED=1
-                fi
                 SKIP_INITIAL_SETUP_IN_INSTALL=1
-                run_install
-                return 0
+                run_launcher_exec --install || return 0
                 ;;
+            3)  run_launcher_exec --status || return 0 ;;
+            4)  run_launcher_exec --test || return 0 ;;
+            5)  run_launcher_exec --preflight || return 0 ;;
+            6)  run_launcher_exec --update || return 0 ;;
+            7)  run_launcher_exec --domain-groups || return 0 ;;
+            8)  run_launcher_switch_engine_submenu || return 0 ;;
+            9)  run_launcher_whitelist_submenu || return 0 ;;
+            10) run_launcher_exec --sync-ip || return 0 ;;
+            11) run_launcher_exec --change-domain || return 0 ;;
+            12) run_launcher_exec --regenerate-cover || return 0 ;;
+            13) run_launcher_exec --backup || return 0 ;;
+            14) run_launcher_rollback_submenu || return 0 ;;
+            15) run_launcher_exec --uninstall || return 0 ;;
             0|q|Q)
                 printf_tr "M_0513"
                 return 0
@@ -4634,6 +4753,7 @@ MENU_RU
 }
 
 # ------------------------------ Initial Backup & Manifest ---------------------
+
 init_install_manifest() {
     install -d -m 0700 -o root -g root "${STATE_DIR}"
     if [[ ! -f "${INSTALL_MANIFEST_FILE}" ]]; then
