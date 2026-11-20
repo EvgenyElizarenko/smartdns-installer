@@ -1090,6 +1090,12 @@ MSG_RU[M_0509]='ПРЕДУПРЕЖДЕНИЕ: Правило или сокет S
 MSG_EN[M_0509]='WARNING: SSH rule or socket on port %s/tcp needs attention; emergency UFW allow applied.'
 MSG_RU[M_0510]='ПРЕДУПРЕЖДЕНИЕ: Fail2ban установлен, но запуск службы сейчас не удался (будет активирован после настройки firewall в основной фазе).\n'
 MSG_EN[M_0510]='WARNING: Fail2ban was installed, but starting the service failed now (it can start once firewall packages are installed in the main phase).\n'
+MSG_RU[M_0511]='Выберите пункт [1/2/0]: '
+MSG_EN[M_0511]='Select an option [1/2/0]: '
+MSG_RU[M_0512]='Некорректный выбор. Введите 1, 2 или 0.\n'
+MSG_EN[M_0512]='Invalid choice. Enter 1, 2, or 0.\n'
+MSG_RU[M_0513]='Выход из установщика.\n'
+MSG_EN[M_0513]='Exiting installer.\n'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -1309,6 +1315,8 @@ SSH_DESIRED_PASSAUTH=""
 SSH_DESIRED_ROOTLOGIN=""
 SSH_HARDENING_CRYPTO="false"
 SSH_LAST_BACKUP_DIR=""
+SKIP_INITIAL_SETUP_IN_INSTALL=0
+LAUNCHER_LOCK_ACQUIRED=0
 SELECTED_DOMAIN_GROUPS="ALL"
 PENDING_CUSTOM_DOMAINS_FILE=""
 PENDING_CUSTOM_DOMAINS_COUNT=0
@@ -4556,6 +4564,73 @@ Initial Server Setup & Security Hardening:
   Deferred reboot needed : ${REBOOT_REQUIRED} (${REBOOT_REASONS:-none})
 ------------------------------------------------------------------------------
 EOF
+}
+
+# ------------------------------ Interactive Main Launcher Menu ----------------
+run_main_launcher_menu() {
+    while true; do
+        if [[ "${SCRIPT_LANG:-ru}" == "en" ]]; then
+            cat <<MENU_EN
+
+==============================================================================
+  UNIFIED SMARTDNS INSTALLER (v${INSTALLER_VERSION})
+==============================================================================
+  1. Initial server setup
+  2. Install SmartDNS
+  0. Exit
+==============================================================================
+MENU_EN
+        else
+            cat <<MENU_RU
+
+==============================================================================
+  УСТАНОВЩИК UNIFIED SMARTDNS (v${INSTALLER_VERSION})
+==============================================================================
+  1. Начальная настройка сервера
+  2. Установка SmartDNS
+  0. Выход
+==============================================================================
+MENU_RU
+        fi
+
+        local menu_choice=""
+        read_tr "M_0511" menu_choice
+        if [[ "${LAST_READ_EOF}" -eq 1 ]]; then
+            return 0
+        fi
+
+        case "${menu_choice}" in
+            1)
+                check_root
+                if [[ "${LAUNCHER_LOCK_ACQUIRED:-0}" -ne 1 ]]; then
+                    acquire_lock
+                    LAUNCHER_LOCK_ACQUIRED=1
+                fi
+                detect_environment
+                validate_os_and_resources
+                init_logging
+                init_reboot_lock "enforce"
+                run_initial_server_setup "standalone"
+                ;;
+            2)
+                check_root
+                if [[ "${LAUNCHER_LOCK_ACQUIRED:-0}" -ne 1 ]]; then
+                    acquire_lock
+                    LAUNCHER_LOCK_ACQUIRED=1
+                fi
+                SKIP_INITIAL_SETUP_IN_INSTALL=1
+                run_install
+                return 0
+                ;;
+            0|q|Q)
+                printf_tr "M_0513"
+                return 0
+                ;;
+            *)
+                printf_tr "M_0512"
+                ;;
+        esac
+    done
 }
 
 # ------------------------------ Initial Backup & Manifest ---------------------
@@ -10472,7 +10547,9 @@ run_install() {
     validate_os_and_resources
     init_logging
     init_reboot_lock "enforce"
-    run_initial_server_setup "install"
+    if [[ "${SKIP_INITIAL_SETUP_IN_INSTALL:-0}" -ne 1 ]]; then
+        run_initial_server_setup "install"
+    fi
     run_interactive_wizard
 
     init_logging
@@ -10532,6 +10609,11 @@ print_help() {
 }
 
 main() {
+    if [[ $# -eq 0 && -t 0 ]]; then
+        select_interface_language
+        run_main_launcher_menu
+        return 0
+    fi
     select_interface_language
     if [[ $# -eq 0 ]]; then
         print_help
