@@ -804,6 +804,16 @@ MSG_RU[M_0367]='Список проксируемых доменов пуст (�
 MSG_EN[M_0367]='Proxied domain list is empty (selected groups: %s) — rewrite test skipped'
 MSG_RU[M_0368]='Выберите корректный пункт меню (A, N, C или Q).\n'
 MSG_EN[M_0368]='Please select a valid menu option (A, N, C, or Q).\n'
+MSG_RU[M_0369]='Настройка автоматического продления TLS-сертификатов (smartdns-cert-renew.timer + атомарный deploy-хук)...'
+MSG_EN[M_0369]='Configuring automated TLS certificate renewal (smartdns-cert-renew.timer + atomic deploy hook)...'
+MSG_RU[M_0370]='Автопродление сертификатов настроено: smartdns-cert-renew.timer активен, reloadcmd подключён.'
+MSG_EN[M_0370]='Certificate auto-renewal configured: smartdns-cert-renew.timer is active, reloadcmd linked.'
+MSG_RU[M_0371]='Предупреждение: не удалось зарегистрировать --install-cert в acme.sh для %s (будет использован fallback в deploy-хуке).'
+MSG_EN[M_0371]='Warning: failed to register --install-cert in acme.sh for %s (deploy hook fallback will be used).'
+MSG_RU[M_0372]='Автопродление TLS (smartdns-cert-renew.timer + deploy-хук acme.sh) активно и корректно настроено'
+MSG_EN[M_0372]='TLS auto-renewal (smartdns-cert-renew.timer + acme.sh deploy hook) is active and properly configured'
+MSG_RU[M_0373]='Профиль acme.sh для %s не найден; таймер создан и готов к работе после выпуска сертификата.'
+MSG_EN[M_0373]='acme.sh profile for %s not found; renewal timer created and ready after certificate issuance.'
 
 select_interface_language() {
     if [[ "${SCRIPT_LANG:-}" != "ru" && "${SCRIPT_LANG:-}" != "en" ]]; then
@@ -948,6 +958,7 @@ readonly XRAY_RULES_DIR="/etc/xray/rules.d"
 readonly XRAY_ROUTING_JSON="${XRAY_RULES_DIR}/10-smartdns-routing.json"
 readonly LOG_DIR="/var/log/oxidns-installer"
 readonly CERT_DIR="/etc/ssl/smartdns"
+readonly CERT_STAGE_DIR="${STATE_DIR}/cert-stage"
 readonly WEB_ROOT="/var/www/studio-nord"
 LAUNCH_DIR="$(pwd)"
 readonly LAUNCH_DIR
@@ -3040,23 +3051,181 @@ EOF
     chmod 0755 /usr/local/bin/verify-tls-keys.sh
 }
 
+configure_cert_auto_renewal() {
+    log_info_tr "certificate.log" "M_0369"
+    install_tls_verification_helper
+
+    install -d -m 0700 -o root -g root "${CERT_STAGE_DIR}"
+    if [[ -f /root/.acme.sh/account.conf ]]; then
+        chmod 0600 /root/.acme.sh/account.conf
+    fi
+
+    cat > /usr/local/bin/smartdns-cert-deploy.sh <<'EOF'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 027
+
+exec 9>/run/lock/smartdns-cert-deploy.lock
+if ! flock -n 9; then
+    exit 0
+fi
+
+# shellcheck disable=SC1091
+source /var/lib/oxidns-installer/settings
+
+LOG_FILE="/var/log/oxidns-installer/certificate.log"
+CERT_DIR="/etc/ssl/smartdns"
+STAGE_DIR="/var/lib/oxidns-installer/cert-stage"
+ACME_ECC_DIR="/root/.acme.sh/${ROOT_DOMAIN}_ecc"
+
+log() {
+    printf '[%s] [CERT-DEPLOY] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" >> "${LOG_FILE}"
+}
+
+SRC_CERT=""
+SRC_KEY=""
+if [[ -s "${STAGE_DIR}/fullchain.pem" && -s "${STAGE_DIR}/privkey.pem" ]]; then
+    SRC_CERT="${STAGE_DIR}/fullchain.pem"
+    SRC_KEY="${STAGE_DIR}/privkey.pem"
+elif [[ -s "${ACME_ECC_DIR}/fullchain.cer" && -s "${ACME_ECC_DIR}/${ROOT_DOMAIN}.key" ]]; then
+    SRC_CERT="${ACME_ECC_DIR}/fullchain.cer"
+    SRC_KEY="${ACME_ECC_DIR}/${ROOT_DOMAIN}.key"
+else
+    log "ОШИБКА: Файлы сертификата не найдены ни в ${STAGE_DIR}, ни в ${ACME_ECC_DIR}."
+    exit 1
+fi
+
+if ! /usr/local/bin/verify-tls-keys.sh "${SRC_CERT}" "${SRC_KEY}" "${ROOT_DOMAIN}" >> "${LOG_FILE}" 2>&1; then
+    log "ОШИБКА: Криптографическая проверка нового сертификата не пройдена. Рабочие файлы в ${CERT_DIR} сохранены без изменений."
+    exit 1
+fi
+
+install -d -m 0750 -o root -g ssl-smartdns "${CERT_DIR}"
+install -m 0644 -o root -g ssl-smartdns "${SRC_CERT}" "${CERT_DIR}/fullchain.pem.new"
+install -m 0640 -o root -g ssl-smartdns "${SRC_KEY}" "${CERT_DIR}/privkey.pem.new"
+mv -f "${CERT_DIR}/fullchain.pem.new" "${CERT_DIR}/fullchain.pem"
+mv -f "${CERT_DIR}/privkey.pem.new" "${CERT_DIR}/privkey.pem"
+log "Сертификат для ${ROOT_DOMAIN} атомарно установлен в ${CERT_DIR}."
+
+if systemctl is-active --quiet nginx 2>/dev/null; then
+    if nginx -t >> "${LOG_FILE}" 2>&1; then
+        systemctl reload nginx
+        log "Nginx успешно перезагружен с актуальным TLS-сертификатом."
+    else
+        log "ОШИБКА: Проверка nginx -t не пройдена после установки сертификата."
+        exit 1
+    fi
+else
+    log "Служба nginx не активна — reload пропущен (сертификат установлен)."
+fi
+EOF
+    chmod 0750 /usr/local/bin/smartdns-cert-deploy.sh
+
+    cat > /usr/local/bin/smartdns-cert-renew.sh <<'EOF'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 027
+
+exec 9>/run/lock/smartdns-cert-renew.lock
+if ! flock -n 9; then
+    exit 0
+fi
+
+# shellcheck disable=SC1091
+source /var/lib/oxidns-installer/settings
+# shellcheck disable=SC1091
+[[ -f /var/lib/oxidns-installer/secrets.env ]] && source /var/lib/oxidns-installer/secrets.env
+
+LOG_FILE="/var/log/oxidns-installer/certificate.log"
+CERT_DIR="/etc/ssl/smartdns"
+
+log() {
+    printf '[%s] [CERT-RENEW] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" >> "${LOG_FILE}"
+}
+
+if [[ ! -x /root/.acme.sh/acme.sh ]]; then
+    log "ОШИБКА: Клиент /root/.acme.sh/acme.sh не найден."
+    exit 1
+fi
+
+if [[ -f /root/.acme.sh/account.conf ]]; then
+    chmod 0600 /root/.acme.sh/account.conf
+fi
+
+log "Запуск плановой проверки продления сертификата для ${ROOT_DOMAIN}..."
+if [[ -n "${CF_API_TOKEN:-}" && "${CF_API_TOKEN}" != "REUSE_EXISTING_CERT_TOKEN" ]]; then
+    export CF_Token="${CF_API_TOKEN}"
+fi
+
+rc=0
+/root/.acme.sh/acme.sh --cron --home /root/.acme.sh >> "${LOG_FILE}" 2>&1 || rc=$?
+unset CF_Token || true
+
+if [[ "${rc}" -ne 0 ]]; then
+    log "ОШИБКА: acme.sh --cron завершился с кодом ${rc}. Действующий сертификат в ${CERT_DIR} не изменён."
+    exit "${rc}"
+fi
+
+if ! /usr/local/bin/verify-tls-keys.sh "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem" "${ROOT_DOMAIN}" >> "${LOG_FILE}" 2>&1; then
+    log "ПРЕДУПРЕЖДЕНИЕ: Проверка установленного сертификата в ${CERT_DIR} не пройдена после --cron."
+    exit 1
+fi
+
+log "Плановая проверка продления сертификата для ${ROOT_DOMAIN} успешно завершена."
+EOF
+    chmod 0750 /usr/local/bin/smartdns-cert-renew.sh
+
+    local acme_ecc_conf="/root/.acme.sh/${ROOT_DOMAIN}_ecc/${ROOT_DOMAIN}.conf"
+    if [[ -x /root/.acme.sh/acme.sh && -f "${acme_ecc_conf}" ]]; then
+        if ! /root/.acme.sh/acme.sh --home /root/.acme.sh --install-cert -d "${ROOT_DOMAIN}" --ecc \
+            --fullchain-file "${CERT_STAGE_DIR}/fullchain.pem" \
+            --key-file "${CERT_STAGE_DIR}/privkey.pem" \
+            --reloadcmd "/usr/local/bin/smartdns-cert-deploy.sh" >> "${LOG_DIR}/certificate.log" 2>&1; then
+            log_warn_tr "certificate.log" "M_0371" "${ROOT_DOMAIN}"
+        fi
+    else
+        log_info_tr "certificate.log" "M_0373" "${ROOT_DOMAIN}"
+    fi
+
+    cat > /etc/systemd/system/smartdns-cert-renew.service <<'EOF'
+[Unit]
+Description=SmartDNS Automated TLS Certificate Renewal (acme.sh)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/smartdns-cert-renew.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+EOF
+
+    cat > /etc/systemd/system/smartdns-cert-renew.timer <<'EOF'
+[Unit]
+Description=Daily SmartDNS TLS Certificate Renewal Check (03:30 Europe/Moscow)
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Europe/Moscow
+RandomizedDelaySec=1800
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable --now smartdns-cert-renew.timer
+    log_info_tr "certificate.log" "M_0370"
+}
+
 issue_wildcard_certificate() {
     backup_file_before_modify "${CERT_DIR}/fullchain.pem" "certificates" || return 1
     backup_file_before_modify "${CERT_DIR}/privkey.pem" "certificates" || return 1
     install_tls_verification_helper
     log_info_tr "certificate.log" "M_0117" "${ROOT_DOMAIN}"
-
-    cat > /usr/local/bin/smartdns-cert-deploy.sh <<EOF
-#!/usr/bin/env bash
-set -Eeuo pipefail
-if /usr/local/bin/verify-tls-keys.sh "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem" "${ROOT_DOMAIN}"; then
-    chown root:ssl-smartdns "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem"
-    chmod 0644 "${CERT_DIR}/fullchain.pem"
-    chmod 0640 "${CERT_DIR}/privkey.pem"
-    nginx -t && systemctl reload nginx
-fi
-EOF
-    chmod 0750 /usr/local/bin/smartdns-cert-deploy.sh
 
     if [[ -s "${CERT_DIR}/fullchain.pem" && -s "${CERT_DIR}/privkey.pem" ]]; then
         if /usr/local/bin/verify-tls-keys.sh "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem" "${ROOT_DOMAIN}" >> "${LOG_DIR}/certificate.log" 2>&1; then
@@ -3064,6 +3233,7 @@ EOF
             chmod 0644 "${CERT_DIR}/fullchain.pem"
             chmod 0640 "${CERT_DIR}/privkey.pem"
             log_info_tr "certificate.log" "M_0118" "${CERT_DIR}"
+            configure_cert_auto_renewal
             return 0
         fi
     fi
@@ -3076,6 +3246,7 @@ EOF
             mv -f "${CERT_DIR}/fullchain.pem.new" "${CERT_DIR}/fullchain.pem"
             mv -f "${CERT_DIR}/privkey.pem.new" "${CERT_DIR}/privkey.pem"
             log_info_tr "certificate.log" "M_0119" "${acme_ecc_dir}"
+            configure_cert_auto_renewal
             return 0
         fi
     fi
@@ -3094,9 +3265,7 @@ EOF
         rm -rf "${tmp_acme}"
     fi
 
-    local stage_dir
-    stage_dir="$(mktemp -d /tmp/cert-stage.XXXXXX)"
-    chmod 0700 "${stage_dir}"
+    install -d -m 0700 -o root -g root "${CERT_STAGE_DIR}"
 
     export CF_Token="${CF_API_TOKEN}"
     /root/.acme.sh/acme.sh --home /root/.acme.sh --set-default-ca --server letsencrypt >/dev/null 2>&1 || true
@@ -3105,27 +3274,17 @@ EOF
     if ! /root/.acme.sh/acme.sh --home /root/.acme.sh --issue --dns dns_cf \
         -d "${ROOT_DOMAIN}" -d "*.${ROOT_DOMAIN}" --keylength ec-256 >> "${LOG_DIR}/certificate.log" 2>&1; then
         unset CF_Token
-        rm -rf "${stage_dir}"
         log_error_tr "certificate.log" "M_0122"
         exit 1
     fi
     unset CF_Token
 
-    /root/.acme.sh/acme.sh --home /root/.acme.sh --install-cert -d "${ROOT_DOMAIN}" --ecc \
-        --fullchain-file "${stage_dir}/fullchain.pem" \
-        --key-file "${stage_dir}/privkey.pem" >/dev/null 2>&1
+    configure_cert_auto_renewal
 
-    if ! /usr/local/bin/verify-tls-keys.sh "${stage_dir}/fullchain.pem" "${stage_dir}/privkey.pem" "${ROOT_DOMAIN}" >> "${LOG_DIR}/certificate.log" 2>&1; then
-        rm -rf "${stage_dir}"
+    if ! /usr/local/bin/verify-tls-keys.sh "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem" "${ROOT_DOMAIN}" >> "${LOG_DIR}/certificate.log" 2>&1; then
         log_error_tr "certificate.log" "M_0123"
         exit 1
     fi
-
-    install -m 0644 -o root -g ssl-smartdns "${stage_dir}/fullchain.pem" "${CERT_DIR}/fullchain.pem.new"
-    install -m 0640 -o root -g ssl-smartdns "${stage_dir}/privkey.pem" "${CERT_DIR}/privkey.pem.new"
-    mv -f "${CERT_DIR}/fullchain.pem.new" "${CERT_DIR}/fullchain.pem"
-    mv -f "${CERT_DIR}/privkey.pem.new" "${CERT_DIR}/privkey.pem"
-    rm -rf "${stage_dir}"
 
     log_info_tr "certificate.log" "M_0124" "${ROOT_DOMAIN}" "${ROOT_DOMAIN}"
 }
@@ -5688,7 +5847,7 @@ EOF
     systemctl daemon-reload
     systemctl enable smartdns-firewall.service "${DNS_ENGINE}.service" xray.service \
         xray-reload.path nginx.service doh-ipset-watcher.service dot-ipset-watcher.service \
-        geosite-update.timer geohide-update.timer
+        geosite-update.timer geohide-update.timer smartdns-cert-renew.timer
 
     systemctl restart smartdns-firewall.service
     systemctl restart "${DNS_ENGINE}.service"
@@ -5696,7 +5855,7 @@ EOF
     systemctl restart xray.service
     systemctl start xray-reload.path
     systemctl restart doh-ipset-watcher.service dot-ipset-watcher.service
-    systemctl start geosite-update.timer geohide-update.timer
+    systemctl start geosite-update.timer geohide-update.timer smartdns-cert-renew.timer
 
     for _ in {1..15}; do
         if ss -ulnp 2>/dev/null | grep -q ":5353 "; then
@@ -6338,12 +6497,27 @@ run_test_suite() {
     xray_proc_user="$(ps -o user= -C xray | sed -n '1p' | tr -d ' ')"
     check_step "$(tr_msg "M_0236" "${xray_proc_user}")" "$( [[ "${xray_proc_user}" == "xray" ]] && echo PASS || echo FAIL )"
 
-    # 2. Certificate cryptographic verification
+    # 2. Certificate cryptographic verification & auto-renewal check
     if /usr/local/bin/verify-tls-keys.sh "${CERT_DIR}/fullchain.pem" "${CERT_DIR}/privkey.pem" "${ROOT_DOMAIN}" >/dev/null 2>&1; then
         check_step "$(tr_msg "M_0237")" "PASS"
     else
         check_step "$(tr_msg "M_0237")" "FAIL"
     fi
+
+    local cert_renew_ok=1
+    if ! systemctl is-active --quiet smartdns-cert-renew.timer || ! systemctl is-enabled --quiet smartdns-cert-renew.timer; then
+        cert_renew_ok=0
+    fi
+    if [[ ! -x /usr/local/bin/smartdns-cert-renew.sh || ! -x /usr/local/bin/smartdns-cert-deploy.sh ]]; then
+        cert_renew_ok=0
+    fi
+    local acme_dom_conf="/root/.acme.sh/${ROOT_DOMAIN}_ecc/${ROOT_DOMAIN}.conf"
+    if [[ -f "${acme_dom_conf}" ]]; then
+        if grep -q "Le_RealFullChainPath='/tmp/" "${acme_dom_conf}" 2>/dev/null || grep -q "^Le_ReloadCmd=''" "${acme_dom_conf}" 2>/dev/null; then
+            cert_renew_ok=0
+        fi
+    fi
+    check_step "$(tr_msg "M_0372")" "$( [[ "${cert_renew_ok}" -eq 1 ]] && echo PASS || echo FAIL )"
 
     # 3. Ordinary DNS resolution via internal listener
     local normal_a
@@ -6597,6 +6771,7 @@ generate_installation_report() {
    Домен сайта Studio Nord   : https://${ROOT_DOMAIN}
    Внутренние TLS-порты      : 9443/TCP (DNAT), 127.0.0.1:9444/TCP (PROXY protocol от Xray)
    Сертификат TLS            : ${CERT_DIR}/fullchain.pem (SAN: ${ROOT_DOMAIN}, *.${ROOT_DOMAIN})
+   Автопродление TLS         : smartdns-cert-renew.timer ($(systemctl is-active smartdns-cert-renew.timer 2>/dev/null || echo inactive), 03:30 MSK)
 
 7. FIREWALL И IPSET
    Используемый backend      : ${IPTABLES_BACKEND} + UFW
@@ -6716,7 +6891,7 @@ run_status() {
     if [[ -f "${SETTINGS_FILE}" ]]; then
         printf '  %-26s : %s\n' "$(tr_msg M_0265)" "$(awk -F'"' '/^DNS_ENGINE=/ {print $2}' "${SETTINGS_FILE}" 2>/dev/null || echo unknown)"
     fi
-    for svc in smartdns-firewall oxidns adguardhome xray xray-reload.path nginx doh-ipset-watcher dot-ipset-watcher geosite-update.timer geohide-update.timer; do
+    for svc in smartdns-firewall oxidns adguardhome xray xray-reload.path nginx doh-ipset-watcher dot-ipset-watcher geosite-update.timer geohide-update.timer smartdns-cert-renew.timer; do
         if systemctl list-unit-files "${svc}*" >/dev/null 2>&1; then
             printf '  %-26s : %s\n' "${svc}" "$(systemctl is-active "${svc}" 2>/dev/null || echo inactive)"
         fi
@@ -6750,6 +6925,7 @@ run_update() {
         install_adguardhome_binary
     fi
     sync_cloudflare_dns_records "${SERVER_IPV4}" "${SERVER_IPV6:-}" || true
+    configure_cert_auto_renewal
     install_domain_update_scripts
     configure_xray_base
     /usr/local/bin/update-geosite.sh
