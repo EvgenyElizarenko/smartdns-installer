@@ -1,10 +1,10 @@
-# Unified SmartDNS + Transparent SNI Proxy Installer (`v2.10.0-stealth`)
+# Unified SmartDNS + Transparent SNI Proxy Installer (`v2.11.0-stealth`)
 
 [![Поддержать проект — CloudTips / СБП](https://img.shields.io/badge/Поддержать_проект-CloudTips_%2F_СБП-0066FF?style=for-the-badge)](https://pay.cloudtips.ru/p/9785e813)
 
 **Язык / Language:** **Русский** | [English](README_EN.md)
 
-[![Version](https://img.shields.io/badge/version-v2.10.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v2.10.0-stealth)
+[![Version](https://img.shields.io/badge/version-v2.10.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v2.11.0-stealth)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-технические-требования)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-выбор-языка-интерфейса-русский--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -15,6 +15,13 @@
 > Скрипт не предназначен для обхода блокировок со стороны РКН и доступа к ресурсам заблокированным на территории РФ! Данный скрипт позволяет получить доступ к зарубежным ИИ сервисам, заблокированным для пользователей из стран, где они недоступны.
 
 ---
+
+## Что нового в v2.11.0-stealth
+
+- **Initial Backup и Installation Manifest:** автоматическое резервирование изменяемых системных файлов до внесения правок (`/var/lib/oxidns-installer/initial-backup/`, защита маркером `.sealed`, проверка `SHA-256`) и структурированный реестр установленных объектов (`install-manifest.tsv`).
+- **Интерактивный выборочный `--uninstall`:** удаление только выбранных компонентов с проверкой графа зависимостей, защитой пользовательских данных, просмотром `diff -u` / восстановлением изменённых файлов из `initial-backup` и безопасным удалением пакетов (`apt-get remove`).
+- **10 групп проксируемых доменов `GeoHideDNS` + импорт своих списков:** выбор нужных категорий при установке и управление ими на работающем сервере (`--domain-groups`), а также импорт локальных файлов или URL со списком доменов с анализом пересечений и дедупликацией.
+- **Автопродление TLS-сертификатов (`acme.sh` + `systemd.timer`):** ежедневная проверка `smartdns-cert-renew.timer` (03:30 MSK) и атомарный `smartdns-cert-deploy.sh` через постоянный staging-каталог без риска повреждения рабочего TLS в Nginx.
 
 ## Содержание
 
@@ -148,7 +155,7 @@
 
 1. **Скачайте скрипт и выдайте права на выполнение:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v2.10.0-stealth.sh" -o smartdns-installer.sh
+   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v2.11.0-stealth.sh" -o smartdns-installer.sh
    chmod +x smartdns-installer.sh
    ```
 
