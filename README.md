@@ -4,7 +4,7 @@
 
 **Язык / Language:** **Русский** | [English](README_EN.md)
 
-[![Version](https://img.shields.io/badge/version-v3.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v3.0-stealth)
+[![Version](https://img.shields.io/badge/version-v3.0.1--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v3.0-stealth)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-технические-требования)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-выбор-языка-интерфейса-русский--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -16,13 +16,13 @@
 
 ---
 
-## Что нового в v3.0-stealth
+## Что нового в v3.0.1-stealth
 
-- **Интерактивное стартовое меню (Launcher):** запуск без аргументов (`sudo ./smartdns-installer-v3.0-stealth.sh`) открывает меню со всеми режимами (`Initial Server Setup`, установка SmartDNS, статус, тесты, обновления, группы доменов, переключение DNS backend, DoT whitelist, синхронизация IP, смена домена, Cover Site, бэкап, откат и удаление) с однократным выбором языка.
-- **Initial Server Setup (`--initial-setup`):** предварительный интерактивный этап из 10 пунктов перед основной установкой — non-interactive обновление ОС, проверка/установка `sudo`, смена пароля `root`, создание/выбор административного пользователя в группе `sudo`, аудит SSH и 16-пунктовый чек-лист дополнительных мер безопасности (`fail2ban` с `backend=systemd`, `unattended-upgrades`, NTP, `swap`). Состояние сохраняется в `/var/lib/oxidns-installer/initial-setup.env` (`0600`) без хранения паролей, passphrase и приватных ключей.
-- **Безопасный SSH Hardening (`Backup → Validate → Apply/Rollback`):** единый механизм резервирования в `/var/lib/oxidns-installer/ssh-backup/` (`initial/.sealed` + `SHA-256`), записи в `/etc/ssh/sshd_config.d/00-smartdns-hardening.conf` (и drop-in `ssh.socket.d/override.conf` при socket activation), проверки `sshd -t` и `sshd -T -C` с автооткатом при ошибке. Включает генерацию ключей (`Ed25519` / `RSA 4096`) с инструкциями переноса для Windows, Linux и macOS, двухфазную смену SSH-порта, защиту зарезервированных портов стека и строгие pre-checks перед отключением `PasswordAuthentication` и `PermitRootLogin` (локальный аккаунт `root` не блокируется).
-- **Централизованный `Reboot Lock`:** строгий запрет перезагрузки (`/var/lib/oxidns-installer/reboot-lock.env`, `0600`, подавление `needrestart`, отслеживание `/var/run/reboot-required` и внешних триггеров) на всех этапах до успешной установки, запуска и прохождения DNS-проверок SmartDNS; после снятия блокировки перезагрузка предлагается только с явным подтверждением `YES`.
-- **Защита SSH-портов в Firewall и стабильность старта:** автоматическое разрешение всех активных SSH-портов в UFW до включения блокирующих правил, `TimeoutStartSec=60s` и ожидание готовности DNS backend перед запуском `xray.service`.
+- **Provider Hostname Profile (без Cloudflare, по PR #1):** альтернативный профиль установки (`--profile hostname`) для внешнего DNS-провайдера и существующего сертификата Certbot (HTTP-01) без аккаунта Cloudflare и токена API. Руководство: [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md).
+- **Проверка без изменений (`--hostname-check`):** read-only диагностика DNS `A`/`AAAA` (`1.1.1.1`, `8.8.8.8`), существующего сертификата Certbot (срок, совпадение ключей, цепочка доверия, права), `webroot` / `renewal/*.conf`, занятых портов и конфликтующих служб с разделением на `[ CRIT ]` и `[ WARN ]`.
+- **Изолированный контур HTTP-01 и Certbot deploy-хук:** в профиле `hostname` Nginx отдаёт `/.well-known/acme-challenge/` из `HOSTNAME_ACME_WEBROOT`, а хук `/etc/letsencrypt/renewal-hooks/deploy/smartdns-hostname.sh` обслуживает строго сохранённый lineage с проверкой ключей/цепочки, `nginx -t`, `systemctl reload nginx` и автооткатом при сбое.
+- **Авторизация DoT IP (`shared`) и защита существующих служб:** для публичного DoT SNI по умолчанию включается `DOT_WHITELIST_ENABLED="true"` (`shared`), установка блокируется при обнаружении занятых портов или активных служб, а смена имени хоста защищена от случайной перезаписи.
+- **Сохранение Cloudflare Profile и автопродления `v3.0`:** исправленный в `v3.0-stealth` механизм автопродления Cloudflare (`acme.sh` + `smartdns-cert-renew.timer` + `smartdns-cert-deploy.sh`) оставлен **полностью без изменений** и изолирован от нового профиля.
 
 ## Содержание
 
@@ -156,7 +156,7 @@
 
 1. **Скачайте скрипт и выдайте права на выполнение:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.0-stealth.sh" -o smartdns-installer.sh
+   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.0.1-stealth.sh" -o smartdns-installer.sh
    chmod +x smartdns-installer.sh
    ```
 
@@ -187,12 +187,14 @@
 
 ## 6. Справочник команд CLI
 
-Использование: `sudo ./smartdns-installer-v3.0-stealth.sh [КОМАНДА]` (запуск без аргументов в интерактивном терминале открывает стартовое меню).
+Использование: `sudo ./smartdns-installer-v3.0.1-stealth.sh [КОМАНДА]` (запуск без аргументов в интерактивном терминале открывает стартовое меню).
 
 | Команда | Описание |
 | :--- | :--- |
 | `--help`, `-h` | Показать справку по всем поддерживаемым параметрам и выйти |
 | `--preflight` | Проверить ОС, ядро, RAM, диск, сеть, порты и совместимость движков (только чтение) |
+| `--hostname-check` | Проверка Provider Hostname Profile (DNS, сертификат Certbot, `webroot`, `renewal`, порты) в режиме только чтения |
+| `--profile [cloudflare\|hostname]` | Явный выбор профиля установки: `cloudflare` (DNS-01, по умолчанию) или `hostname` (без Cloudflare, см. [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md)) |
 | `--initial-setup` | Интерактивная первоначальная настройка сервера и усиление безопасности SSH (`10` пунктов + `16`-пунктовый аудит, сохранение состояния в `initial-setup.env`) |
 | `--install` | Запустить интерактивную транзакционную установку полного стека (с предварительным этапом `Initial Server Setup` при необходимости) |
 | `--status` | Показать активный DNS-движок, статус служб/таймеров `systemd` и наборов `ipset` |
