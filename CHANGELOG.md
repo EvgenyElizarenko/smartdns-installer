@@ -5,9 +5,10 @@
 
 ---
 
-## [3.0.1-stealth] — Unreleased
+## [3.0.1-stealth] — 2026-11-21
 
 ### Added
+- **Дизайн страницы быстрой веб-авторизации (`/auth/<DOH_PATH>`):** динамически синхронизируется с брендом, инициалами, городом и CSS процедурного Cover Site через `/etc/nginx/smartdns-web-auth.conf` (включая автоматическое обновление при `--regenerate-cover`).
 - **Provider Hostname Profile (`--profile hostname`, без Cloudflare):** интегрирован альтернативный профиль установки по Pull Request #1 (`53631fb`, `ec1e4af`) для внешнего DNS-провайдера и существующего сертификата Certbot (HTTP-01) с поддержкой всех возможностей `v3.0` (`Initial Server Setup`, `SSH Hardening`, `Reboot Lock`, 10 групп доменов, `Initial Backup`, выборочный `--uninstall`).
 - **Read-only проверка (`--hostname-check`):** 16-пунктовая проверка публичных DNS `A`/`AAAA` (`1.1.1.1`, `8.8.8.8`), существующего сертификата Certbot (срок, совпадение ключей, цепочка доверия, права), `webroot` и `renewal/*.conf`, занятых портов и конфликтующих служб без изменения системы.
 - **Изолированный контур HTTP-01 и Certbot renewal:** маршрут `/.well-known/acme-challenge/` в Nginx (только для `hostname`-профиля), отдельный валидатор `/usr/local/bin/verify-hostname-tls-keys.sh` и lineage-специфичный deploy-хук `/etc/letsencrypt/renewal-hooks/deploy/smartdns-hostname.sh` (`smartdns-hostname-cert-deploy.sh`) с проверкой `TLS_MODE`, `RENEWED_LINEAGE`, `nginx -t`, `systemctl reload nginx` и автооткатом при сбое.

@@ -6,8 +6,8 @@ import sys
 import tempfile
 
 repo_root = Path(__file__).resolve().parents[1]
-installer = Path(os.environ.get("SMARTDNS_INSTALLER", str(repo_root / "smartdns-installer-v3.0.1-stealth.sh")))
-v30_baseline = repo_root / "smartdns-installer-v3.0-stealth.sh"
+installer = Path(os.environ.get("SMARTDNS_INSTALLER", str(repo_root / "smartdns-installer-v3.1.0-stealth.sh")))
+v30_baseline = (repo_root / "smartdns-installer-v3.0-stealth.sh" if (repo_root / "smartdns-installer-v3.0-stealth.sh").exists() else repo_root / "old" / "smartdns-installer-v3.0-stealth.sh")
 live = os.environ.get("SMARTDNS_LIVE_TESTS") == "1"
 
 os.environ.setdefault("PROVIDER_HOSTNAME", "dns.example.net")
