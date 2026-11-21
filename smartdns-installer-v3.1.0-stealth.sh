@@ -1742,25 +1742,21 @@ run_preflight() {
 
 # ------------------------------ Crypto & Validators ---------------------------
 generate_random_alnum() {
-    local length="$1"
-    local result=""
-    while [[ "${#result}" -lt "${length}" ]]; do
-        local chunk
-        chunk="$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "${length}" || true)"
-        result+="${chunk}"
+    local len="${1:-48}"
+    local out=""
+    while [[ "${#out}" -lt "${len}" ]]; do
+        out+="$(LC_ALL=C head -c 2048 /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' || true)"
     done
-    printf '%s' "${result:0:${length}}"
+    printf '%s' "${out:0:${len}}"
 }
 
 generate_random_lower() {
-    local length="$1"
-    local result=""
-    while [[ "${#result}" -lt "${length}" ]]; do
-        local chunk
-        chunk="$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c "${length}" || true)"
-        result+="${chunk}"
+    local len="${1:-10}"
+    local out=""
+    while [[ "${#out}" -lt "${len}" ]]; do
+        out+="$(LC_ALL=C head -c 2048 /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' || true)"
     done
-    printf '%s' "${result:0:${length}}"
+    printf '%s' "${out:0:${len}}"
 }
 
 validate_domain_syntax() {
@@ -10588,6 +10584,10 @@ run_test_suite() {
 
 # ------------------------------ Installation Report ---------------------------
 generate_installation_report() {
+    local fw_report_backend="${IPTABLES_BACKEND:-iptables} + UFW"
+    if [[ "${CONTAINER_MODE:-0}" == "1" ]]; then
+        fw_report_backend="${IPTABLES_BACKEND:-iptables} (systemd-nspawn container)"
+    fi
     # shellcheck disable=SC1091
     source "${SETTINGS_FILE}"
     # shellcheck disable=SC1091
@@ -10671,15 +10671,15 @@ generate_installation_report() {
    Проксируемых доменов      : ${FINAL_DOMAIN_COUNT:-0}
    Автоперезагрузка правил   : $(systemctl is-active xray-reload.path)
 
-6. NGINX И САЙТ-ЗАГЛУШКА STUDIO NORD
+6. NGINX И ПРОЦЕДУРНЫЙ САЙТ-ЗАГЛУШКА (COVER SITE)
    Статус службы             : $(systemctl is-active nginx)
-   Домен сайта Studio Nord   : https://${ROOT_DOMAIN}
+   Домен сайта-заглушки      : https://${ROOT_DOMAIN}
    Внутренние TLS-порты      : 9443/TCP (DNAT), 127.0.0.1:9444/TCP (PROXY protocol от Xray)
    Сертификат TLS            : ${CERT_DIR}/fullchain.pem (SAN: $( is_hostname_profile && printf '%s (existing Certbot)' "${ROOT_DOMAIN}" || printf '%s, *.%s' "${ROOT_DOMAIN}" "${ROOT_DOMAIN}" ))
    Автопродление TLS         : $( is_hostname_profile && printf 'certbot.timer (%s) + /etc/letsencrypt/renewal-hooks/deploy/smartdns-hostname.sh' "$(systemctl is-active certbot.timer 2>/dev/null || echo inactive)" || printf 'smartdns-cert-renew.timer (%s, 03:30 MSK)' "$(systemctl is-active smartdns-cert-renew.timer 2>/dev/null || echo inactive)" )
 
 7. FIREWALL И IPSET
-   Используемый backend      : ${IPTABLES_BACKEND} + UFW
+   Используемый backend      : ${fw_report_backend}
    Публичные порты           : 80/TCP, 443/TCP, 853/TCP
    Закрытые внутренние порты : 8444, 9444, 8853, 5353, 8053, 3000
    Набор ipset               : smartdns_clients (TTL 86400s), авторизовано IP: ${auth_ip_count}
@@ -10719,7 +10719,9 @@ EOF
     if [[ "${show_sec:-N}" =~ ^[Yy]$ ]]; then
         cat "${secret_report_file}"
     fi
-    print_initial_setup_report_summary
+    if [[ "${CONTAINER_MODE:-0}" != "1" ]]; then
+        print_initial_setup_report_summary
+    fi
 }
 
 run_regenerate_cover() {
@@ -11974,7 +11976,7 @@ nspawn_detect_host_firewall() {
 nspawn_is_virtual_iface() {
     local ifc="$1"
     case "${ifc}" in
-        lo|docker*|br-*|veth*|sdns-*|virbr*|wg*|tun*|tap*|tailscale*|amnezia*|awg*|cni*|flannel*) return 0 ;;
+        lo|docker*|br-*|veth*|sdns-*|virbr*|wg*|tun*|tap*|tailscale*|amnezia*|amn*|awg*|cni*|flannel*) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -13145,7 +13147,7 @@ main() {
                 shift
                 ;;
             --second-ip)
-                if [[ $# -lt 2 ]]; then
+                if [[ $# -lt 2 || -z "$2" ]]; then
                     printf_err_tr "NS_02"
                     exit 1
                 fi
@@ -13154,6 +13156,10 @@ main() {
                 ;;
             --second-ip=*)
                 SECOND_IP_ARG="${1#--second-ip=}"
+                if [[ -z "${SECOND_IP_ARG}" ]]; then
+                    printf_err_tr "NS_02"
+                    exit 1
+                fi
                 shift
                 ;;
             --second-ipv6)

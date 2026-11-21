@@ -296,4 +296,19 @@ grep -Fq "${city}" "${WEB_AUTH_SNIPPET_FILE}"
     assert 'source "${SECRETS_FILE}"' in source[regen_start:regen_end], "run_regenerate_cover must load SECRETS_FILE"
     print("PASS: Web-Auth /auth/ page dynamically matches generated cover site branding & CSS")
 
+    # 24. Empty --second-ip "" rejected & amn0 excluded as virtual interface
+    res_empty_ip = subprocess.run(
+        ["bash", str(installer), "--preflight-second-IP", "--second-ip", ""],
+        stdin=subprocess.DEVNULL, env=dict(os.environ, SCRIPT_LANG="en"),
+        capture_output=True, text=True, timeout=5,
+    )
+    assert res_empty_ip.returncode != 0, "Empty --second-ip must be rejected"
+    res_amn = subprocess.run(
+        ["bash", "-c", f'source "{library.as_posix()}"; trap - ERR; nspawn_is_virtual_iface amn0'],
+        stdin=subprocess.DEVNULL, env=dict(os.environ, SCRIPT_LANG="en"),
+        capture_output=True, text=True, timeout=5,
+    )
+    assert res_amn.returncode == 0, "amn0 must be recognized as virtual interface"
+    print("PASS: Empty --second-ip rejected and amn0 excluded from candidate host IPs")
+
 print("ALL DUAL-IP SYSTEMD-NSPAWN UNIT & CONFLICT TESTS PASSED")
