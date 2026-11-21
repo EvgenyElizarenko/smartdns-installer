@@ -7,34 +7,38 @@
 
    Выделенный сервер (Режим № 2):
    ```bash
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --test
+   sudo ./smartdns-installer.sh --test
    ```
 
    Изолированный контейнер `systemd-nspawn` на 2-м IP (Режим № 3):
    ```bash
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --target container --test
+   sudo ./smartdns-installer.sh --target container --test
    ```
 
-3. Проверьте состояние служб, сети и белого списка IP:
+3. Проверьте состояние служб, сети, белого списка IP и Telegram-бота:
 
    ```bash
    # Выделенный сервер (хост)
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --status
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --whitelist-status
+   sudo ./smartdns-installer.sh --status
+   sudo ./smartdns-installer.sh --whitelist-status
+   sudo ./smartdns-installer.sh --telegram-bot-status
+   sudo ./smartdns-installer.sh --telegram-bot-check
 
    # Изолированный контейнер systemd-nspawn (2-й IP)
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --target container --status
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --target container --whitelist-status
+   sudo ./smartdns-installer.sh --target container --status
+   sudo ./smartdns-installer.sh --target container --whitelist-status
+   sudo ./smartdns-installer.sh --target container --telegram-bot-status
+   sudo ./smartdns-installer.sh --target container --telegram-bot-check
    sudo /usr/local/bin/smartdns-nspawn-host-net.sh status
 
    # Read-only диагностика до установки
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --preflight-second-IP
-   sudo ./smartdns-installer-v3.1.0-stealth.sh --hostname-check
+   sudo ./smartdns-installer.sh --preflight-second-IP
+   sudo ./smartdns-installer.sh --hostname-check
    ```
 
 ## Куда обращаться
 
-* **Ошибки и сбои установки:** создайте обращение через форму **[Ошибка / Bug Report](https://github.com/EvgenyElizarenko/smartdns-installer/issues/new?template=bug_report.yml)**, приложив вывод `--test` и фрагмент журнала из `/var/log/oxidns-installer/` (для контейнера `systemd-nspawn` — `/var/lib/machines/smartdns-v3.1.0/var/log/oxidns-installer/`).
+* **Ошибки и сбои установки:** создайте обращение через форму **[Ошибка / Bug Report](https://github.com/EvgenyElizarenko/smartdns-installer/issues/new?template=bug_report.yml)**, приложив вывод `--test` / `--telegram-bot-check` и фрагмент журнала из `/var/log/oxidns-installer/` или `/var/log/smartdns-tgbot/` (для контейнера `systemd-nspawn` — внутри `/var/lib/machines/smartdns-v3.1.0/var/log/`).
 * **Идеи и предложения по улучшению:** используйте форму **[Предложение / Feature Request](https://github.com/EvgenyElizarenko/smartdns-installer/issues/new?template=feature_request.yml)**.
 
-> **Важно:** перед публикацией логов обязательно удалите свой **Cloudflare API Token**, 48-символьный секретный путь **DOH_PATH** и реальное доменное имя.
+> **Важно:** перед публикацией логов обязательно удалите **Telegram Bot Token**, **Cloudflare API Token**, 48-символьный секретный путь **DOH_PATH** и реальное доменное имя.

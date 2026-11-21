@@ -10,7 +10,7 @@ set -Eeuo pipefail
 umask 027
 
 # ------------------------------ Global Constants ------------------------------
-readonly SCRIPT_NAME="smartdns-installer-v4.0.0-stealth.sh"
+readonly SCRIPT_NAME="smartdns-installer.sh"
 INSTALLER_VERSION="4.0.0-stealth"
 
 # ------------------------------ Localization Engine (RU / EN) -----------------

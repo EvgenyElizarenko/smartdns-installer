@@ -4,7 +4,7 @@
 
 **Язык / Language:** **Русский** | [English](README_EN.md)
 
-[![Version](https://img.shields.io/badge/version-v3.1.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v3.1.0-stealth)
+[![Version](https://img.shields.io/badge/version-v4.0.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-технические-требования)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-выбор-языка-интерфейса-русский--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -16,16 +16,16 @@
 
 ---
 
-## Что нового в v3.1.0-stealth
+## Что нового в v4.0.0-stealth
 
-- **Два режима установки в интерактивном меню (`[0–18]`):**
-  - `[ 2]` **Установка SmartDNS + SNI Proxy на выделенный сервер (`--install`)** — штатная установка на хост с полным сохранением архитектуры `v3.0`/`v3.0.1`.
-  - `[ 3]` **Установка SmartDNS + SNI Proxy на сервер с 2мя IP (`--install-on-second-IP`)** — изолированное развёртывание в контейнер `systemd-nspawn` (`smartdns-v3.1.0`) на второй публичный IPv4/IPv6 без вмешательства в существующие службы хоста (Nginx, Xray, VPN/Amnezia, Telemt, Docker, SSH, firewall).
-- **Read-only предварительный аудит (`--preflight-second-IP`, пункт `[ 7]`):** проверяет ОС/ядро/`cgroups`/namespaces, `systemd-nspawn`/`debootstrap` (без автоустановки до подтверждения), глобальные IP (с исключением виртуальных интерфейсов `docker*`/`amn*`/`wg*`), порты `80`/`443`/`853` (включая wildcard `0.0.0.0`/`[::]`), активные службы, firewall (`UFW`/`iptables`/`nftables`) и чужие контейнеры, выдавая статус `INSTALLATION READY`, `INSTALLATION READY WITH WARNINGS` или `INSTALLATION BLOCKED`.
-- **Изолированная сеть и неразрушающий firewall хоста:** выделенная `veth`-пара (`sdns-h0` <-> `host0`, транзит `10.203.110.0/30`), автономный сетевой юнит `smartdns-container-net.service` и точечные правила `SMARTDNS_NSPAWN_*` (iptables/UFW или таблицы `nftables`) строго для IP #2 с сохранением реального IP клиента для `ipset` и блокировкой доступа контейнера к IP #1 и хосту.
-- **Разделённое обслуживание (`--target [auto|host|container]`):** команды `--status`, `--test`, `--update`, `--whitelist-*`, `--backup`, `--rollback`, `--uninstall` поддерживают и хост, и контейнер; удаление контейнера очищает только `SMARTDNS_NSPAWN_*` и артефакты контейнера.
-- **Синхронизация дизайна `/auth/<DOH_PATH>`:** страница быстрой веб-авторизации автоматически наследует бренд, инициалы, город и стили процедурного Cover Site (`/etc/nginx/smartdns-web-auth.conf`), обновляясь и при `--regenerate-cover`.
-- **Сохранение Provider Hostname Profile и Cloudflare renewal (`v3.0`):** профиль `--profile hostname` (`v3.0.1-stealth`, см. [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md)) и исправленное в `v3.0-stealth` автопродление Cloudflare (`acme.sh` + `smartdns-cert-renew.timer` + `smartdns-cert-deploy.sh`) сохранены полностью без изменений.
+- **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.0-stealth"`), в тегах и релизах GitHub.
+- **Опциональный Telegram-бот управления SmartDNS (`[19]` / `--install-telegram-bot`):**
+  - **двухслойная изоляция без `pip`-зависимостей (Python 3 stdlib):** непривилегированный демон `smartdns-tg-bot.service` (`User=smartdns-tgbot`, исходящий HTTPS long polling, **0 входящих портов**) взаимодействует с короткоживущим root-backend `smartdns-tg-ctl.socket` строго через локальный Unix-сокет `/run/smartdns-tg-ctl/ctl.sock` (`0660`, проверка `SO_PEERCRED`, allowlist типизированных JSON-команд, без `eval` и `shell=True`);
+  - **строгий доступ `Owner-Only`:** управление разрешено исключительно создателю бота (`primary_admin_id`) в приватном чате на обоих слоях (`bot.py` + `ctl.py`); любые сторонние пользователи получают отказ в авторизации;
+  - **управление доменами (3 способа в едином конвейере):** одиночный домен, массовый текстовый список (перенос строки, `,`, `;`, комментарии `#`) и загрузка `.txt`-файлов (проверка UTF-8/BOM, размера, защита от бинарных/архивов, очистка временных файлов) с отчётом, пагинацией, подтверждением и транзакционным откатом при ошибке;
+  - **дополнительные инструменты управления:** поиск, удаление/массовое удаление пользовательских доменов (`custom-allow.txt`), экспорт/бэкап, история, проверка DNS и маршрутизации Xray; просмотр, добавление, массовое добавление, удаление, поиск и экспорт IPv4/IPv6 в `ipset` whitelist; актуальные ссылки DoT/DoH/Web-Auth; статус служб, CPU/RAM/диска и срока TLS-сертификата; перезапуск служб по allowlist, просмотр логов со скраббингом секретов, диагностика, управление модулями и `audit.log`;
+  - **независимый жизненный цикл и поддержка контейнера:** 8 команд `--telegram-bot-*` работают как на выделенном хосте, так и в контейнере `systemd-nspawn` (`--target container`); `--telegram-bot-remove` удаляет только бота без затрагивания SmartDNS.
+- **Полная совместимость с `v3.1.0-stealth`:** сохранены оба режима установки (выделенный сервер и `systemd-nspawn` на 2-м IP), `Initial Server Setup`, `Provider Hostname Profile` ([HOSTNAME_SETUP.md](HOSTNAME_SETUP.md)), синхронизация дизайна `/auth/` и автопродление Cloudflare `v3.0`.
 
 ## Содержание
 
@@ -38,6 +38,7 @@
    * [5.2. Загрузка и запуск интерактивного меню](#52-загрузка-и-запуск-интерактивного-меню)
    * [5.3. Первоначальная настройка сервера и усиление безопасности SSH](#53-первоначальная-настройка-сервера-и-усиление-безопасности-ssh)
    * [5.4. Изолированная установка на сервер с 2мя IP (`systemd-nspawn`)](#54-изолированная-установка-на-сервер-с-2мя-ip-systemd-nspawn)
+   * [5.5. Установка и управление Telegram-ботом (опционально)](#55-установка-и-управление-telegram-ботом-опционально)
 6. [Справочник команд CLI](#6-справочник-команд-cli)
 7. [Настройка клиентских устройств](#7-настройка-клиентских-устройств)
 8. [Безопасность, резервное копирование и диагностика](#8-безопасность-резервное-копирование-и-диагностика)
@@ -161,12 +162,12 @@
 
 ### 5.2. Загрузка и запуск интерактивного меню
 
-Все операции — первоначальная настройка сервера, предварительная диагностика, установка на выделенный сервер или на 2-й IP, запуск автотестов, переключение DNS-движка, управление группами доменов и DoT whitelist, обновление, резервное копирование, откат и удаление — интегрированы в **единое интерактивное меню `[0–18]`**. Запоминать отдельные флаги CLI для повседневной работы не требуется.
+Все операции — первоначальная настройка сервера, предварительная диагностика, установка на выделенный сервер или на 2-й IP, запуск автотестов, переключение DNS-движка, управление группами доменов и DoT whitelist, обновление, резервное копирование, откат и удаление — интегрированы в **единое интерактивное меню `[0–19]`**. Запоминать отдельные флаги CLI для повседневной работы не требуется.
 
 1. **Скачайте скрипт, проверьте контрольную сумму `SHA-256` и выдайте права на выполнение:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.1.0-stealth.sh" -o smartdns-installer.sh
-   echo "ae5cd601e1e003a4e363df1778fbd9215cfba511b268b18d5f26d989f21b040b  smartdns-installer.sh" | sha256sum -c -
+   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer.sh" -o smartdns-installer.sh
+   echo "9f9e36f45584bfcbd52db76885a59100095001c5a4d6e5b06b0b5b6829862d6a  smartdns-installer.sh" | sha256sum -c -
    chmod +x smartdns-installer.sh
    ```
 
@@ -225,11 +226,25 @@
      ```
    * Секреты и журналы контейнера изолированы внутри `/var/lib/machines/smartdns-v3.1.0/var/lib/oxidns-installer/secrets.env` и `/var/lib/machines/smartdns-v3.1.0/var/log/oxidns-installer/`.
    * Удаление контейнера (через меню или `--target container --uninstall` с подтверждением `YES`) удаляет **только** `smartdns-v3.1.0`, `sdns-h0` и правила `SMARTDNS_NSPAWN_*`, не затрагивая службы хоста, IP #1, SSH и существующий firewall.
+
+### 5.5. Установка и управление Telegram-ботом (опционально)
+
+Telegram-бот позволяет оперативно добавлять домены (по одному, текстом или `.txt`-файлом), просматривать ссылки DoT/DoH/Web-Auth, управлять IP whitelist и контролировать состояние служб прямо из Telegram без подключения по SSH. Бот использует исходящий long polling (входящие порты не открываются) и работает строго для создателя бота (**Owner-Only**).
+
+1. Создайте бота через `@BotFather` и получите **Telegram Bot Token**, а также узнайте свой числовой **Telegram User ID** (например, через `@userinfobot`).
+2. Запустите единое меню `sudo ./smartdns-installer.sh`, выберите пункт **`[19]`** → **`[1]`** (или выполните напрямую `sudo ./smartdns-installer.sh --install-telegram-bot`; для контейнера на 2-м IP добавьте `--target container`).
+3. Введите токен (ввод скрыт, сохраняется в `/etc/smartdns-tgbot/token.env` с правами `0600`), ваш `Telegram User ID` и выберите автозапуск после перезагрузки.
+4. Проверьте работу сокета `ctl.sock` и доступность Telegram API:
+   ```bash
+   sudo ./smartdns-installer.sh --telegram-bot-check
+   sudo ./smartdns-installer.sh --telegram-bot-status
+   ```
+5. Удалить бота без затрагивания SmartDNS, сертификатов, доменов и whitelist можно в любой момент через пункт `[19]` → `[8]` или командой `sudo ./smartdns-installer.sh --telegram-bot-remove`.
 ---
 
 ## 6. Справочник команд CLI
 
-Использование: `sudo ./smartdns-installer-v3.1.0-stealth.sh [КОМАНДА]` (запуск без аргументов в интерактивном терминале открывает стартовое меню).
+Использование: `sudo ./smartdns-installer.sh [КОМАНДА]` (запуск без аргументов в интерактивном терминале открывает стартовое меню).
 
 | Команда | Описание |
 | :--- | :--- |
@@ -260,6 +275,14 @@
 | `--whitelist-add <IP>` | Вручную добавить одиночный IPv4 или IPv6 в белый список (TTL 24 часа) |
 | `--whitelist-remove <IP>` | Немедленно удалить одиночный IPv4 или IPv6 из белого списка |
 | `--whitelist-flush` | Очистить все авторизованные IPv4/IPv6-адреса из белого списка DoT |
+| `--install-telegram-bot` | Установить, обновить код или перенастроить опциональный Telegram-бот (`[19]`) |
+| `--telegram-bot-config` | Изменить токен, `Telegram User ID` владельца или автозапуск бота без переустановки |
+| `--telegram-bot-check` | Проверить права `token.env`/`config.json`, синтаксис, сокет `ctl.sock` и Telegram API |
+| `--telegram-bot-status` | Показать статус служб `smartdns-tg-bot`/`smartdns-tg-ctl.socket` и параметры бота |
+| `--telegram-bot-start` | Запустить службы Telegram-бота |
+| `--telegram-bot-stop` | Остановить Telegram-бота |
+| `--telegram-bot-restart` | Перезапустить Telegram-бота и контрольный сокет |
+| `--telegram-bot-remove` | Удалить только Telegram-бота без затрагивания SmartDNS и его конфигураций |
 
 ---
 

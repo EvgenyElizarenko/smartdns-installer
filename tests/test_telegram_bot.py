@@ -25,8 +25,8 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-V310_SCRIPT = REPO_ROOT / "smartdns-installer-v3.1.0-stealth.sh"
-V400_SCRIPT = REPO_ROOT / os.environ.get("SMARTDNS_INSTALLER", "smartdns-installer-v4.0.0-stealth.sh")
+V310_SCRIPT = REPO_ROOT / "smartdns-installer-v3.1.0-stealth.sh" if (REPO_ROOT / "smartdns-installer-v3.1.0-stealth.sh").exists() else REPO_ROOT / "old" / "smartdns-installer-v3.1.0-stealth.sh"
+V400_SCRIPT = REPO_ROOT / os.environ.get("SMARTDNS_INSTALLER", "smartdns-installer.sh")
 V310_EXPECTED_SHA = "ae5cd601e1e003a4e363df1778fbd9215cfba511b268b18d5f26d989f21b040b"
 
 
@@ -126,7 +126,7 @@ def main() -> None:
 
     v400_text = V400_SCRIPT.read_text(encoding="utf-8").replace("\r\n", "\n")
     assert 'INSTALLER_VERSION="4.0.0-stealth"' in v400_text
-    assert 'SCRIPT_NAME="smartdns-installer-v4.0.0-stealth.sh"' in v400_text
+    assert 'SCRIPT_NAME="smartdns-installer.sh"' in v400_text
     assert "Выберите пункт [0-19]:" in v400_text and "Select an option [0-19]:" in v400_text
     assert "[19] Telegram Bot setup & management" in v400_text
     assert "[19] Установка и управление Telegram-ботом" in v400_text

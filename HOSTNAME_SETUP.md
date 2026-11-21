@@ -7,10 +7,10 @@
 <a id="english"></a>
 ## English
 
-The **Provider Hostname Profile** in `smartdns-installer-v3.1.0-stealth.sh` deploys the full SmartDNS + Transparent SNI Proxy stack using a provider-managed hostname and an **existing single-host Certbot certificate** (HTTP-01 challenge), without a Cloudflare account or DNS API token.
+The **Provider Hostname Profile** in `smartdns-installer.sh` deploys the full SmartDNS + Transparent SNI Proxy stack using a provider-managed hostname and an **existing single-host Certbot certificate** (HTTP-01 challenge), without a Cloudflare account or DNS API token.
 
 > **Important — Preservation of Cloudflare Certificate Renewal (`v3.0`):**
-> Automatic TLS certificate renewal for the Cloudflare profile (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) was fixed in **`v3.0-stealth`** and remains completely unchanged in `v3.1.0-stealth`. The Provider Hostname Profile uses a separate, isolated mechanism (`certbot.timer` + lineage-specific deploy hook). The two mechanisms do not replace each other and never interfere. In `v3.1.0-stealth`, this profile is supported both on dedicated servers (`--profile hostname --install`) and inside the dual-IP `systemd-nspawn` container (`--profile hostname --install-on-second-IP`).
+> Automatic TLS certificate renewal for the Cloudflare profile (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) was fixed in **`v3.0-stealth`** and remains completely unchanged in `v4.0.0-stealth`. The Provider Hostname Profile uses a separate, isolated mechanism (`certbot.timer` + lineage-specific deploy hook). The two mechanisms do not replace each other and never interfere. In `v4.0.0-stealth`, this profile is supported both on dedicated servers (`--profile hostname --install`) and inside the dual-IP `systemd-nspawn` container (`--profile hostname --install-on-second-IP`).
 
 ### 1. Cloudflare Profile vs. Provider Hostname Profile
 
@@ -46,7 +46,7 @@ Performs read-only diagnostics without installing packages, modifying configs/fi
 
 ```bash
 sudo env PROVIDER_HOSTNAME='dns.example.net' PUBLIC_IPV4='192.0.2.25' \
-  SCRIPT_LANG=en ./smartdns-installer-v3.1.0-stealth.sh --hostname-check
+  SCRIPT_LANG=en ./smartdns-installer.sh --hostname-check
 ```
 
 With IPv6 and custom Certbot paths:
@@ -57,7 +57,7 @@ sudo env PROVIDER_HOSTNAME='dns.example.net' PUBLIC_IPV4='192.0.2.25' \
   HOSTNAME_CERT_LINEAGE='/etc/letsencrypt/live/dns.example.net' \
   HOSTNAME_ACME_WEBROOT='/var/www/dns.example.net' \
   HOSTNAME_RENEWAL_CONF='/etc/letsencrypt/renewal/dns.example.net.conf' \
-  SCRIPT_LANG=en ./smartdns-installer-v3.1.0-stealth.sh --hostname-check
+  SCRIPT_LANG=en ./smartdns-installer.sh --hostname-check
 ```
 
 The report classifies `[ CRIT ]` and `[ WARN ]` findings across public DNS `A`/`AAAA` (`1.1.1.1`, `8.8.8.8`), certificate files and permissions, expiry (`< 24h` critical, `< 14d` warning), public/private key match, CA trust chain, `webroot` / `renewal/*.conf`, required ports (`80, 443, 853, 5353, 8053, 8443, 8444, 8853, 9443, 9444`), and conflicting services. Full installation is blocked on any `[ CRIT ]` finding.
@@ -69,14 +69,14 @@ This profile uses an **already issued** Certbot webroot certificate and never si
 Interactive installation:
 
 ```bash
-sudo ./smartdns-installer-v3.1.0-stealth.sh --profile hostname --install
+sudo ./smartdns-installer.sh --profile hostname --install
 ```
 
 Non-interactive installation (fails cleanly without hanging if required inputs are missing):
 
 ```bash
 sudo env PROVIDER_HOSTNAME='dns.example.net' PUBLIC_IPV4='192.0.2.25' \
-  SCRIPT_LANG=en ./smartdns-installer-v3.1.0-stealth.sh --profile hostname --install </dev/null
+  SCRIPT_LANG=en ./smartdns-installer.sh --profile hostname --install </dev/null
 ```
 
 Validated inputs are saved in `/var/lib/oxidns-installer/settings` (`0600`, backed up to `settings.bak` before updates) with `INSTALL_PROFILE="hostname"`, `DNS_PROVIDER="external"`, and `TLS_MODE="existing-certbot"`.
@@ -100,10 +100,10 @@ Validated inputs are saved in `/var/lib/oxidns-installer/settings` (`0600`, back
 <a id="русский"></a>
 ## Русский
 
-**Профиль имени хоста провайдера (Provider Hostname Profile)** в `smartdns-installer-v3.1.0-stealth.sh` позволяет развернуть стек SmartDNS + Transparent SNI Proxy с именем хоста внешнего DNS/VPS-провайдера и **существующим сертификатом Certbot для одного хоста** (HTTP-01), без аккаунта Cloudflare и токена DNS API.
+**Профиль имени хоста провайдера (Provider Hostname Profile)** в `smartdns-installer.sh` позволяет развернуть стек SmartDNS + Transparent SNI Proxy с именем хоста внешнего DNS/VPS-провайдера и **существующим сертификатом Certbot для одного хоста** (HTTP-01), без аккаунта Cloudflare и токена DNS API.
 
 > **Важно — сохранение исправленного автопродления Cloudflare (`v3.0`):**
-> Автоматическое продление сертификатов Cloudflare (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) было исправлено в **`v3.0-stealth`** и осталось полностью без изменений в `v3.1.0-stealth`. Provider Hostname Profile использует отдельный изолированный механизм (`certbot.timer` + deploy-хук для конкретного lineage). Эти механизмы не взаимозаменяются и не влияют друг на друга. В `v3.1.0-stealth` профиль поддерживается как на выделенном сервере (`--profile hostname --install`), так и в изолированном контейнере `systemd-nspawn` на 2-м IP (`--profile hostname --install-on-second-IP`).
+> Автоматическое продление сертификатов Cloudflare (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) было исправлено в **`v3.0-stealth`** и осталось полностью без изменений в `v4.0.0-stealth`. Provider Hostname Profile использует отдельный изолированный механизм (`certbot.timer` + deploy-хук для конкретного lineage). Эти механизмы не взаимозаменяются и не влияют друг на друга. В `v4.0.0-stealth` профиль поддерживается как на выделенном сервере (`--profile hostname --install`), так и в изолированном контейнере `systemd-nspawn` на 2-м IP (`--profile hostname --install-on-second-IP`).
 
 ### 1. Отличия Cloudflare Profile и Provider Hostname Profile
 
@@ -139,7 +139,7 @@ Validated inputs are saved in `/var/lib/oxidns-installer/settings` (`0600`, back
 
 ```bash
 sudo env PROVIDER_HOSTNAME='dns.example.net' PUBLIC_IPV4='192.0.2.25' \
-  SCRIPT_LANG=ru ./smartdns-installer-v3.1.0-stealth.sh --hostname-check
+  SCRIPT_LANG=ru ./smartdns-installer.sh --hostname-check
 ```
 
 Отчёт разделяет критические проблемы (`[ CRIT ]`) и предупреждения (`[ WARN ]`): записи `A`/`AAAA` (`1.1.1.1`, `8.8.8.8`), файлы и права сертификата, срок действия (`< 24ч` критично, `< 14д` предупреждение), совпадение ключей, цепочка доверия, `webroot` и `renewal/*.conf`, занятость портов (`80, 443, 853, 5353, 8053, 8443, 8444, 8853, 9443, 9444`) и конфликтующие службы. При наличии `[ CRIT ]` полная установка блокируется.
@@ -151,14 +151,14 @@ sudo env PROVIDER_HOSTNAME='dns.example.net' PUBLIC_IPV4='192.0.2.25' \
 Интерактивная установка:
 
 ```bash
-sudo ./smartdns-installer-v3.1.0-stealth.sh --profile hostname --install
+sudo ./smartdns-installer.sh --profile hostname --install
 ```
 
 Неинтерактивная установка (не зависает без TTY; завершается ошибкой при отсутствии обязательных переменных):
 
 ```bash
 sudo env PROVIDER_HOSTNAME='dns.example.net' PUBLIC_IPV4='192.0.2.25' \
-  SCRIPT_LANG=ru ./smartdns-installer-v3.1.0-stealth.sh --profile hostname --install </dev/null
+  SCRIPT_LANG=ru ./smartdns-installer.sh --profile hostname --install </dev/null
 ```
 
 Параметры сохраняются в `/var/lib/oxidns-installer/settings` (`0600`, бэкап `settings.bak`) с `INSTALL_PROFILE="hostname"`, `DNS_PROVIDER="external"`, `TLS_MODE="existing-certbot"`.
