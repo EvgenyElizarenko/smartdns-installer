@@ -13341,6 +13341,7 @@ def parse_kv_file(path: Path) -> dict[str, str]:
 def load_bot_config() -> dict[str, Any]:
     default_cfg: dict[str, Any] = {
         "primary_admin_id": 0,
+        "owner_only": True,
         "allowed_user_ids": [],
         "language": "ru",
         "max_file_bytes": 262144,
@@ -13361,6 +13362,16 @@ def load_bot_config() -> dict[str, Any]:
         mods = {}
     default_cfg["enabled_modules"] = {m: bool(mods.get(m, True)) for m in ALL_MODULES}
     return default_cfg
+
+
+def get_authorized_user_ids(cfg: dict[str, Any]) -> set[int]:
+    primary_id = int(cfg.get("primary_admin_id") or 0)
+    if bool(cfg.get("owner_only", True)):
+        return {primary_id} if primary_id > 0 else set()
+    allowed = {int(x) for x in cfg.get("allowed_user_ids", []) if str(x).isdigit() and int(x) > 0}
+    if primary_id > 0:
+        allowed.add(primary_id)
+    return allowed
 
 
 def collect_secret_values() -> list[str]:
@@ -14410,7 +14421,8 @@ def action_get_bot_config(_params: dict[str, Any], _uid: int) -> dict[str, Any]:
     return {
         "ok": True,
         "primary_admin_id": cfg.get("primary_admin_id", 0),
-        "allowed_user_ids": cfg.get("allowed_user_ids", []),
+        "owner_only": bool(cfg.get("owner_only", True)),
+        "allowed_user_ids": sorted(get_authorized_user_ids(cfg)),
         "language": cfg.get("language", "ru"),
         "enabled_modules": cfg.get("enabled_modules", {}),
         "limits": {
@@ -14430,6 +14442,8 @@ def action_update_bot_config(params: dict[str, Any], uid: int) -> dict[str, Any]
         if primary_id and primary_id not in admins:
             admins.insert(0, primary_id)
 
+        if op in ("add_admin", "remove_admin") and bool(cfg.get("owner_only", True)):
+            return {"ok": False, "error": "Owner-only mode is active: only the bot creator is authorized."}
         if op == "add_admin":
             if primary_id and uid != primary_id:
                 return {"ok": False, "error": "Only the primary administrator can manage admin users."}
@@ -14528,7 +14542,7 @@ def dispatch_request(req: dict[str, Any]) -> dict[str, Any]:
     # Defense-in-depth: re-verify Telegram user_id against config.json on backend too (except CLI local ping uid=0)
     if action != "ping" or uid_int != 0:
         cfg = load_bot_config()
-        allowed = {int(x) for x in cfg.get("allowed_user_ids", []) if str(x).isdigit()}
+        allowed = get_authorized_user_ids(cfg)
         if uid_int not in allowed:
             write_audit(uid_int, action, "DENIED", "unauthorized_user_id")
             return {"ok": False, "error": "Unauthorized user"}
@@ -14931,7 +14945,12 @@ class SmartDnsBot:
 
     def is_authorized(self, user_id: int) -> bool:
         self.reload_config()
-        allowed = {int(x) for x in self.cfg.get("allowed_user_ids", []) if str(x).isdigit()}
+        primary_id = int(self.cfg.get("primary_admin_id") or 0)
+        if bool(self.cfg.get("owner_only", True)):
+            return primary_id > 0 and int(user_id) == primary_id
+        allowed = {int(x) for x in self.cfg.get("allowed_user_ids", []) if str(x).isdigit() and int(x) > 0}
+        if primary_id > 0:
+            allowed.add(primary_id)
         return int(user_id) in allowed
 
     def module_enabled(self, module: str) -> bool:
@@ -15009,23 +15028,39 @@ class SmartDnsBot:
             user = cb.get("from") or {}
             uid = int(user.get("id", 0) or 0)
             cb_id = str(cb.get("id", ""))
-            if not self.is_authorized(uid):
-                self.logger.warning("Unauthorized callback blocked: user_id=%s", uid)
-                self.api.answer_callback(cb_id, self.tr("Доступ запрещён.", "Access denied."), show_alert=True)
+            chat_type = str(((cb.get("message") or {}).get("chat") or {}).get("type", "private"))
+            if not self.is_authorized(uid) or (chat_type and chat_type != "private"):
+                self.logger.warning("Unauthorized callback blocked: user_id=%s chat_type=%s", uid, chat_type)
+                self.api.answer_callback(
+                    cb_id,
+                    self.tr("⛔ Отказано в авторизации. Доступ разрешён только создателю бота.", "⛔ Authorization denied. Owner access only."),
+                    show_alert=True,
+                )
                 return
             self.handle_callback(cb, uid)
             return
 
-        msg = update.get("message")
+        msg = update.get("message") or update.get("edited_message")
         if not msg:
             return
         user = msg.get("from") or {}
         uid = int(user.get("id", 0) or 0)
-        chat_id = int((msg.get("chat") or {}).get("id", 0) or 0)
+        chat = msg.get("chat") or {}
+        chat_id = int(chat.get("id", 0) or 0)
+        chat_type = str(chat.get("type", "private"))
         if not self.is_authorized(uid):
-            self.logger.warning("Unauthorized message blocked: user_id=%s", uid)
-            if chat_id:
-                self.api.send_message(chat_id, self.tr("⛔ Доступ запрещён.", "⛔ Access denied."))
+            self.logger.warning("Unauthorized message blocked: user_id=%s chat_type=%s", uid, chat_type)
+            if chat_id and chat_type == "private":
+                self.api.send_message(
+                    chat_id,
+                    self.tr(
+                        "⛔ <b>Отказано в авторизации.</b>\nДоступ к этому боту разрешён только его создателю.",
+                        "⛔ <b>Authorization denied.</b>\nAccess to this bot is restricted to its creator only.",
+                    ),
+                )
+            return
+        if chat_type and chat_type != "private":
+            self.logger.warning("Non-private chat blocked: user_id=%s chat_type=%s", uid, chat_type)
             return
         self.handle_message(msg, uid, chat_id)
 
@@ -15715,6 +15750,13 @@ class SmartDnsBot:
                 self.show_home(chat_id, msg_id, f"❌ {html.escape(str(res.get('error', 'error')))}")
                 return
             prim = res.get("primary_admin_id", 0)
+            if res.get("owner_only", True):
+                txt = self.tr(
+                    f"🔒 <b>Доступ к боту (Owner-Only)</b>\n\nВладелец (создатель): <code>{prim}</code>\nЛюбые другие пользователи Telegram автоматически получают отказ в авторизации.",
+                    f"🔒 <b>Bot Access (Owner-Only)</b>\n\nOwner (creator): <code>{prim}</code>\nAll other Telegram users are automatically denied authorization.",
+                )
+                self.api.edit_message(chat_id, msg_id, txt, self.kb_home_only())
+                return
             adm_lines = "\n".join(f"• <code>{a}</code>{' (primary)' if a == prim else ''}" for a in res.get("allowed_user_ids", []))
             kb = {
                 "inline_keyboard": [
@@ -15985,6 +16027,7 @@ cur_path, tmp_path, prim_s, lang = Path(sys.argv[1]), Path(sys.argv[2]), sys.arg
 prim = int(prim_s)
 cfg = {
     "primary_admin_id": prim,
+    "owner_only": True,
     "allowed_user_ids": [prim],
     "language": "en" if lang.lower() == "en" else "ru",
     "max_file_bytes": 262144,
@@ -16004,11 +16047,9 @@ if cur_path.is_file():
         old = json.loads(cur_path.read_text(encoding="utf-8"))
         if isinstance(old, dict):
             cfg.update(old)
-            admins = [int(x) for x in old.get("allowed_user_ids", []) if str(x).isdigit()]
-            if prim not in admins:
-                admins.insert(0, prim)
             cfg["primary_admin_id"] = prim
-            cfg["allowed_user_ids"] = admins
+            cfg["owner_only"] = True
+            cfg["allowed_user_ids"] = [prim]
             cfg["language"] = "en" if lang.lower() == "en" else "ru"
     except Exception:
         pass
@@ -16029,7 +16070,7 @@ PrivateTmp=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
-ReadWritePaths=${TGBOT_TMP_DIR} ${TGBOT_LOG_DIR}"
+ReadWritePaths=${TGBOT_TMP_DIR} ${TGBOT_LOG_DIR} -/run/smartdns-tg-ctl"
     fi
 
     cat > /etc/systemd/system/smartdns-tg-ctl.socket <<EOF_CTL_SOCK
@@ -16042,7 +16083,7 @@ ListenStream=${TGBOT_SOCKET_PATH}
 SocketMode=0660
 SocketUser=root
 SocketGroup=${TGBOT_USER}
-DirectoryMode=0750
+DirectoryMode=0755
 Accept=yes
 
 [Install]
@@ -16069,7 +16110,8 @@ EOF_CTL_SVC
 [Unit]
 Description=SmartDNS Telegram Management Bot (v4.0.0)
 After=network-online.target smartdns-tg-ctl.socket
-Wants=network-online.target smartdns-tg-ctl.socket
+Wants=network-online.target
+Requires=smartdns-tg-ctl.socket
 
 [Service]
 Type=simple
@@ -16091,8 +16133,10 @@ EOF_BOT_SVC
     chmod 0644 /etc/systemd/system/smartdns-tg-ctl.socket \
                /etc/systemd/system/smartdns-tg-ctl@.service \
                /etc/systemd/system/smartdns-tg-bot.service
+    install -d -m 0755 -o root -g root "$(dirname "${TGBOT_SOCKET_PATH}")"
     systemctl daemon-reload
-    systemctl enable --now smartdns-tg-ctl.socket
+    systemctl enable smartdns-tg-ctl.socket
+    systemctl restart smartdns-tg-ctl.socket
 }
 
 tgbot_verify_api_as_bot_user() {
@@ -16104,7 +16148,8 @@ tgbot_verify_api_as_bot_user() {
 }
 
 tgbot_ping_ctl_socket() {
-    python3 - "${TGBOT_SOCKET_PATH}" <<'EOF_SOCK_PING'
+    if command -v runuser >/dev/null 2>&1; then
+        runuser -u "${TGBOT_USER}" -- /usr/bin/python3 - "${TGBOT_SOCKET_PATH}" <<'EOF_SOCK_PING'
 import json, socket, sys
 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 s.settimeout(5)
@@ -16118,6 +16163,22 @@ try:
 finally:
     s.close()
 EOF_SOCK_PING
+    else
+        python3 - "${TGBOT_SOCKET_PATH}" <<'EOF_SOCK_PING_FALLBACK'
+import json, socket, sys
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(5)
+try:
+    s.connect(sys.argv[1])
+    s.sendall(b'{"user_id": 0, "action": "ping", "params": {}}')
+    s.shutdown(socket.SHUT_WR)
+    data = s.recv(4096).decode("utf-8", errors="replace").strip()
+    obj = json.loads(data)
+    sys.exit(0 if obj.get("ok") else 1)
+finally:
+    s.close()
+EOF_SOCK_PING_FALLBACK
+    fi
 }
 
 tgbot_prompt_and_configure() {

@@ -133,6 +133,8 @@ def main() -> None:
     assert 'if [[ -n "${TG_BOT_TOKEN:-}" ]]; then' in v400_text
     assert "NoNewPrivileges=true" in v400_text
     assert "SocketMode=0660" in v400_text
+    assert "DirectoryMode=0755" in v400_text
+    assert "-/run/smartdns-tg-ctl" in v400_text
     assert "run_telegram_bot_remove()" in v400_text
     print("PASS: v4.0.0 structure, menu [0-19], systemd socket/hardening & redaction present")
 
@@ -428,7 +430,7 @@ def main() -> None:
 
             # --- 18.2 Authorization ---
             send_msg(ATTACKER_ID, "/start")
-            assert "Доступ запрещён" in fake_api.sent[-1]["text"]
+            assert "Отказано в авторизации" in fake_api.sent[-1]["text"]
             click(ATTACKER_ID, "m:links")
             assert fake_api.callbacks[-1]["alert"] is True
             direct_bypass = ctl.dispatch_request({"user_id": ATTACKER_ID, "action": "get_links", "params": {}})
@@ -634,18 +636,21 @@ def main() -> None:
             diag = ctl.dispatch_request({"user_id": ADMIN_ID, "action": "run_diagnostics", "params": {}})
             assert diag["ok"] and all(c["ok"] for c in diag["checks"])
 
-            # B1: Secondary admin add/remove, primary admin protected, non-primary cannot manage admins
+            # Strict owner-only mode: adding/removing extra admins via Telegram is blocked, and non-owner users are always denied
             add_adm = ctl.dispatch_request({"user_id": ADMIN_ID, "action": "update_bot_config", "params": {"op": "add_admin", "target_user_id": str(SECOND_ADMIN_ID)}})
-            assert add_adm["ok"] and SECOND_ADMIN_ID in add_adm["config"]["allowed_user_ids"]
-            # Secondary admin now authorized for regular actions, but blocked from removing primary admin
-            assert ctl.dispatch_request({"user_id": SECOND_ADMIN_ID, "action": "get_status", "params": {}})["ok"] is True
-            deny_adm = ctl.dispatch_request({"user_id": SECOND_ADMIN_ID, "action": "update_bot_config", "params": {"op": "remove_admin", "target_user_id": str(ADMIN_ID)}})
-            assert not deny_adm["ok"]
-            deny_self = ctl.dispatch_request({"user_id": ADMIN_ID, "action": "update_bot_config", "params": {"op": "remove_admin", "target_user_id": str(ADMIN_ID)}})
-            assert not deny_self["ok"]
-            rem_adm = ctl.dispatch_request({"user_id": ADMIN_ID, "action": "update_bot_config", "params": {"op": "remove_admin", "target_user_id": str(SECOND_ADMIN_ID)}})
-            assert rem_adm["ok"] and SECOND_ADMIN_ID not in rem_adm["config"]["allowed_user_ids"]
+            assert not add_adm["ok"] and "owner-only" in add_adm["error"].lower()
+            # Even if another ID were manually written to allowed_user_ids while owner_only is true, only primary_admin_id is accepted
+            cfg_obj = json.loads(ctl.BOT_CONFIG_FILE.read_text(encoding="utf-8"))
+            cfg_obj["allowed_user_ids"] = [ADMIN_ID, SECOND_ADMIN_ID]
+            ctl.BOT_CONFIG_FILE.write_text(json.dumps(cfg_obj), encoding="utf-8")
+            tg._cfg_mtime = -1.0
             assert ctl.dispatch_request({"user_id": SECOND_ADMIN_ID, "action": "get_status", "params": {}})["ok"] is False
+            send_msg(SECOND_ADMIN_ID, "/start")
+            assert "Отказано в авторизации" in fake_api.sent[-1]["text"]
+            # Non-private (group) chat is blocked even for owner
+            sent_before = len(fake_api.sent)
+            tg.handle_update({"message": {"from": {"id": ADMIN_ID}, "chat": {"id": -10012345, "type": "group"}, "text": "/start"}})
+            assert len(fake_api.sent) == sent_before
 
             # Module toggle disables access cleanly
             tog = ctl.dispatch_request({"user_id": ADMIN_ID, "action": "update_bot_config", "params": {"op": "toggle_module", "module": "links"}})
