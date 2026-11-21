@@ -234,4 +234,63 @@ echo "FINAL_STATE=${NSPAWN_AUDIT_STATE} RC=${rc} FW=${NSPAWN_HOST_FW_BACKEND}"
     assert res_tgt.returncode != 0
     print("PASS: Invalid --target rejected cleanly")
 
+    # 23. Web-Auth /auth/ page matches procedurally generated cover site (brand, initials, city, CSS; no Studio Nord)
+    auth_check_script = r'''
+source "${TEST_LIB}"
+trap - ERR
+ROOT_DOMAIN="cover-check.example.net"
+SERVER_IPV4="203.0.113.11"
+WEB_AUTH_SNIPPET_FILE="${TEST_SNIPPET}"
+log_info_tr() { :; }
+log_warn_tr() { :; }
+log_error_tr() { :; }
+if [[ "$(id -u)" -ne 0 ]]; then
+    chown() { :; }
+    install() {
+        local -a args=()
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -o|-g) shift 2 ;;
+                *) args+=("$1"); shift ;;
+            esac
+        done
+        command install "${args[@]}"
+    }
+fi
+generate_procedural_cover_site "${TEST_COVER}" "1"
+[[ -s "${WEB_AUTH_SNIPPET_FILE}" ]]
+[[ ! -e "${TEST_COVER}/.web-auth-snippet.tmp" ]]
+brand="$(sed -nE 's#.*<span class="brand-badge">[^<]+</span><span>([^<]+)</span>.*#\1#p' "${TEST_COVER}/404.html" | head -n1)"
+initials="$(sed -nE 's#.*<span class="brand-badge">([^<]+)</span>.*#\1#p' "${TEST_COVER}/404.html" | head -n1)"
+city="$(sed -nE 's#.*<div class="wrap footer-inner"><span>[^<]+</span><span>([^<]+)</span>.*#\1#p' "${TEST_COVER}/404.html" | head -n1)"
+[[ -n "${brand}" && -n "${initials}" && -n "${city}" ]]
+grep -Fq "${brand}" "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq "<span class=\"brand-badge\">${initials}</span>" "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq "${city}" "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq 'href="/assets/style.css"' "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq '$remote_addr' "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq 'Session Synchronized' "${WEB_AUTH_SNIPPET_FILE}"
+! grep -Fqi 'Studio Nord' "${WEB_AUTH_SNIPPET_FILE}"
+
+# Fallback reconstruction from existing 404.html (e.g. --update migration)
+rm -f "${WEB_AUTH_SNIPPET_FILE}"
+ensure_web_auth_nginx_snippet "${TEST_COVER}" "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq "${brand}" "${WEB_AUTH_SNIPPET_FILE}"
+grep -Fq "${city}" "${WEB_AUTH_SNIPPET_FILE}"
+'''
+    auth_env = dict(
+        os.environ,
+        SCRIPT_LANG="en",
+        TEST_LIB=library.as_posix(),
+        TEST_SNIPPET=(temp / "nginx-web-auth.conf").as_posix(),
+        TEST_COVER=(temp / "cover-site").as_posix(),
+    )
+    res_auth = subprocess.run(
+        ["bash", "-c", auth_check_script],
+        stdin=subprocess.DEVNULL, env=auth_env,
+        capture_output=True, text=True, timeout=20,
+    )
+    assert res_auth.returncode == 0, (res_auth.stdout, res_auth.stderr)
+    print("PASS: Web-Auth /auth/ page dynamically matches generated cover site branding & CSS")
+
 print("ALL DUAL-IP SYSTEMD-NSPAWN UNIT & CONFLICT TESTS PASSED")

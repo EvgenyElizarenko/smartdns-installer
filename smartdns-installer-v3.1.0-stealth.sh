@@ -1414,6 +1414,7 @@ readonly LOG_DIR="/var/log/oxidns-installer"
 readonly CERT_DIR="/etc/ssl/smartdns"
 readonly CERT_STAGE_DIR="${STATE_DIR}/cert-stage"
 readonly WEB_ROOT="/var/www/studio-nord"
+WEB_AUTH_SNIPPET_FILE="${WEB_AUTH_SNIPPET_FILE:-/etc/nginx/smartdns-web-auth.conf}"
 LAUNCH_DIR="$(pwd)"
 readonly LAUNCH_DIR
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
@@ -6143,6 +6144,7 @@ record_full_install_manifest() {
     manifest_record "DIR" "installer-core" "${LOG_DIR}" "log-dir" "-"
 
     log_info_tr "installation.log" "M_0283" "${INSTALL_MANIFEST_FILE}"
+    if [[ -f "${WEB_AUTH_SNIPPET_FILE}" ]]; then manifest_record "CONFIG" "nginx" "${WEB_AUTH_SNIPPET_FILE}" "managed"; fi
 }
 
 # ------------------------------ Backup & Rollback -----------------------------
@@ -8701,7 +8703,58 @@ EOF
 </html>
 EOF
 
+    write_web_auth_nginx_snippet "${esc_brand}" "${brand_initials}" "${esc_city}" "${stage_dir}/.web-auth-snippet.tmp"
     sync_cover_site_domain_metadata "${stage_dir}"
+}
+
+write_web_auth_nginx_snippet() {
+    local raw_brand="${1:-Client Portal}"
+    local raw_initials="${2:-CP}"
+    local raw_city="${3:-${ROOT_DOMAIN:-Portal}}"
+    local out_file="${4:-${WEB_AUTH_SNIPPET_FILE}}"
+
+    local sq="'" dl='$'
+    local safe_brand="${raw_brand//$'\r'/}"
+    safe_brand="${safe_brand//$'\n'/ }"
+    safe_brand="${safe_brand//"${sq}"/&#39;}"
+    safe_brand="${safe_brand//"${dl}"/&#36;}"
+
+    local safe_initials="${raw_initials//$'\r'/}"
+    safe_initials="${safe_initials//$'\n'/ }"
+    safe_initials="${safe_initials//"${sq}"/&#39;}"
+    safe_initials="${safe_initials//"${dl}"/&#36;}"
+
+    local safe_city="${raw_city//$'\r'/}"
+    safe_city="${safe_city//$'\n'/ }"
+    safe_city="${safe_city//"${sq}"/&#39;}"
+    safe_city="${safe_city//"${dl}"/&#36;}"
+
+    install -d -m 0755 "$(dirname "${out_file}")" 2>/dev/null || mkdir -p "$(dirname "${out_file}")"
+    cat > "${out_file}" <<EOF_AUTH_SNIP
+return 200 '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Client Session Active | ${safe_brand}</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="/assets/style.css"></head><body><header class="site-header"><div class="wrap header-inner"><a href="/" class="brand-mark"><span class="brand-badge">${safe_initials}</span><span>${safe_brand}</span></a><nav class="nav-links"><a href="/">Overview</a><a href="/#contact">Contact</a></nav></div></header><main><section class="content-section"><div class="wrap"><div class="card"><div class="card-kicker">Client Portal</div><h3>Client Portal / Session Synchronized</h3><p>Network endpoint <strong>\$remote_addr</strong> is verified for active workspace access (24h lease).</p><a href="/" class="btn-link">Return to Overview</a></div></div></section></main><footer class="site-footer"><div class="wrap footer-inner"><span>&copy; 2026 ${safe_brand}.</span><span>${safe_city}</span></div></footer></body></html>';
+EOF_AUTH_SNIP
+    chmod 0644 "${out_file}" 2>/dev/null || true
+}
+
+ensure_web_auth_nginx_snippet() {
+    local target_dir="${1:-${WEB_ROOT}}"
+    local out_file="${2:-${WEB_AUTH_SNIPPET_FILE}}"
+
+    if [[ -s "${out_file}" ]]; then
+        return 0
+    fi
+
+    local brand="" initials="" city=""
+    if [[ -s "${target_dir}/404.html" ]]; then
+        initials="$(sed -nE 's#.*<span class="brand-badge">([^<]+)</span>.*#\1#p' "${target_dir}/404.html" | head -n1 || true)"
+        brand="$(sed -nE 's#.*<span class="brand-badge">[^<]+</span><span>([^<]+)</span>.*#\1#p' "${target_dir}/404.html" | head -n1 || true)"
+        city="$(sed -nE 's#.*<div class="wrap footer-inner"><span>[^<]+</span><span>([^<]+)</span>.*#\1#p' "${target_dir}/404.html" | head -n1 || true)"
+    fi
+
+    brand="${brand:-${ROOT_DOMAIN:-Client Portal}}"
+    initials="${initials:-CP}"
+    city="${city:-${ROOT_DOMAIN:-Portal}}"
+    write_web_auth_nginx_snippet "${brand}" "${initials}" "${city}" "${out_file}"
 }
 
 generate_procedural_cover_site() {
@@ -8709,6 +8762,7 @@ generate_procedural_cover_site() {
     local force_regen="${2:-0}"
 
     if [[ "${force_regen}" != "1" && -s "${target_dir}/index.html" && -s "${target_dir}/assets/style.css" ]]; then
+        ensure_web_auth_nginx_snippet "${target_dir}" "${WEB_AUTH_SNIPPET_FILE}"
         log_info_tr "installation.log" "M_0136" "${target_dir}"
         return 0
     fi
@@ -8752,6 +8806,11 @@ generate_procedural_cover_site() {
                "${stage_dir}/assets/style.css" "${stage_dir}/assets/app.js"
     chown -R root:root "${stage_dir}"
 
+    if [[ -s "${stage_dir}/.web-auth-snippet.tmp" ]]; then
+        install -d -m 0755 "$(dirname "${WEB_AUTH_SNIPPET_FILE}")" 2>/dev/null || mkdir -p "$(dirname "${WEB_AUTH_SNIPPET_FILE}")"
+        mv -f "${stage_dir}/.web-auth-snippet.tmp" "${WEB_AUTH_SNIPPET_FILE}"
+        chmod 0644 "${WEB_AUTH_SNIPPET_FILE}" 2>/dev/null || true
+    fi
     cp -a "${stage_dir}/." "${target_dir}/"
     rm -rf "${stage_dir}"
 
@@ -8771,6 +8830,7 @@ configure_nginx() {
     touch /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log
     chown www-data:adm /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log
     chmod 0640 /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log
+    ensure_web_auth_nginx_snippet "${WEB_ROOT}" "${WEB_AUTH_SNIPPET_FILE}"
 
     local acme_http01_block=""
     local nginx_server_names="${ROOT_DOMAIN} www.${ROOT_DOMAIN} ${DOT_HOST} _"
@@ -8876,7 +8936,7 @@ ${acme_http01_block}
         }
     }
 
-    # Unified Stealth Server: Studio Nord Website + Root Domain DoH & Web-Auth
+    # Unified Stealth Server: Procedural Cover Site + Root Domain DoH & Web-Auth
     server {
         listen 9443 ssl default_server;
         listen [::]:9443 ssl default_server;
@@ -8921,7 +8981,7 @@ ${acme_http01_block}
             add_header Pragma "no-cache" always;
             add_header X-Robots-Tag "noindex, nofollow" always;
             access_log /var/log/nginx/doh-auth.log web_auth_fmt;
-            return 200 '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Studio Nord — Client Session Active</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="/assets/style.css"></head><body><header><div class="nav-container"><a href="/" class="brand">Studio Nord</a></div></header><section class="section"><div class="card"><h3>Client Portal / Session Synchronized</h3><p>Network endpoint <strong>\$remote_addr</strong> is verified for active workspace access (24h lease).</p><a href="/" class="btn">Return to Studio Overview</a></div></section><footer>&copy; 2026 Studio Nord Architecture AB.</footer></body></html>';
+            include ${WEB_AUTH_SNIPPET_FILE};
         }
 
         # Secret DoH Endpoint disguised inside root domain
@@ -10670,6 +10730,9 @@ run_regenerate_cover() {
     create_system_backup
     TRANSACTION_ACTIVE=1
     generate_procedural_cover_site "${WEB_ROOT}" "1"
+    if [[ -f /etc/nginx/nginx.conf ]] && ! grep -Fq "${WEB_AUTH_SNIPPET_FILE}" /etc/nginx/nginx.conf 2>/dev/null; then
+        configure_nginx
+    fi
     nginx -t && systemctl reload nginx
     run_test_suite
     TRANSACTION_ACTIVE=0
@@ -11350,6 +11413,7 @@ uninstall_component_nginx() {
     remove_dir_if_empty /etc/systemd/system/nginx.service.d
     systemctl daemon-reload || true
     uninstall_safe_remove_or_restore_file "/etc/nginx/nginx.conf" 0
+    uninstall_safe_remove_or_restore_file "${WEB_AUTH_SNIPPET_FILE}" 1
     uninstall_safe_remove_or_restore_file "/etc/apt/sources.list.d/nginx-official.list" 1
     uninstall_safe_remove_or_restore_file "/etc/apt/preferences.d/99nginx-official" 1
     uninstall_safe_remove_or_restore_file "/etc/apt/keyrings/nginx-archive-keyring.gpg" 1
