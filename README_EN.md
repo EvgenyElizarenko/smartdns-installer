@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.png" alt="Unified SmartDNS Stealth Stack" width="100%">
+</p>
+
 # Unified SmartDNS + Transparent SNI Proxy Installer
 
 [![Donate — CloudTips / SBP](https://img.shields.io/badge/Donate-CloudTips_%2F_SBP-0066FF?style=for-the-badge)](https://pay.cloudtips.ru/p/9785e813)
@@ -17,6 +21,10 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 ---
 
 ## What's New in v4.0.0-stealth
+
+<p align="center">
+  <img src="docs/deployment-modes.png" alt="Deployment Modes and Dual-IP Isolation" width="100%">
+</p>
 
 - **Permanent installer filename (`smartdns-installer.sh`):** starting with `v4.0.0-stealth`, the script in the repository and GitHub Releases (`Latest`) always uses the fixed filename `smartdns-installer.sh`; versions are tracked via `INSTALLER_VERSION="4.0.0-stealth"`, Git tags, and GitHub Releases.
 - **Optional SmartDNS Management Telegram Bot (`[19]` / `--install-telegram-bot`):**
@@ -62,6 +70,10 @@ This script automates the end-to-end deployment and maintenance of a personal Sm
 ---
 
 ## 2. Architecture and Stealth Camouflage
+
+<p align="center">
+  <img src="docs/smartdns-architecture-v400.png" alt="Unified SmartDNS Stealth Stack Architecture" width="100%">
+</p>
 
 ### Traffic Processing Flow
 
@@ -229,6 +241,10 @@ This mode is built for a VPS already running production host services (Nginx, Xr
 
 
 ### 5.5. Installing and Configuring the Telegram Bot (Optional)
+
+<p align="center">
+  <img src="docs/telegram-bot-flow.png" alt="Telegram Bot Control and Security Flow" width="100%">
+</p>
 
 The optional Telegram Bot provides day-to-day SmartDNS administration directly from Telegram without SSH access. It uses only the Python 3 standard library (zero `pip` dependencies), communicates via outbound HTTPS long polling (**0 open inbound ports**), runs with strict two-layer privilege separation (`smartdns-tg-bot.service` under `smartdns-tgbot` + on-demand root backend `smartdns-tg-ctl.socket` verified via `SO_PEERCRED`), and enforces **Owner-Only** access (restricted exclusively to the bot creator in private chat).
 

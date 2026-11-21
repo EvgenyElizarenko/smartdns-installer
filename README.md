@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.png" alt="Unified SmartDNS Stealth Stack" width="100%">
+</p>
+
 # Unified SmartDNS + Transparent SNI Proxy Installer
 
 [![Поддержать проект — CloudTips / СБП](https://img.shields.io/badge/Поддержать_проект-CloudTips_%2F_СБП-0066FF?style=for-the-badge)](https://pay.cloudtips.ru/p/9785e813)
@@ -17,6 +21,10 @@
 ---
 
 ## Что нового в v4.0.0-stealth
+
+<p align="center">
+  <img src="docs/deployment-modes.png" alt="Режимы развёртывания и изоляция Dual-IP" width="100%">
+</p>
 
 - **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.0-stealth"`), в тегах и релизах GitHub.
 - **Опциональный Telegram-бот управления SmartDNS (`[19]` / `--install-telegram-bot`):**
@@ -62,6 +70,10 @@
 ---
 
 ## 2. Архитектура и стелс-маскировка
+
+<p align="center">
+  <img src="docs/smartdns-architecture-v400.png" alt="Архитектура Unified SmartDNS Stealth Stack" width="100%">
+</p>
 
 ### Схема обработки трафика
 
@@ -229,6 +241,10 @@
 
 
 ### 5.5. Установка и настройка Telegram-бота (опционально)
+
+<p align="center">
+  <img src="docs/telegram-bot-flow.png" alt="Архитектура и безопасность Telegram-бота" width="100%">
+</p>
 
 Опциональный Telegram-бот позволяет управлять SmartDNS прямо из Telegram без подключения по SSH. Бот написан на стандартной библиотеке Python 3 (без `pip`-зависимостей), работает по исходящему HTTPS long polling (**не открывает входящих портов**), изолирован двухслойной архитектурой (`smartdns-tg-bot.service` от пользователя `smartdns-tgbot` + on-demand backend `smartdns-tg-ctl.socket` с проверкой `SO_PEERCRED`) и защищён строгим режимом **Owner-Only** (доступ только у создателя бота в приватном чате).
 
