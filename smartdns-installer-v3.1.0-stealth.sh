@@ -8830,6 +8830,10 @@ configure_nginx() {
     touch /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log
     chown www-data:adm /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log
     chmod 0640 /var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log
+    if [[ -z "${DOH_PATH:-}" && -f "${SECRETS_FILE}" ]]; then
+        # shellcheck disable=SC1091
+        source "${SECRETS_FILE}"
+    fi
     ensure_web_auth_nginx_snippet "${WEB_ROOT}" "${WEB_AUTH_SNIPPET_FILE}"
 
     local acme_http01_block=""
@@ -10726,6 +10730,10 @@ run_regenerate_cover() {
     fi
     # shellcheck disable=SC1091
     source "${SETTINGS_FILE}"
+    if [[ -f "${SECRETS_FILE}" ]]; then
+        # shellcheck disable=SC1091
+        source "${SECRETS_FILE}"
+    fi
 
     create_system_backup
     TRANSACTION_ACTIVE=1

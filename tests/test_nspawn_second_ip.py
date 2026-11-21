@@ -291,6 +291,9 @@ grep -Fq "${city}" "${WEB_AUTH_SNIPPET_FILE}"
         capture_output=True, text=True, timeout=20,
     )
     assert res_auth.returncode == 0, (res_auth.stdout, res_auth.stderr)
+    regen_start = source.index("run_regenerate_cover() {")
+    regen_end = source.index("\n}\n", regen_start) + 3
+    assert 'source "${SECRETS_FILE}"' in source[regen_start:regen_end], "run_regenerate_cover must load SECRETS_FILE"
     print("PASS: Web-Auth /auth/ page dynamically matches generated cover site branding & CSS")
 
 print("ALL DUAL-IP SYSTEMD-NSPAWN UNIT & CONFLICT TESTS PASSED")
