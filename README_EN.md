@@ -34,6 +34,10 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 3. [Comparison of Supported DNS Engines](#3-comparison-of-supported-dns-engines)
 4. [Technical Requirements](#4-technical-requirements)
 5. [Installation and Initial Setup](#5-installation-and-initial-setup)
+   * [5.1. Interface Language Selection](#51-interface-language-selection-russian--english)
+   * [5.2. Downloading and Launching the Interactive Menu](#52-downloading-and-launching-the-interactive-menu)
+   * [5.3. Initial Server Setup and SSH Hardening](#53-initial-server-setup-and-ssh-hardening)
+   * [5.4. Isolated Installation on a Dual-IP Server (`systemd-nspawn`)](#54-isolated-installation-on-a-dual-ip-server-systemd-nspawn)
 6. [CLI Command Reference](#6-cli-command-reference)
 7. [Client Device Configuration](#7-client-device-configuration)
 8. [Security, Backups, and Diagnostics](#8-security-backups-and-diagnostics)
@@ -155,38 +159,72 @@ On every interactive launch, the script prompts for the user interface language 
 * **`2`** — switches all menus, prompts, diagnostic messages, reports, and `--test` self-test output to English.
 * **Non-interactive execution (`cron`, `systemd`, `/dev/null` or `EOF` input):** When no interactive TTY is attached or `stdin` reaches `EOF`, the script proceeds without blocking and defaults to Russian (or uses the language explicitly set via the `SCRIPT_LANG=en` or `SCRIPT_LANG=ru` environment variable).
 
-### 5.2. Downloading and Running the Installer
+### 5.2. Downloading and Launching the Interactive Menu
 
-1. **Download the script and make it executable:**
+All operations — initial server setup, preflight diagnostics, dedicated server or dual-IP installation, self-tests, DNS engine switching, domain group and DoT whitelist management, updates, backup/rollback, and uninstall — are integrated into a **single interactive menu `[0–18]`**. You do not need to memorize individual CLI flags for routine administration.
+
+1. **Download the script, verify its `SHA-256` checksum, and make it executable:**
    ```bash
    curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.1.0-stealth.sh" -o smartdns-installer.sh
    echo "ae5cd601e1e003a4e363df1778fbd9215cfba511b268b18d5f26d989f21b040b  smartdns-installer.sh" | sha256sum -c -
    chmod +x smartdns-installer.sh
    ```
 
-2. **Run a read-only server preflight check:**
+2. **Launch the unified interactive menu:**
    ```bash
-   sudo ./smartdns-installer.sh --preflight
+   sudo ./smartdns-installer.sh
    ```
 
-3. **Launch the interactive installation wizard:**
-   ```bash
-   sudo ./smartdns-installer.sh --install
-   ```
-   The wizard will prompt for:
-   * DNS engine selection (`1` — OxiDNS, `2` — AdGuardHome);
-   * primary second-level domain (`ROOT_DOMAIN`, e.g. `example.com`);
-   * DoT subdomain prefix (`DOT_HOST`, defaults to a randomly generated 10-character subdomain);
-   * automatic generation or manual entry of a 48-character secret `DOH_PATH`;
-   * enabling and configuring `ipset` filtering mode for DoT (`shared` or `separate`);
-   * optional domain filters (`EXCLUDE_GOOGLE_SYS`, `INCLUDE_XBOX_IPIFY`);
-   * Cloudflare API Token (`Zone:DNS:Edit`) and contact email for Let's Encrypt certificates.
+3. **Standard dedicated-server setup flow via the menu:**
+   * **Read-only preflight check:** select the preflight option (`[6]` / `--preflight`) to verify OS, kernel, resources, ports, and engine compatibility without modifying the system.
+   * **Initial server setup & SSH hardening (recommended on a fresh VPS):** select option **`[1]`** (see [Section 5.3](#53-initial-server-setup-and-ssh-hardening)).
+   * **Install the stack on a dedicated server:** select option **`[2]`** (`--install`). The wizard will prompt for:
+     * installation profile (`1` — Cloudflare DNS-01 with wildcard certificate, `2` — Provider Hostname Profile without Cloudflare, see [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md));
+     * DNS engine (`1` — OxiDNS, `2` — AdGuardHome);
+     * primary second-level domain (`ROOT_DOMAIN`, e.g. `example.com`) and DoT subdomain (`DOT_HOST`, defaults to a random 10-character prefix);
+     * automatic generation or manual entry of the 48-character secret `DOH_PATH`;
+     * DoT `ipset` filtering mode (`shared` or `separate`), domain groups, and optional filters (`EXCLUDE_GOOGLE_SYS`, `INCLUDE_XBOX_IPIFY`);
+     * Cloudflare API Token (`Zone:DNS:Edit`) and contact email for Let's Encrypt certificates (Cloudflare profile).
+   * **Post-install verification:** select the self-test option (`[9]` / `--test`) to run all 26 functional and negative checks.
 
-4. **Verify the deployed stack after installation:**
-   ```bash
-   sudo ./smartdns-installer.sh --test
-   ```
+> **Automation:** every menu item remains directly callable via CLI flags documented in [Section 6. CLI Command Reference](#6-cli-command-reference) (for `cron`, `systemd`, and deployment scripts).
 
+### 5.3. Initial Server Setup and SSH Hardening
+
+The **Initial Server Setup & Security Hardening** workflow can be launched directly from the interactive menu (option **`[1]`** or `--initial-setup`) and is automatically offered before a dedicated-server installation (`[2]`) if not yet completed.
+
+* **Scope & safe execution order:** includes **10 configurable hardening steps** plus a final **16-point security audit**. Choosing full pass **`[A]`** runs steps in a lockout-safe sequence: base system preparation & `sudo` admin user creation → SSH key installation and verification (**step 7**) → SSH port change (**step 6**) → disabling password authentication (**step 8**) and direct `root` login (**step 9**) → final security audit (**step 10**).
+* **Flexible navigation & idempotency:** supports **`[A]`** (all steps in safe order), **`[C]`** (selective execution), **`[S]`** (skip), **`[B]`** (step back), and **`[Q]`** (quit). Progress is persisted in `/var/lib/oxidns-installer/initial-setup.env`, allowing subsequent runs to skip or selectively adjust completed items.
+* **Lockout protection (`Reboot Lock`):** verifies confirmed SSH key access before locking passwords or `root`, and holds any deferred kernel reboot (`REBOOT_LOCKED`) until SmartDNS deployment and verification succeed.
+* **Compatibility with Dual-IP Mode #3:** when installing inside the isolated `systemd-nspawn` container ([Section 5.4](#54-isolated-installation-on-a-dual-ip-server-systemd-nspawn)), `Initial Server Setup` is **skipped** and never modifies host SSH, users, or firewall settings.
+
+### 5.4. Isolated Installation on a Dual-IP Server (`systemd-nspawn`)
+
+This mode is built for a VPS already running production host services (Nginx, Xray, VPN/Amnezia, Telemt, Docker, SSH) on its primary IP (**IP #1**) with a **second dedicated public IPv4** (and optional secondary IPv6) available for SmartDNS + SNI Proxy.
+
+1. **Read-only pre-installation audit (zero system changes):**
+   Launch `sudo ./smartdns-installer.sh` and choose option **`[7]`** (or `--preflight-second-IP`). The audit inspects OS, kernel, cgroups/namespaces, `systemd-nspawn`/`debootstrap` presence (no auto-install before confirmation), global IPs (excluding virtual interfaces `docker*`, `amn*`, `wg*`), ports `80`/`443`/`853` (including `0.0.0.0` and `[::]` wildcards), active host services, host firewall (`UFW`/`iptables`/`nftables`), and foreign containers, returning:
+   * `INSTALLATION READY` — no conflicts detected;
+   * `INSTALLATION READY WITH WARNINGS` — missing packages or host wildcard listeners found (confirmation required);
+   * `INSTALLATION BLOCKED` — blocking conflict (primary IP #1 chosen, port bound directly on IP #2, missing secondary IP, or foreign container named `smartdns-v3.1.0`).
+
+2. **Isolated installation via the menu:**
+   * Select option **`[3]`** (`--install-on-second-IP`) and pick the **secondary public IPv4** from the detected list (primary IP #1 is blocked to protect SSH and existing services).
+   * Review the `ISOLATED INSTALLATION PLAN` and confirm (`Y`).
+   * The installer builds a minimal Debian container `smartdns-v3.1.0` (`/var/lib/machines/smartdns-v3.1.0`) enabled via `machines.target`, configures a dedicated `veth` transit link (`sdns-h0` <-> `host0`, `10.203.110.0/30`), applies scoped `SMARTDNS_NSPAWN_*` DNAT/SNAT rules strictly for IP #2 (without flushing host `UFW`/`Docker`/`iptables`/`nftables` rules, preserving real client IPs for in-container `ipset`, and blocking container access to IP #1 and the host), and launches the SmartDNS setup wizard inside the container.
+
+3. **Maintenance, diagnostics & clean container removal:**
+   * All maintenance options in the interactive menu automatically detect the container (or prompt to select Host vs. Container if both exist).
+   * For direct CLI invocation, pass `--target container`:
+     ```bash
+     sudo ./smartdns-installer.sh --target container --status
+     sudo ./smartdns-installer.sh --target container --test
+     sudo ./smartdns-installer.sh --target container --whitelist-status
+     sudo ./smartdns-installer.sh --target container --update
+     sudo /usr/local/bin/smartdns-nspawn-host-net.sh status
+     ```
+   * Container secrets and logs remain isolated inside `/var/lib/machines/smartdns-v3.1.0/var/lib/oxidns-installer/secrets.env` and `/var/lib/machines/smartdns-v3.1.0/var/log/oxidns-installer/`.
+   * Removing the container (via the menu or `--target container --uninstall` with `YES` confirmation) deletes **only** `smartdns-v3.1.0`, `sdns-h0`, and `SMARTDNS_NSPAWN_*` host rules, leaving host services, IP #1, SSH, and the host firewall untouched.
 ---
 
 ## 6. CLI Command Reference
