@@ -4,7 +4,7 @@
 
 **Language:** [Русский](README.md) | **English**
 
-[![Version](https://img.shields.io/badge/version-v3.0.1--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v3.0-stealth)
+[![Version](https://img.shields.io/badge/version-v3.1.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/tag/v3.1.0-stealth)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-technical-requirements)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-interface-language-selection-russian--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -16,13 +16,16 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 
 ---
 
-## What's New in v3.0.1-stealth
+## What's New in v3.1.0-stealth
 
-- **Provider Hostname Profile (without Cloudflare, based on PR #1):** alternative installation profile (`--profile hostname`) for external provider-managed hostnames and an existing single-host Certbot certificate (HTTP-01) without a Cloudflare account or API token. Guide: [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md).
-- **Read-only pre-check (`--hostname-check`):** non-destructive verification of public DNS `A`/`AAAA` (`1.1.1.1`, `8.8.8.8`), existing Certbot certificate (expiry, key match, trust chain, permissions), `webroot` / `renewal/*.conf`, occupied ports, and conflicting services with `[ CRIT ]` / `[ WARN ]` classification.
-- **Isolated HTTP-01 routing & Certbot deploy hook:** in `hostname` profile, Nginx serves `/.well-known/acme-challenge/` from `HOSTNAME_ACME_WEBROOT`, and `/etc/letsencrypt/renewal-hooks/deploy/smartdns-hostname.sh` deploys strictly the saved lineage with key/chain validation, `nginx -t`, `systemctl reload nginx`, and automatic rollback on failure.
-- **Default DoT IP authorization (`shared`) & existing-service guard:** enables `DOT_WHITELIST_ENABLED="true"` (`shared`) for public DoT SNI, stops fresh installation when required ports or services are already active, and protects saved hostname settings against accidental overwrite.
-- **Preservation of Cloudflare Profile & `v3.0` renewal fix:** the Cloudflare certificate auto-renewal mechanism (`acme.sh` + `smartdns-cert-renew.timer` + `smartdns-cert-deploy.sh`) fixed in `v3.0-stealth` remains **completely untouched** and strictly isolated from the new profile.
+- **Two installation modes in the interactive menu (`[0–18]`):**
+  - `[ 2]` **Install SmartDNS + SNI Proxy on dedicated server (`--install`)** — standard host deployment preserving the `v3.0`/`v3.0.1` architecture.
+  - `[ 3]` **Install SmartDNS + SNI Proxy on dual-IP server (`--install-on-second-IP`)** — isolated deployment inside a `systemd-nspawn` container (`smartdns-v3.1.0`) bound to a secondary public IPv4/IPv6 without touching existing host services (Nginx, Xray, VPN/Amnezia, Telemt, Docker, SSH, firewall).
+- **Read-only pre-installation audit (`--preflight-second-IP`, menu `[ 7]`):** checks OS/kernel/cgroups/namespaces, `systemd-nspawn`/`debootstrap` availability (no auto-install before confirmation), global IPs (excluding virtual interfaces `docker*`/`amn*`/`wg*`), ports `80`/`443`/`853` (including `0.0.0.0`/`[::]` wildcards), active host services, host firewall (`UFW`/`iptables`/`nftables`), and foreign containers, returning `INSTALLATION READY`, `INSTALLATION READY WITH WARNINGS`, or `INSTALLATION BLOCKED`.
+- **Isolated networking & non-destructive host firewall:** dedicated `veth` link (`sdns-h0` <-> `host0`, `10.203.110.0/30` transit), self-contained `smartdns-container-net.service`, and scoped `SMARTDNS_NSPAWN_*` rules (iptables/UFW or `nftables` tables) strictly for IP #2, preserving real client IPs for in-container `ipset` and blocking container access to IP #1 and the host.
+- **Host / Container maintenance routing (`--target [auto|host|container]`):** `--status`, `--test`, `--update`, `--whitelist-*`, `--backup`, `--rollback`, and `--uninstall` seamlessly support both targets; container removal cleans up only `SMARTDNS_NSPAWN_*` and container artifacts.
+- **Cover-matched `/auth/<DOH_PATH>` Web-Auth page:** dynamically inherits the generated Cover Site brand, initials, city, and CSS via `/etc/nginx/smartdns-web-auth.conf` (including automatic refresh on `--regenerate-cover`).
+- **Preservation of Provider Hostname Profile & Cloudflare renewal (`v3.0`):** the `--profile hostname` profile (`v3.0.1-stealth`, see [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md)) and the Cloudflare auto-renewal fix (`v3.0-stealth`: `acme.sh` + `smartdns-cert-renew.timer` + `smartdns-cert-deploy.sh`) remain completely untouched.
 
 ## Table of Contents
 
@@ -156,7 +159,8 @@ On every interactive launch, the script prompts for the user interface language 
 
 1. **Download the script and make it executable:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.0.1-stealth.sh" -o smartdns-installer.sh
+   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer-v3.1.0-stealth.sh" -o smartdns-installer.sh
+   echo "ae5cd601e1e003a4e363df1778fbd9215cfba511b268b18d5f26d989f21b040b  smartdns-installer.sh" | sha256sum -c -
    chmod +x smartdns-installer.sh
    ```
 
@@ -187,7 +191,7 @@ On every interactive launch, the script prompts for the user interface language 
 
 ## 6. CLI Command Reference
 
-Usage: `sudo ./smartdns-installer-v3.0.1-stealth.sh [COMMAND]` (running without arguments in an interactive terminal opens the main launcher menu).
+Usage: `sudo ./smartdns-installer-v3.1.0-stealth.sh [COMMAND]` (running without arguments in an interactive terminal opens the main launcher menu).
 
 | Command | Description |
 | :--- | :--- |
@@ -197,6 +201,10 @@ Usage: `sudo ./smartdns-installer-v3.0.1-stealth.sh [COMMAND]` (running without 
 | `--profile [cloudflare\|hostname]` | Explicitly select installation profile: `cloudflare` (DNS-01, default) or `hostname` (without Cloudflare, see [HOSTNAME_SETUP.md](HOSTNAME_SETUP.md)) |
 | `--initial-setup` | Interactive initial server setup and SSH hardening (`10` steps + `16`-point security audit, state saved to `initial-setup.env`) |
 | `--install` | Run interactive transactional installation of the full stack (including `Initial Server Setup` when needed) |
+| `--install-on-second-IP` | Isolated SmartDNS + SNI Proxy installation on a secondary IP via `systemd-nspawn` (Mode #3) |
+| `--preflight-second-IP` | Read-only dual-IP audit (OS, kernel/namespaces, IPs, ports/wildcards, services, host firewall) |
+| `--second-ip <IPV4>` | Explicitly specify secondary server IPv4 for `systemd-nspawn` mode (optional `--second-ipv6 <IPV6>`) |
+| `--target [auto\|host\|container]` | Target selection for maintenance commands (`--status`, `--test`, `--update`, `--uninstall`, etc.) |
 | `--status` | Show active DNS engine, `systemd` service/timer states, and `ipset` sets |
 | `--test` | Run functional and negative self-tests across the proxy and DNS chain |
 | `--switch-engine [oxidns\|adguardhome]` | Transactionally switch the active DNS backend on a running server |
