@@ -22,10 +22,6 @@
 
 ## Что нового в v4.0.0-stealth
 
-<p align="center">
-  <img src="docs/deployment-modes.png" alt="Режимы развёртывания и изоляция Dual-IP" width="100%">
-</p>
-
 - **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.0-stealth"`), в тегах и релизах GitHub.
 - **Опциональный Telegram-бот управления SmartDNS (`[19]` / `--install-telegram-bot`):**
   - **двухслойная изоляция без `pip`-зависимостей (Python 3 stdlib):** непривилегированный демон `smartdns-tg-bot.service` (`User=smartdns-tgbot`, исходящий HTTPS long polling, **0 входящих портов**) взаимодействует с короткоживущим root-backend `smartdns-tg-ctl.socket` строго через локальный Unix-сокет `/run/smartdns-tg-ctl/ctl.sock` (`0660`, проверка `SO_PEERCRED`, allowlist типизированных JSON-команд, без `eval` и `shell=True`);
@@ -155,6 +151,10 @@
 
 ## 5. Установка и первоначальная настройка
 
+<p align="center">
+  <img src="docs/deployment-modes.png" alt="Режимы развёртывания и изоляция Dual-IP" width="100%">
+</p>
+
 ### 5.1. Выбор языка интерфейса (Русский / English)
 
 При каждом интерактивном запуске скрипт перед началом выполнения любых операций запрашивает язык пользовательского интерфейса:
@@ -238,7 +238,6 @@
      ```
    * Секреты и журналы контейнера изолированы внутри `/var/lib/machines/smartdns-v3.1.0/var/lib/oxidns-installer/secrets.env` и `/var/lib/machines/smartdns-v3.1.0/var/log/oxidns-installer/`.
    * Удаление контейнера (через меню или `--target container --uninstall` с подтверждением `YES`) удаляет **только** `smartdns-v3.1.0`, `sdns-h0` и правила `SMARTDNS_NSPAWN_*`, не затрагивая службы хоста, IP #1, SSH и существующий firewall.
-
 
 ### 5.5. Установка и настройка Telegram-бота (опционально)
 

@@ -22,10 +22,6 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 
 ## What's New in v4.0.0-stealth
 
-<p align="center">
-  <img src="docs/deployment-modes.png" alt="Deployment Modes and Dual-IP Isolation" width="100%">
-</p>
-
 - **Permanent installer filename (`smartdns-installer.sh`):** starting with `v4.0.0-stealth`, the script in the repository and GitHub Releases (`Latest`) always uses the fixed filename `smartdns-installer.sh`; versions are tracked via `INSTALLER_VERSION="4.0.0-stealth"`, Git tags, and GitHub Releases.
 - **Optional SmartDNS Management Telegram Bot (`[19]` / `--install-telegram-bot`):**
   - **two-layer isolation with zero `pip` dependencies (Python 3 stdlib only):** unprivileged `smartdns-tg-bot.service` (`User=smartdns-tgbot`, outbound HTTPS long polling, **0 open inbound ports**) talks to on-demand root backend `smartdns-tg-ctl.socket` exclusively over `/run/smartdns-tg-ctl/ctl.sock` (`0660`, `SO_PEERCRED` verification, strict JSON action allowlist, no `eval` or `shell=True`);
@@ -155,6 +151,10 @@ Client (DoH / DoT / HTTPS)
 
 ## 5. Installation and Initial Setup
 
+<p align="center">
+  <img src="docs/deployment-modes.png" alt="Deployment Modes and Dual-IP Isolation" width="100%">
+</p>
+
 ### 5.1. Interface Language Selection (Russian / English)
 
 On every interactive launch, the script prompts for the user interface language before executing any operations:
@@ -238,7 +238,6 @@ This mode is built for a VPS already running production host services (Nginx, Xr
      ```
    * Container secrets and logs remain isolated inside `/var/lib/machines/smartdns-v3.1.0/var/lib/oxidns-installer/secrets.env` and `/var/lib/machines/smartdns-v3.1.0/var/log/oxidns-installer/`.
    * Removing the container (via the menu or `--target container --uninstall` with `YES` confirmation) deletes **only** `smartdns-v3.1.0`, `sdns-h0`, and `SMARTDNS_NSPAWN_*` host rules, leaving host services, IP #1, SSH, and the host firewall untouched.
-
 
 ### 5.5. Installing and Configuring the Telegram Bot (Optional)
 
