@@ -38,7 +38,7 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
    * [5.2. Downloading and Launching the Interactive Menu](#52-downloading-and-launching-the-interactive-menu)
    * [5.3. Initial Server Setup and SSH Hardening](#53-initial-server-setup-and-ssh-hardening)
    * [5.4. Isolated Installation on a Dual-IP Server (`systemd-nspawn`)](#54-isolated-installation-on-a-dual-ip-server-systemd-nspawn)
-   * [5.5. Telegram Bot Setup & Management (Optional)](#55-telegram-bot-setup--management-optional)
+   * [5.5. Installing and Configuring the Telegram Bot (Optional)](#55-installing-and-configuring-the-telegram-bot-optional)
 6. [CLI Command Reference](#6-cli-command-reference)
 7. [Client Device Configuration](#7-client-device-configuration)
 8. [Security, Backups, and Diagnostics](#8-security-backups-and-diagnostics)
@@ -227,19 +227,80 @@ This mode is built for a VPS already running production host services (Nginx, Xr
    * Container secrets and logs remain isolated inside `/var/lib/machines/smartdns-v3.1.0/var/lib/oxidns-installer/secrets.env` and `/var/lib/machines/smartdns-v3.1.0/var/log/oxidns-installer/`.
    * Removing the container (via the menu or `--target container --uninstall` with `YES` confirmation) deletes **only** `smartdns-v3.1.0`, `sdns-h0`, and `SMARTDNS_NSPAWN_*` host rules, leaving host services, IP #1, SSH, and the host firewall untouched.
 
-### 5.5. Telegram Bot Setup & Management (Optional)
 
-The Telegram Bot enables day-to-day SmartDNS administration (single/batch/`.txt` domain additions, DoT/DoH/Web-Auth links, IP whitelist management, service status, logs, and allowlisted restarts) directly from Telegram without SSH. It uses outbound HTTPS long polling (0 open inbound ports) and enforces strict **Owner-Only** authorization.
+### 5.5. Installing and Configuring the Telegram Bot (Optional)
 
-1. Create a bot via `@BotFather` to obtain a **Telegram Bot Token**, and retrieve your numeric **Telegram User ID** (e.g. via `@userinfobot`).
-2. Open the interactive menu (`sudo ./smartdns-installer.sh`) and select **`[19]`** → **`[1]`** (or run `sudo ./smartdns-installer.sh --install-telegram-bot`; add `--target container` for the dual-IP `systemd-nspawn` container).
-3. Enter the token (hidden input, stored in `/etc/smartdns-tgbot/token.env` mode `0600`), your `Telegram User ID`, and autostart preference.
-4. Verify socket permissions, backend health, and Telegram API reachability:
-   ```bash
-   sudo ./smartdns-installer.sh --telegram-bot-check
-   sudo ./smartdns-installer.sh --telegram-bot-status
-   ```
-5. Remove the bot at any time without touching SmartDNS, certificates, domains, or whitelist via menu `[19]` → `[8]` or `sudo ./smartdns-installer.sh --telegram-bot-remove`.
+The optional Telegram Bot provides day-to-day SmartDNS administration directly from Telegram without SSH access. It uses only the Python 3 standard library (zero `pip` dependencies), communicates via outbound HTTPS long polling (**0 open inbound ports**), runs with strict two-layer privilege separation (`smartdns-tg-bot.service` under `smartdns-tgbot` + on-demand root backend `smartdns-tg-ctl.socket` verified via `SO_PEERCRED`), and enforces **Owner-Only** access (restricted exclusively to the bot creator in private chat).
+
+#### 1. Preparation in Telegram
+
+1. Open `@BotFather`, send `/newbot`, choose a name and username, and copy the issued **Telegram Bot Token** (`<digits>:<secret>`).
+2. Obtain your numeric **Telegram User ID** (for example, via `@userinfobot` or `@getmyid_bot`) — only this account will be authorized to control the bot.
+
+#### 2. Installing the Bot on the Server
+
+* **Via the unified interactive menu (`[0–19]`):**
+  ```bash
+  sudo ./smartdns-installer.sh
+  ```
+  Select **`[19]`** (*Telegram Bot setup & management*) → **`[1]`** (*Install / reconfigure bot*).
+
+* **Directly via CLI (dedicated server, Mode #2):**
+  ```bash
+  sudo ./smartdns-installer.sh --install-telegram-bot
+  ```
+
+* **Directly via CLI (dual-IP `systemd-nspawn` container, Mode #3):**
+  ```bash
+  sudo ./smartdns-installer.sh --target container --install-telegram-bot
+  ```
+
+#### 3. Step-by-Step Configuration Wizard
+
+During installation, the wizard prompts for:
+1. **Telegram Bot Token** — hidden input (`read -r -s`), written strictly to `/etc/smartdns-tgbot/token.env` (`smartdns-tgbot:smartdns-tgbot`, mode `0600`), never passed in command-line arguments, and automatically redacted from logs.
+2. **Primary Admin (Creator) Telegram User ID** — saved to `/etc/smartdns-tgbot/config.json` (`root:smartdns-tgbot`, mode `0640`) with `"owner_only": true`. Any other Telegram user receives `⛔ Authorization denied`, and group chats are blocked.
+3. **Autostart after reboot (`[Y/n]`)** — enables or disables `smartdns-tg-bot.service` on boot.
+
+#### 4. Verification and First Launch in Telegram
+
+Verify file permissions, the local Unix socket `/run/smartdns-tg-ctl/ctl.sock`, and Telegram API connectivity:
+```bash
+# Dedicated server (append --target container for dual-IP nspawn mode)
+sudo ./smartdns-installer.sh --telegram-bot-check
+sudo ./smartdns-installer.sh --telegram-bot-status
+```
+
+Confirm all 5 checks in `--telegram-bot-check` return `[ PASS ]`, then open your bot in a private Telegram chat and send **`/start`** or **`/menu`**.
+
+The Inline Keyboard main menu provides:
+* **`➕ Add Domains`** — unified pipeline supporting 3 input methods: single domain, batch text list (newline, `,`, `;`, `#` comments), and `.txt` file upload (UTF-8/BOM, max 256 KB & 500 domains) with preview report, pagination, single-use confirmation, and automatic rollback on failure; plus removal from `custom-allow.txt`, export/backup, history, and DNS/Xray verification;
+* **`📋 Proxied Domains`** — live list from the active configuration with custom-only filter, substring search, and pagination;
+* **`🔗 SmartDNS Links`** — live DoT, DoH, and `/auth/<DOH_PATH>` Web-Auth connection details formatted for one-tap copying (tokens and passwords are never exposed);
+* **`🛡 Whitelist IP`** — active IPv4/IPv6 members with remaining TTL, single/batch add, remove, search, export, and history;
+* **`📊 Server Status`** — `systemd` unit states, DoH/DoT/SNI Proxy readiness, domain & whitelist counts, CPU/RAM/disk usage, and TLS certificate expiration;
+* **`⚙️ Management`** — allowlisted service restarts, non-destructive diagnostics, secret-scrubbed log viewer, bot module toggles, and `/var/log/smartdns-tgbot/audit.log`.
+
+#### 5. Reconfiguring, Updating, and Safe Removal
+
+```bash
+# Change token, owner User ID, or autostart without losing settings
+sudo ./smartdns-installer.sh --telegram-bot-config
+
+# Update bot code while preserving existing token & config.json
+# (choose [1] in the already-installed prompt)
+sudo ./smartdns-installer.sh --install-telegram-bot
+
+# Service lifecycle controls
+sudo ./smartdns-installer.sh --telegram-bot-stop
+sudo ./smartdns-installer.sh --telegram-bot-start
+sudo ./smartdns-installer.sh --telegram-bot-restart
+
+# Remove ONLY the Telegram Bot (SmartDNS, certs, domains, and whitelist remain untouched)
+sudo ./smartdns-installer.sh --telegram-bot-remove
+```
+
+*(For dual-IP container installations, pass `--target container` or manage the bot via interactive menu item `[19]`.)*
 ---
 
 ## 6. CLI Command Reference
