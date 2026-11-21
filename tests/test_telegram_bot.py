@@ -270,7 +270,12 @@ def main() -> None:
             },
         }))
 
-        ctl = load_module_from_path("smartdns_ctl_test", ctl_file)
+        orig_geteuid = os.geteuid
+        os.geteuid = lambda: 1000  # type: ignore[assignment]
+        try:
+            ctl = load_module_from_path("smartdns_ctl_test", ctl_file)
+        finally:
+            os.geteuid = orig_geteuid
         bot = load_module_from_path("smartdns_bot_test", bot_file)
 
         # Stateful fake system command backend for ctl.py
