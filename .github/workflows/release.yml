@@ -11,6 +11,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,15 +19,30 @@ jobs:
       - name: Verify syntax and prepare release assets
         run: |
           bash -n smartdns-installer.sh
+
           mkdir -p release-assets
+
           cp smartdns-installer.sh release-assets/smartdns-installer.sh
+
           (cd release-assets && sha256sum smartdns-installer.sh > SHA256SUMS.txt)
 
       - name: Publish GitHub Release as Latest
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" release-assets/* \
-            --title "SmartDNS Installer ${GITHUB_REF_NAME}" \
-            --generate-notes \
-            --latest
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+              echo "Release ${GITHUB_REF_NAME} exists. Updating assets..."
+
+              gh release upload "${GITHUB_REF_NAME}" release-assets/* --clobber
+
+              gh release edit "${GITHUB_REF_NAME}" \
+                  --title "SmartDNS Installer ${GITHUB_REF_NAME}" \
+                  --latest
+          else
+              echo "Creating release ${GITHUB_REF_NAME}..."
+
+              gh release create "${GITHUB_REF_NAME}" release-assets/* \
+                  --title "SmartDNS Installer ${GITHUB_REF_NAME}" \
+                  --generate-notes \
+                  --latest
+          fi
