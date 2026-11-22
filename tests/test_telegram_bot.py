@@ -125,7 +125,7 @@ def main() -> None:
     print("PASS: v3.1.0-stealth is byte-for-byte unchanged")
 
     v400_text = V400_SCRIPT.read_text(encoding="utf-8").replace("\r\n", "\n")
-    assert 'INSTALLER_VERSION="4.0.0-stealth"' in v400_text
+    assert 'INSTALLER_VERSION="4.0.1-stealth"' in v400_text
     assert 'SCRIPT_NAME="smartdns-installer.sh"' in v400_text
     assert "Выберите пункт [0-19]:" in v400_text and "Select an option [0-19]:" in v400_text
     assert "[19] Telegram Bot setup & management" in v400_text

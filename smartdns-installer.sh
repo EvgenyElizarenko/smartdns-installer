@@ -11,7 +11,7 @@ umask 027
 
 # ------------------------------ Global Constants ------------------------------
 readonly SCRIPT_NAME="smartdns-installer.sh"
-INSTALLER_VERSION="4.0.0-stealth"
+INSTALLER_VERSION="4.0.1-stealth"
 
 # ------------------------------ Localization Engine (RU / EN) -----------------
 SCRIPT_LANG="${SCRIPT_LANG:-ru}"
@@ -6213,6 +6213,7 @@ record_full_install_manifest() {
 
     log_info_tr "installation.log" "M_0283" "${INSTALL_MANIFEST_FILE}"
     if [[ -f "${WEB_AUTH_SNIPPET_FILE}" ]]; then manifest_record "CONFIG" "nginx" "${WEB_AUTH_SNIPPET_FILE}" "managed"; fi
+    if [[ -f /etc/logrotate.d/smartdns-stealth ]]; then manifest_record "FILE" "installer-core" "/etc/logrotate.d/smartdns-stealth" "managed"; fi
 }
 
 # ------------------------------ Backup & Rollback -----------------------------
@@ -6582,6 +6583,7 @@ install_oxidns_binary() {
 
     local target_ver="${OXIDNS_DEFAULT_VER}"
     local target_url="${OXIDNS_DEFAULT_URL}"
+    local target_sha_url=""
 
     log_info_tr "dns.log" "M_0098" "${OXIDNS_REPO}"
     local latest_json=""
@@ -6592,9 +6594,12 @@ install_oxidns_binary() {
         latest_pre="$(printf '%s' "${latest_json}" | jq -r '.prerelease // true')"
         local latest_asset
         latest_asset="$(printf '%s' "${latest_json}" | jq -r '.assets[]? | select(.name | test("x86_64.*linux.*tar\\.gz$")) | .browser_download_url' | sed -n '1p')"
+        local latest_sha_asset
+        latest_sha_asset="$(printf '%s' "${latest_json}" | jq -r '.assets[]? | select(.name | test("(x86_64.*linux.*tar\\.gz\\.sha256|checksums?\\.txt|SHA256SUMS)$"; "i")) | .browser_download_url' | sed -n '1p')"
         if [[ -n "${latest_tag}" && "${latest_pre}" == "false" && -n "${latest_asset}" ]]; then
             target_ver="${latest_tag}"
             target_url="${latest_asset}"
+            target_sha_url="${latest_sha_asset:-}"
         fi
     fi
 
@@ -6602,6 +6607,20 @@ install_oxidns_binary() {
     tmp_dir="$(mktemp -d /tmp/oxidns-install.XXXXXX)"
     log_info_tr "dns.log" "M_0099" "${target_ver}" "${target_url}"
     curl -fsSL --retry 3 --connect-timeout 15 -o "${tmp_dir}/oxidns.tar.gz" "${target_url}"
+
+    if [[ -n "${target_sha_url}" ]] && curl -fsSL --retry 2 --connect-timeout 10 -o "${tmp_dir}/oxidns.sha256" "${target_sha_url}" 2>/dev/null; then
+        local oxi_asset_name oxi_exp_sha oxi_act_sha
+        oxi_asset_name="$(basename "${target_url}")"
+        oxi_exp_sha="$(awk -v f="${oxi_asset_name}" 'NF==1 && $1 ~ /^[0-9a-fA-F]{64}$/ {print tolower($1); exit} ($2 == f || $2 == ("./" f) || $2 == ("*" f)) && $1 ~ /^[0-9a-fA-F]{64}$/ {print tolower($1); exit}' "${tmp_dir}/oxidns.sha256")"
+        if [[ -n "${oxi_exp_sha}" ]]; then
+            oxi_act_sha="$(sha256sum "${tmp_dir}/oxidns.tar.gz" | awk '{print tolower($1)}')"
+            if [[ "${oxi_exp_sha}" != "${oxi_act_sha}" ]]; then
+                rm -rf "${tmp_dir}"
+                log_error_tr "dns.log" "M_0095" "${oxi_exp_sha}" "${oxi_act_sha}"
+                exit 1
+            fi
+        fi
+    fi
 
     if ! gzip -t "${tmp_dir}/oxidns.tar.gz" 2>/dev/null; then
         rm -rf "${tmp_dir}"
@@ -6653,10 +6672,22 @@ install_adguardhome_binary() {
             ;;
     esac
 
-    local tar_url="https://github.com/AdguardTeam/AdGuardHome/releases/download/${tag_name}/AdGuardHome_linux_${agh_arch}.tar.gz"
+    local tar_name="AdGuardHome_linux_${agh_arch}.tar.gz"
+    local tar_url="https://github.com/AdguardTeam/AdGuardHome/releases/download/${tag_name}/${tar_name}"
+    local csum_url="https://github.com/AdguardTeam/AdGuardHome/releases/download/${tag_name}/checksums.txt"
     local tmp_dir
     tmp_dir="$(mktemp -d /tmp/agh-install.XXXXXX)"
     curl -fsSL --retry 3 --connect-timeout 15 -o "${tmp_dir}/agh.tar.gz" "${tar_url}"
+    curl -fsSL --retry 3 --connect-timeout 15 -o "${tmp_dir}/checksums.txt" "${csum_url}"
+
+    local expected_sha256 actual_sha256
+    expected_sha256="$(awk -v f="${tar_name}" '$2 == f || $2 == ("./" f) {print $1; exit}' "${tmp_dir}/checksums.txt" | tr -d ' \r\n')"
+    actual_sha256="$(sha256sum "${tmp_dir}/agh.tar.gz" | awk '{print $1}')"
+    if [[ -z "${expected_sha256}" || "${expected_sha256}" != "${actual_sha256}" ]]; then
+        rm -rf "${tmp_dir}"
+        log_error_tr "dns.log" "M_0095" "${expected_sha256}" "${actual_sha256}"
+        exit 1
+    fi
 
     tar -xzf "${tmp_dir}/agh.tar.gz" -C "${tmp_dir}"
     if [[ ! -f "${tmp_dir}/AdGuardHome/AdGuardHome" ]]; then
@@ -7385,7 +7416,39 @@ if [[ "${KEEP_GENLANG}" == "1" ]]; then
 fi
 
 if [[ -s "${ASSETS_DIR}/custom-deny.txt" ]]; then
-    grep -vFf "${ASSETS_DIR}/custom-deny.txt" "${TMP_DOMAINS}.filtered" | sort -u > "${TMP_DOMAINS}" || true
+    awk '
+        NR == FNR {
+            sub(/\r$/, "")
+            sub(/#.*$/, "")
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+            d = tolower($0)
+            sub(/^\*\./, "", d)
+            sub(/^\./, "", d)
+            if (d != "" && d ~ /^[a-z0-9.-]+$/ && index(d, ".") > 0) {
+                deny[d] = 1
+            }
+            next
+        }
+        {
+            cur = tolower($0)
+            blocked = 0
+            if (cur in deny) {
+                blocked = 1
+            } else {
+                pos = index(cur, ".")
+                while (pos > 0) {
+                    parent = substr(cur, pos + 1)
+                    if (parent in deny) {
+                        blocked = 1
+                        break
+                    }
+                    rel = index(parent, ".")
+                    pos = (rel > 0) ? (pos + rel) : 0
+                }
+            }
+            if (!blocked) print $0
+        }
+    ' "${ASSETS_DIR}/custom-deny.txt" "${TMP_DOMAINS}.filtered" | sort -u > "${TMP_DOMAINS}"
 else
     sort -u "${TMP_DOMAINS}.filtered" > "${TMP_DOMAINS}"
 fi
@@ -7728,7 +7791,7 @@ configure_xray_base() {
   "log": {
     "access": "/var/log/xray/access.log",
     "error": "/var/log/xray/error.log",
-    "loglevel": "info"
+    "loglevel": "warning"
   },
   "dns": {
     "servers": [
@@ -7789,11 +7852,10 @@ configure_xray_base() {
     {
       "tag": "direct-v4",
       "protocol": "freedom",
-      "settings": {
-        "domainStrategy": "UseIPv4"
-      },
+      "settings": {},
       "streamSettings": {
         "sockopt": {
+          "domainStrategy": "UseIPv4",
           "tcpKeepAliveInterval": 120
         }
       }
@@ -7810,7 +7872,8 @@ configure_xray_base() {
       "tag": "dot-backend",
       "protocol": "freedom",
       "settings": {
-        "redirect": "127.0.0.1:8853"
+        "redirect": "127.0.0.1:8853",
+        "proxyProtocol": 1
       }
     },
     {
@@ -8928,12 +8991,13 @@ events {
     multi_accept on;
 }
 
-# Internal DoT TLS terminator (receives SNI-verified stream from Xray dot-in)
+# Internal DoT TLS terminator (receives SNI-verified stream from Xray dot-in with PROXY protocol v1)
 stream {
     log_format dot_stream '\$time_iso8601|\$remote_addr|\$protocol|\$status|\$bytes_sent|\$bytes_received';
 
     server {
-        listen 127.0.0.1:8853 ssl;
+        listen 127.0.0.1:8853 ssl proxy_protocol;
+        set_real_ip_from 127.0.0.1;
         ssl_certificate ${CERT_DIR}/fullchain.pem;
         ssl_certificate_key ${CERT_DIR}/privkey.pem;
         ssl_protocols TLSv1.2 TLSv1.3;
@@ -8990,8 +9054,13 @@ http {
     }
 
     map "\$status:\$upstream_status:\$upstream_http_content_type" \$doh_verified {
-        "200:200:application/dns-message" 1;
+        "~*^200:200:application/dns-message" 1;
         default 0;
+    }
+
+    upstream doh_backend {
+        server 127.0.0.1:8053;
+        keepalive 16;
     }
 
     server {
@@ -9049,6 +9118,11 @@ ${acme_http01_block}
             }
             default_type text/html;
             charset utf-8;
+            add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+            add_header X-Content-Type-Options "nosniff" always;
+            add_header X-Frame-Options "DENY" always;
+            add_header Referrer-Policy "no-referrer" always;
+            add_header Content-Security-Policy "default-src 'self'; style-src 'self'; img-src 'self' data:; script-src 'none'; object-src 'none'" always;
             add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
             add_header Pragma "no-cache" always;
             add_header X-Robots-Tag "noindex, nofollow" always;
@@ -9070,7 +9144,7 @@ ${acme_http01_block}
             proxy_set_header Connection "";
             proxy_hide_header Server;
             proxy_hide_header X-Powered-By;
-            proxy_pass http://127.0.0.1:8053/dns-query;
+            proxy_pass http://doh_backend/dns-query;
 
             access_log /var/log/nginx/doh-auth.log doh_auth_fmt if=\$doh_verified;
         }
@@ -9088,6 +9162,50 @@ EOF
 }
 
 # ------------------------------ Dynamic Allowlist Watchers --------------------
+configure_logrotate() {
+    install -d -m 0755 /etc/logrotate.d
+    cat > /etc/logrotate.d/smartdns-stealth.tmp <<'EOF_LOGROTATE'
+/var/log/xray/access.log /var/log/xray/error.log {
+    daily
+    maxsize 10M
+    rotate 5
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su xray xray
+}
+
+/var/log/nginx/doh-auth.log /var/log/nginx/dot-auth.log {
+    daily
+    maxsize 10M
+    rotate 5
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su www-data adm
+}
+
+/var/log/oxidns-installer/*.log /var/log/smartdns-tgbot/*.log {
+    weekly
+    maxsize 10M
+    rotate 4
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su root root
+}
+EOF_LOGROTATE
+    chown root:root /etc/logrotate.d/smartdns-stealth.tmp
+    chmod 0644 /etc/logrotate.d/smartdns-stealth.tmp
+    mv -f /etc/logrotate.d/smartdns-stealth.tmp /etc/logrotate.d/smartdns-stealth
+}
+
 install_ipset_watchers() {
     log_info_tr "firewall.log" "M_0141"
 
@@ -9120,7 +9238,7 @@ is_valid_ipv6() {
 
 tail -n 0 -F "${LOG_FILE}" 2>/dev/null | while IFS='|' read -r ts client_ip status up_status ctype bytes_sent; do
     [[ "${status:-}" == "200" && "${up_status:-}" == "200" ]] || continue
-    [[ "${ctype:-}" == "application/dns-message" || "${ctype:-}" == "web-auth-verified" ]] || continue
+    [[ "${ctype:-}" == application/dns-message* || "${ctype:-}" == "web-auth-verified" ]] || continue
     [[ "${bytes_sent:-0}" =~ ^[0-9]+$ && "${bytes_sent}" -ge 12 ]] || continue
 
     client_ip="${client_ip#::ffff:}"
@@ -9133,7 +9251,7 @@ tail -n 0 -F "${LOG_FILE}" 2>/dev/null | while IFS='|' read -r ts client_ip stat
     fi
 
     if is_valid_ipv4 "${client_ip}"; then
-        [[ "${client_ip}" =~ ^(127\.|10\.|192\.168\.|169\.254\.) ]] && continue
+        [[ "${client_ip}" =~ ^(0\.|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|100\.(6[4-9]|[7-9][0-9]|1[0-1][0-9]|12[0-7])\.) ]] && continue
         if ipset add smartdns_clients "${client_ip}" timeout 86400 -exist 2>/dev/null; then
             LAST_SEEN["${key}"]="${now}"
             if [[ "${ctype}" == "web-auth-verified" ]]; then
@@ -9144,7 +9262,7 @@ tail -n 0 -F "${LOG_FILE}" 2>/dev/null | while IFS='|' read -r ts client_ip stat
             fi
         fi
     elif is_valid_ipv6 "${client_ip}"; then
-        [[ "${client_ip}" == "::1" || "${client_ip}" =~ ^fe80: || "${client_ip}" =~ ^fc00: || "${client_ip}" =~ ^fd00: ]] && continue
+        [[ "${client_ip}" == "::1" || "${client_ip}" == "::" || "${client_ip,,}" =~ ^(fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|ff[0-9a-f]{2}:) ]] && continue
         if ipset add smartdns_clients6 "${client_ip}" timeout 86400 -exist 2>/dev/null; then
             LAST_SEEN["${key}"]="${now}"
             if [[ "${ctype}" == "web-auth-verified" ]]; then
@@ -9157,7 +9275,15 @@ tail -n 0 -F "${LOG_FILE}" 2>/dev/null | while IFS='|' read -r ts client_ip stat
     fi
 
     if [[ "${ctype}" == "web-auth-verified" || $((now - LAST_PERSIST)) -ge 30 ]]; then
-        ipset save > "${IPSET_SAVE}.tmp" 2>/dev/null && mv -f "${IPSET_SAVE}.tmp" "${IPSET_SAVE}" || true
+        (
+            flock -w 5 9 || exit 0
+            tmp_save="${IPSET_SAVE}.doh.$$.tmp"
+            if ipset save > "${tmp_save}" 2>/dev/null; then
+                mv -f "${tmp_save}" "${IPSET_SAVE}"
+            else
+                rm -f "${tmp_save}"
+            fi
+        ) 9>/run/lock/smartdns-ipset-save.lock || true
         LAST_PERSIST="${now}"
     fi
 done
@@ -9199,7 +9325,7 @@ tail -n 0 -F "${XRAY_ACCESS_LOG}" 2>/dev/null | while IFS= read -r line; do
     fi
 
     if [[ "${client_ip}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-        [[ "${client_ip}" =~ ^(127\.|10\.|192\.168\.|169\.254\.) ]] && continue
+        [[ "${client_ip}" =~ ^(0\.|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|100\.(6[4-9]|[7-9][0-9]|1[0-1][0-9]|12[0-7])\.) ]] && continue
         if ipset add smartdns_clients "${client_ip}" timeout 86400 -exist 2>/dev/null; then
             LAST_DOT_SEEN["${client_ip}"]="${now}"
             if [[ "${dot_wl_mode}" == "separate" ]]; then
@@ -9208,7 +9334,7 @@ tail -n 0 -F "${XRAY_ACCESS_LOG}" 2>/dev/null | while IFS= read -r line; do
             printf '[%s] [DOT-AUTH] Авторизован IPv4 %s через DoT (TTL 86400s, режим %s)\n' "$(date -Is)" "${client_ip}" "${dot_wl_mode}" >> "${FIREWALL_LOG}"
         fi
     elif [[ "${client_ip}" =~ ^[0-9a-fA-F:]+$ ]] && [[ "${client_ip}" == *:* ]]; then
-        [[ "${client_ip}" == "::1" || "${client_ip}" =~ ^fe80: || "${client_ip}" =~ ^fc00: || "${client_ip}" =~ ^fd00: ]] && continue
+        [[ "${client_ip}" == "::1" || "${client_ip}" == "::" || "${client_ip,,}" =~ ^(fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|ff[0-9a-f]{2}:) ]] && continue
         if ipset add smartdns_clients6 "${client_ip}" timeout 86400 -exist 2>/dev/null; then
             LAST_DOT_SEEN["${client_ip}"]="${now}"
             if [[ "${dot_wl_mode}" == "separate" ]]; then
@@ -9219,12 +9345,21 @@ tail -n 0 -F "${XRAY_ACCESS_LOG}" 2>/dev/null | while IFS= read -r line; do
     fi
 
     if [[ $((now - LAST_PERSIST)) -ge 30 ]]; then
-        ipset save > "${IPSET_SAVE}.tmp" 2>/dev/null && mv -f "${IPSET_SAVE}.tmp" "${IPSET_SAVE}" || true
+        (
+            flock -w 5 9 || exit 0
+            tmp_save="${IPSET_SAVE}.dot.$$.tmp"
+            if ipset save > "${tmp_save}" 2>/dev/null; then
+                mv -f "${tmp_save}" "${IPSET_SAVE}"
+            else
+                rm -f "${tmp_save}"
+            fi
+        ) 9>/run/lock/smartdns-ipset-save.lock || true
         LAST_PERSIST="${now}"
     fi
 done
 EOF
     chmod 0755 /usr/local/bin/dot-ipset-watcher.sh
+    configure_logrotate
 }
 
 # ------------------------------ Firewall, ipset & Sysctl ----------------------
@@ -11870,6 +12005,7 @@ run_uninstall() {
             rm -f "${sf}" 2>/dev/null || true
         done
         rm -rf "${STATE_DIR}/fw-backup" 2>/dev/null || true
+        rm -f /etc/logrotate.d/smartdns-stealth 2>/dev/null || true
 
         local ans_bak=""
         read_tr "M_0325" ans_bak "${INITIAL_BACKUP_DIR}" "${BACKUP_ROOT}"
