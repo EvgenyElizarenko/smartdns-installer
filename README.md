@@ -8,7 +8,7 @@
 
 **Язык / Language:** **Русский** | [English](README_EN.md)
 
-[![Version](https://img.shields.io/badge/version-v4.0.0--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
+[![Version](https://img.shields.io/badge/version-v4.0.1--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-технические-требования)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-выбор-языка-интерфейса-русский--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -21,6 +21,13 @@
 ---
 
 ## Что нового в v4.0.0-stealth
+
+### Патч v4.0.1-stealth (аудит и усиление)
+- **Фильтрация доменов (`custom-deny.txt`):** небезопасный `grep -vFf` заменён на точный `awk`-фильтр по домену и поддоменам (игнорирует пустые строки и комментарии `#`, исключает ложные совпадения по подстроке).
+- **Xray-core:** `domainStrategy` перенесён в `streamSettings.sockopt.domainStrategy` (устранён warning в Xray 26.11+), `loglevel` снижен до `warning`, включён `proxyProtocol: 1` для `dot-backend`.
+- **Nginx:** включён `proxy_protocol` + `set_real_ip_from 127.0.0.1` для DoT (реальный IP клиента в `dot-auth.log`), восстановлены все security-заголовки на `/auth/<DOH_PATH>`, добавлен `upstream doh_backend` (`keepalive 16`) и префиксный regex для `$doh_verified`.
+- **Ротация логов (`logrotate`):** добавлен `/etc/logrotate.d/smartdns-stealth` (`copytruncate`, `maxsize 10M`, сжатие) для логов Xray, Nginx auth, установщика и Telegram-бота.
+- **Watchers и проверка бинарников:** устранена гонка записи `ipset-whitelist.save.tmp` через `flock` + per-PID временные файлы, расширен фильтр частных/CGNAT/ULA-сетей, добавлена проверка SHA-256 для AdGuardHome (`checksums.txt`) и OxiDNS.
 
 - **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.0-stealth"`), в тегах и релизах GitHub.
 - **Опциональный Telegram-бот управления SmartDNS (`[19]` / `--install-telegram-bot`):**
