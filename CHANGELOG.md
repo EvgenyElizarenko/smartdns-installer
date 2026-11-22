@@ -5,6 +5,17 @@
 
 ---
 
+## [4.0.1-stealth] — 2026-11-22
+
+### Исправлено и усилено (аудит стека)
+- **Фильтрация доменов (`custom-deny.txt`):** небезопасный `grep -vFf` в `update-geohide-domains.sh` заменён на точный `awk`-фильтр по домену и поддоменам (игнорирует пустые строки и комментарии `#`, исключает ложные совпадения по подстроке вроде `x.com` -> `netflix.com`).
+- **Xray-core (`00-base.json`):** `domainStrategy` перенесён из устаревшего `freedom.settings` в `streamSettings.sockopt.domainStrategy` (устранён warning в Xray 26.11+); `loglevel` снижен с `info` до `warning` для предотвращения роста `error.log`; включён `proxyProtocol: 1` для outbound `dot-backend`.
+- **Nginx (`configure_nginx`):** включён `proxy_protocol` и `set_real_ip_from 127.0.0.1` для DoT (`127.0.0.1:8853`) для записи реальных IP клиентов в `dot-auth.log`; восстановлены все 5 security-заголовков (`HSTS`, `CSP`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`) на `/auth/<DOH_PATH>`; добавлен `upstream doh_backend` с `keepalive 16` и префиксный regex в `$doh_verified`.
+- **Ротация логов (`logrotate`):** добавлена автоматическая генерация `/etc/logrotate.d/smartdns-stealth` (`copytruncate`, `maxsize 10M`, сжатие) для логов Xray, Nginx auth, установщика и Telegram-бота с учётом манифеста и очистки при `--uninstall`.
+- **Watchers (`doh-ipset-watcher` / `dot-ipset-watcher`):** устранена гонка записи `ipset-whitelist.save.tmp` через `flock` и per-PID временные файлы; расширена фильтрация частных/служебных сетей (`172.16.0.0/12`, CGNAT `100.64.0.0/10`, полный IPv6 ULA `fc00::/7` и multicast).
+- **Целостность бинарников:** добавлена обязательная сверка SHA-256 при установке `AdGuardHome` по официальному `checksums.txt` и автоматическая проверка контрольных сумм для `OxiDNS` (при наличии checksum-ассета в релизе).
+- **Регрессионные тесты:** добавлен набор `tests/test_v401_audit_fixes.py`.
+
 ## [4.0.0-stealth] — 2026-11-21
 
 ### Changed

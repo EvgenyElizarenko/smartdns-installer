@@ -20,7 +20,7 @@
 
 ---
 
-## Что нового в v4.0.0-stealth
+## Что нового в v4.0.1-stealth
 
 ### Патч v4.0.1-stealth (аудит и усиление)
 - **Фильтрация доменов (`custom-deny.txt`):** небезопасный `grep -vFf` заменён на точный `awk`-фильтр по домену и поддоменам (игнорирует пустые строки и комментарии `#`, исключает ложные совпадения по подстроке).
@@ -29,7 +29,7 @@
 - **Ротация логов (`logrotate`):** добавлен `/etc/logrotate.d/smartdns-stealth` (`copytruncate`, `maxsize 10M`, сжатие) для логов Xray, Nginx auth, установщика и Telegram-бота.
 - **Watchers и проверка бинарников:** устранена гонка записи `ipset-whitelist.save.tmp` через `flock` + per-PID временные файлы, расширен фильтр частных/CGNAT/ULA-сетей, добавлена проверка SHA-256 для AdGuardHome (`checksums.txt`) и OxiDNS.
 
-- **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.0-stealth"`), в тегах и релизах GitHub.
+- **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.1-stealth"`), в тегах и релизах GitHub.
 - **Опциональный Telegram-бот управления SmartDNS (`[19]` / `--install-telegram-bot`):**
   - **двухслойная изоляция без `pip`-зависимостей (Python 3 stdlib):** непривилегированный демон `smartdns-tg-bot.service` (`User=smartdns-tgbot`, исходящий HTTPS long polling, **0 входящих портов**) взаимодействует с короткоживущим root-backend `smartdns-tg-ctl.socket` строго через локальный Unix-сокет `/run/smartdns-tg-ctl/ctl.sock` (`0660`, проверка `SO_PEERCRED`, allowlist типизированных JSON-команд, без `eval` и `shell=True`);
   - **строгий доступ `Owner-Only`:** управление разрешено исключительно создателю бота (`primary_admin_id`) в приватном чате на обоих слоях (`bot.py` + `ctl.py`); любые сторонние пользователи получают отказ в авторизации;

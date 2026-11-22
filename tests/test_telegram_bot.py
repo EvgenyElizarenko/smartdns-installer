@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Comprehensive automated test suite for SmartDNS v4.0.0-stealth Telegram Bot.
+"""Comprehensive automated test suite for SmartDNS v4.0.1-stealth Telegram Bot.
 Covers Sections 18.1-18.10: installer structure, authorization, single/batch/file
 domain management, whitelist, links, status, D1-D5/W1-W2/S1-S2/B1 features,
 security (injection/traversal/redaction/locking/rollback), and v3.1.0 immutability.
@@ -136,7 +136,7 @@ def main() -> None:
     assert "DirectoryMode=0755" in v400_text
     assert "-/run/smartdns-tg-ctl" in v400_text
     assert "run_telegram_bot_remove()" in v400_text
-    print("PASS: v4.0.0 structure, menu [0-19], systemd socket/hardening & redaction present")
+    print("PASS: v4.0.1 structure, menu [0-19], systemd socket/hardening & redaction present")
 
     # Verify --help outputs all Telegram Bot CLI flags cleanly without hanging
     res_help = subprocess.run(
@@ -692,7 +692,7 @@ def main() -> None:
                     pass
             logger.handlers.clear()
 
-    print("\nALL TELEGRAM BOT v4.0.0 FUNCTIONAL, SECURITY & IMMUTABILITY TESTS PASSED")
+    print("\nALL TELEGRAM BOT v4.0.1 FUNCTIONAL, SECURITY & IMMUTABILITY TESTS PASSED")
 
 
 if __name__ == "__main__":

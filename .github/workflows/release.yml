@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to create or update (e.g. v4.0.0-stealth)'
+        description: 'Release tag to create or update (e.g. v4.0.1-stealth)'
         required: true
         type: string
 

@@ -20,7 +20,7 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 
 ---
 
-## What's New in v4.0.0-stealth
+## What's New in v4.0.1-stealth
 
 ### Patch v4.0.1-stealth (Audit & Hardening)
 - **Domain filtering (`custom-deny.txt`):** replaced `grep -vFf` with exact/subdomain `awk` matching (ignores blank lines and `#` comments, eliminates substring false positives).
@@ -29,7 +29,7 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 - **Logrotate:** added `/etc/logrotate.d/smartdns-stealth` (`copytruncate`, `maxsize 10M`, compression) for Xray, Nginx auth, installer, and Telegram bot logs.
 - **Watchers & binary integrity:** fixed `ipset-whitelist.save.tmp` write race via `flock` + per-PID temp files, extended private/CGNAT/ULA IP filtering, added SHA-256 verification for AdGuardHome (`checksums.txt`) and OxiDNS.
 
-- **Permanent installer filename (`smartdns-installer.sh`):** starting with `v4.0.0-stealth`, the script in the repository and GitHub Releases (`Latest`) always uses the fixed filename `smartdns-installer.sh`; versions are tracked via `INSTALLER_VERSION="4.0.0-stealth"`, Git tags, and GitHub Releases.
+- **Permanent installer filename (`smartdns-installer.sh`):** starting with `v4.0.0-stealth`, the script in the repository and GitHub Releases (`Latest`) always uses the fixed filename `smartdns-installer.sh`; versions are tracked via `INSTALLER_VERSION="4.0.1-stealth"`, Git tags, and GitHub Releases.
 - **Optional SmartDNS Management Telegram Bot (`[19]` / `--install-telegram-bot`):**
   - **two-layer isolation with zero `pip` dependencies (Python 3 stdlib only):** unprivileged `smartdns-tg-bot.service` (`User=smartdns-tgbot`, outbound HTTPS long polling, **0 open inbound ports**) talks to on-demand root backend `smartdns-tg-ctl.socket` exclusively over `/run/smartdns-tg-ctl/ctl.sock` (`0660`, `SO_PEERCRED` verification, strict JSON action allowlist, no `eval` or `shell=True`);
   - **strict `Owner-Only` authorization:** access is locked strictly to the bot creator (`primary_admin_id`) in private chat on both layers (`bot.py` + `ctl.py`); any other Telegram user receives an immediate authorization denial;

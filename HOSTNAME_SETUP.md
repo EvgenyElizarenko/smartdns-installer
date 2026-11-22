@@ -10,7 +10,7 @@
 The **Provider Hostname Profile** in `smartdns-installer.sh` deploys the full SmartDNS + Transparent SNI Proxy stack using a provider-managed hostname and an **existing single-host Certbot certificate** (HTTP-01 challenge), without a Cloudflare account or DNS API token.
 
 > **Important — Preservation of Cloudflare Certificate Renewal (`v3.0`):**
-> Automatic TLS certificate renewal for the Cloudflare profile (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) was fixed in **`v3.0-stealth`** and remains completely unchanged in `v4.0.0-stealth`. The Provider Hostname Profile uses a separate, isolated mechanism (`certbot.timer` + lineage-specific deploy hook). The two mechanisms do not replace each other and never interfere. In `v4.0.0-stealth`, this profile is supported both on dedicated servers (`--profile hostname --install`) and inside the dual-IP `systemd-nspawn` container (`--profile hostname --install-on-second-IP`).
+> Automatic TLS certificate renewal for the Cloudflare profile (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) was fixed in **`v3.0-stealth`** and remains completely unchanged in `v4.0.1-stealth`. The Provider Hostname Profile uses a separate, isolated mechanism (`certbot.timer` + lineage-specific deploy hook). The two mechanisms do not replace each other and never interfere. In `v4.0.1-stealth`, this profile is supported both on dedicated servers (`--profile hostname --install`) and inside the dual-IP `systemd-nspawn` container (`--profile hostname --install-on-second-IP`).
 
 ### 1. Cloudflare Profile vs. Provider Hostname Profile
 
@@ -103,7 +103,7 @@ Validated inputs are saved in `/var/lib/oxidns-installer/settings` (`0600`, back
 **Профиль имени хоста провайдера (Provider Hostname Profile)** в `smartdns-installer.sh` позволяет развернуть стек SmartDNS + Transparent SNI Proxy с именем хоста внешнего DNS/VPS-провайдера и **существующим сертификатом Certbot для одного хоста** (HTTP-01), без аккаунта Cloudflare и токена DNS API.
 
 > **Важно — сохранение исправленного автопродления Cloudflare (`v3.0`):**
-> Автоматическое продление сертификатов Cloudflare (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) было исправлено в **`v3.0-stealth`** и осталось полностью без изменений в `v4.0.0-stealth`. Provider Hostname Profile использует отдельный изолированный механизм (`certbot.timer` + deploy-хук для конкретного lineage). Эти механизмы не взаимозаменяются и не влияют друг на друга. В `v4.0.0-stealth` профиль поддерживается как на выделенном сервере (`--profile hostname --install`), так и в изолированном контейнере `systemd-nspawn` на 2-м IP (`--profile hostname --install-on-second-IP`).
+> Автоматическое продление сертификатов Cloudflare (`acme.sh` + DNS-01 + `smartdns-cert-renew.timer` + `/usr/local/bin/smartdns-cert-deploy.sh`) было исправлено в **`v3.0-stealth`** и осталось полностью без изменений в `v4.0.1-stealth`. Provider Hostname Profile использует отдельный изолированный механизм (`certbot.timer` + deploy-хук для конкретного lineage). Эти механизмы не взаимозаменяются и не влияют друг на друга. В `v4.0.1-stealth` профиль поддерживается как на выделенном сервере (`--profile hostname --install`), так и в изолированном контейнере `systemd-nspawn` на 2-м IP (`--profile hostname --install-on-second-IP`).
 
 ### 1. Отличия Cloudflare Profile и Provider Hostname Profile
 
