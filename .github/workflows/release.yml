@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to create or update (e.g. v4.0.1-stealth)'
+        description: 'Release tag to create or update (e.g. v4.0.2-stealth)'
         required: true
         type: string
 
@@ -23,9 +23,19 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
-      - name: Verify syntax and prepare release assets
+      - name: Verify syntax, static analysis, tests, and prepare release assets
         run: |
+          if grep -q $'\r' smartdns-installer.sh; then
+            echo "ERROR: CRLF line endings detected in smartdns-installer.sh"
+            exit 1
+          fi
           bash -n smartdns-installer.sh
+          shellcheck -S warning -e SC1090,SC2034,SC2154 smartdns-installer.sh
+          python3 tests/test_v401_audit_fixes.py
+          python3 tests/test_v402_hardening.py
+          python3 tests/test_telegram_bot.py
+          python3 tests/test_hostname_profile.py
+          python3 tests/test_nspawn_second_ip.py
           mkdir -p release-assets
           cp -p smartdns-installer.sh release-assets/smartdns-installer.sh
           (

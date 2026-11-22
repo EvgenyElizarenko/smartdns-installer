@@ -8,7 +8,7 @@
 
 **Language:** [Русский](README.md) | **English**
 
-[![Version](https://img.shields.io/badge/version-v4.0.1--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
+[![Version](https://img.shields.io/badge/version-v4.0.2--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-technical-requirements)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-interface-language-selection-russian--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -20,7 +20,14 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 
 ---
 
-## What's New in v4.0.1-stealth
+## What's New in v4.0.2-stealth
+
+### Patch v4.0.2-stealth (Rollback, Supply-Chain & CI Hardening)
+- **Rollback & permissions:** activated `TRANSACTION_ACTIVE=1` before `setup_users_and_dirs()`, removed global `chmod 0755 / /etc /var ...`, added `checksums.sha256` verification, targeted path restore, and error tracking for `ipset`/`iptables-restore` in `perform_rollback()`.
+- **Supply-chain pinning:** pinned `acme.sh` to release tag `3.1.6` with mandatory SHA-256 verification; enforced mandatory SHA-256 verification for `OxiDNS` (pinned `v1.7.1` hash or verified checksum asset).
+- **Secure `--test` temp directory:** replaced predictable `/tmp/bad-routing.json` with a `0700` `mktemp -d /run/smartdns-test.XXXXXX` directory.
+- **CI & Tests:** migrated `tests/test_nspawn_second_ip.py` to test the current `smartdns-installer.sh`, added `tests/test_v402_hardening.py`, and enabled all 5 Python test suites + `ShellCheck` as mandatory gates in GitHub Actions (`shellcheck.yml` and `release.yml`).
+- **Documentation & metadata:** synchronized version headers/docstrings to `v4.0.2-stealth` and switched README installation instructions to `releases/latest/download/SHA256SUMS.txt`.
 
 ### Patch v4.0.1-stealth (Audit & Hardening)
 - **Domain filtering (`custom-deny.txt`):** replaced `grep -vFf` with exact/subdomain `awk` matching (ignores blank lines and `#` comments, eliminates substring false positives).
@@ -29,7 +36,7 @@ A unified transactional Bash installer for deploying a resilient **SmartDNS (DoH
 - **Logrotate:** added `/etc/logrotate.d/smartdns-stealth` (`copytruncate`, `maxsize 10M`, compression) for Xray, Nginx auth, installer, and Telegram bot logs.
 - **Watchers & binary integrity:** fixed `ipset-whitelist.save.tmp` write race via `flock` + per-PID temp files, extended private/CGNAT/ULA IP filtering, added SHA-256 verification for AdGuardHome (`checksums.txt`) and OxiDNS.
 
-- **Permanent installer filename (`smartdns-installer.sh`):** starting with `v4.0.0-stealth`, the script in the repository and GitHub Releases (`Latest`) always uses the fixed filename `smartdns-installer.sh`; versions are tracked via `INSTALLER_VERSION="4.0.1-stealth"`, Git tags, and GitHub Releases.
+- **Permanent installer filename (`smartdns-installer.sh`):** starting with `v4.0.0-stealth`, the script in the repository and GitHub Releases (`Latest`) always uses the fixed filename `smartdns-installer.sh`; versions are tracked via `INSTALLER_VERSION="4.0.2-stealth"`, Git tags, and GitHub Releases.
 - **Optional SmartDNS Management Telegram Bot (`[19]` / `--install-telegram-bot`):**
   - **two-layer isolation with zero `pip` dependencies (Python 3 stdlib only):** unprivileged `smartdns-tg-bot.service` (`User=smartdns-tgbot`, outbound HTTPS long polling, **0 open inbound ports**) talks to on-demand root backend `smartdns-tg-ctl.socket` exclusively over `/run/smartdns-tg-ctl/ctl.sock` (`0660`, `SO_PEERCRED` verification, strict JSON action allowlist, no `eval` or `shell=True`);
   - **strict `Owner-Only` authorization:** access is locked strictly to the bot creator (`primary_admin_id`) in private chat on both layers (`bot.py` + `ctl.py`); any other Telegram user receives an immediate authorization denial;
@@ -185,9 +192,9 @@ All operations — initial server setup, preflight diagnostics, dedicated server
 
 1. **Download the script, verify its `SHA-256` checksum, and make it executable:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer.sh" -o smartdns-installer.sh
-   echo "9f9e36f45584bfcbd52db76885a59100095001c5a4d6e5b06b0b5b6829862d6a  smartdns-installer.sh" | sha256sum -c -
-   chmod +x smartdns-installer.sh
+   curl -fsSL "https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest/download/smartdns-installer.sh" -o smartdns-installer.sh
+   curl -fsSL "https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest/download/SHA256SUMS.txt" -o SHA256SUMS.txt
+   sha256sum -c SHA256SUMS.txt && chmod +x smartdns-installer.sh
    ```
 
 2. **Launch the unified interactive menu:**

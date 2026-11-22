@@ -26,3 +26,11 @@ jobs:
 
       - name: Run ShellCheck static analysis
         run: shellcheck -S warning -e SC1090,SC2034,SC2154 smartdns-installer.sh
+
+      - name: Run Python automated test suites
+        run: |
+          python3 tests/test_v401_audit_fixes.py
+          python3 tests/test_v402_hardening.py
+          python3 tests/test_telegram_bot.py
+          python3 tests/test_hostname_profile.py
+          python3 tests/test_nspawn_second_ip.py

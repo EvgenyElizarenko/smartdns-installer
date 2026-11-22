@@ -48,7 +48,26 @@ if v30_baseline.exists():
         "configure_cert_auto_renewal",
         "issue_wildcard_certificate",
     ):
-        assert extract_function(v30_source, fn) == extract_function(source, fn), f"Cloudflare function modified: {fn}"
+        v30_fn = extract_function(v30_source, fn)
+        cur_fn = extract_function(source, fn)
+        if fn == "issue_wildcard_certificate":
+            pinned_snip = (
+                '        curl -fsSL --retry 3 --connect-timeout 15 -o "${tmp_acme}/acme.tar.gz" "${ACME_SH_URL}"\n'
+                '        local acme_act_sha\n'
+                '        acme_act_sha="$(sha256sum "${tmp_acme}/acme.tar.gz" | awk \'' + "{print tolower($1)}" + '\')"\n'
+                '        if [[ "${acme_act_sha}" != "${ACME_SH_SHA256}" ]]; then\n'
+                '            rm -rf "${tmp_acme}"\n'
+                '            log_error_tr "certificate.log" "M_0095" "${ACME_SH_SHA256}" "${acme_act_sha}"\n'
+                '            exit 1\n'
+                '        fi'
+            )
+            legacy_snip = (
+                '        local git_tar_url="https://github.com/acmesh-official/acme.sh/archive/refs/heads/master.tar.gz"\n'
+                '        curl -fsSL --retry 3 -o "${tmp_acme}/acme.tar.gz" "${git_tar_url}"'
+            )
+            assert pinned_snip in cur_fn, "issue_wildcard_certificate must enforce pinned ACME_SH_SHA256"
+            cur_fn = cur_fn.replace(pinned_snip, legacy_snip, 1)
+        assert v30_fn == cur_fn, f"Cloudflare function modified: {fn}"
     print("PASS: Cloudflare renewal functions are byte-for-byte identical to v3.0-stealth")
 
 with tempfile.TemporaryDirectory(prefix="smartdns-hostname-test-") as folder:

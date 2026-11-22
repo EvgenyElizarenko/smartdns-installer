@@ -5,13 +5,13 @@ import subprocess
 import tempfile
 
 repo_root = Path(__file__).resolve().parents[1]
-installer = Path(os.environ.get("SMARTDNS_INSTALLER", str((repo_root / "smartdns-installer-v3.1.0-stealth.sh" if (repo_root / "smartdns-installer-v3.1.0-stealth.sh").exists() else repo_root / "old" / "smartdns-installer-v3.1.0-stealth.sh"))))
+installer = Path(os.environ.get("SMARTDNS_INSTALLER", str(repo_root / "smartdns-installer.sh")))
 v30_baseline = (repo_root / "smartdns-installer-v3.0-stealth.sh" if (repo_root / "smartdns-installer-v3.0-stealth.sh").exists() else repo_root / "old" / "smartdns-installer-v3.0-stealth.sh")
 
 source = installer.read_text(encoding="utf-8").replace("\r\n", "\n")
 assert source.count('main "$@"') == 1, "Expected single main \"$@\" entrypoint"
-assert 'INSTALLER_VERSION="3.1.0-stealth"' in source, "Version must be 3.1.0-stealth"
-assert 'readonly SCRIPT_NAME="smartdns-installer-v3.1.0-stealth.sh"' in source, "SCRIPT_NAME must match v3.1.0"
+assert re.search(r'^INSTALLER_VERSION="4\.\d+\.\d+-stealth"$', source, flags=re.M), "Version must be 4.x-stealth"
+assert 'readonly SCRIPT_NAME="smartdns-installer.sh"' in source, "SCRIPT_NAME must match smartdns-installer.sh"
 
 # 1. Verify Mode [2] & Mode [3] menu structure and zero overlapping item numbers (0..18)
 menu_start = source.index("run_main_launcher_menu() {")
@@ -21,9 +21,9 @@ assert "[ 2] Установка SmartDNS + SNI Proxy на выделенный �
 assert "[ 3] Установка SmartDNS + SNI Proxy на сервер с 2мя IP" in menu_src
 assert "(--install-on-second-IP)" in menu_src
 assert "(--preflight-second-IP)" in menu_src
-for num in range(1, 19):
+for num in range(1, 20):
     assert re.search(rf"^\s*{num}\)", menu_src, flags=re.M), f"Missing menu handler for option {num}"
-print("PASS: Menu structure [0-18] has dedicated Mode [2], dual-IP Mode [3], and complete 1-to-1 handlers")
+print("PASS: Menu structure [0-19] has dedicated Mode [2], dual-IP Mode [3], and complete 1-to-1 handlers")
 
 # 2. Verify host networking script syntax (both iptables/UFW and nftables branches)
 net_start = source.index("#!/usr/bin/env bash\nset -Eeuo pipefail\n\nACTION=\"${1:-status}\"")

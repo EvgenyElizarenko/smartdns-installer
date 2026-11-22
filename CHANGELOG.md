@@ -5,6 +5,15 @@
 
 ---
 
+## [4.0.2-stealth] — 2026-11-22
+
+### Безопасность, откат и CI
+- **Транзакционный откат и права:** `TRANSACTION_ACTIVE=1` перенесён до `setup_users_and_dirs()` в `run_install()`; удалены глобальные `chmod 0755 / /etc /var ...` из `setup_users_and_dirs()` и `perform_rollback()`; в `perform_rollback()` добавлена проверка `checksums.sha256`, точечное восстановление только управляемых путей и фиксация ошибок `ipset`/`iptables-restore`.
+- **Обязательный SHA-256 и пиннинг `acme.sh`:** `acme.sh` закреплён на теге `3.1.6` с обязательной проверкой `ACME_SH_SHA256`; в `install_oxidns_binary()` исключена тихая установка непроверенного релиза (обязательная сверка `OXIDNS_DEFAULT_SHA256` или checksum-ассета).
+- **Безопасный временный файл в `--test`:** фиксированный `/tmp/bad-routing.json` заменён на `mktemp -d /run/smartdns-test.XXXXXX` (`chmod 0700`).
+- **CI и тестирование:** `tests/test_nspawn_second_ip.py` нацелен на актуальный `smartdns-installer.sh`, добавлен `tests/test_v402_hardening.py`, а все 5 наборов Python-тестов и `ShellCheck` подключены в `.github/workflows/shellcheck.yml` и `.github/workflows/release.yml`.
+- **Документация и метаданные:** синхронизированы `# Version:` и docstring Telegram-бота (`4.0.2-stealth`), а инструкции скачивания в `README.md` / `README_EN.md` переведены на проверку через `releases/latest/download/SHA256SUMS.txt`.
+
 ## [4.0.1-stealth] — 2026-11-22
 
 ### Исправлено и усилено (аудит стека)
