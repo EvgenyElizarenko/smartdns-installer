@@ -8,7 +8,7 @@
 
 **Язык / Language:** **Русский** | [English](README_EN.md)
 
-[![Version](https://img.shields.io/badge/version-v4.0.1--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
+[![Version](https://img.shields.io/badge/version-v4.0.2--stealth-blue.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest)
 [![OS](https://img.shields.io/badge/OS-Debian%2012%2F13%20%7C%20Ubuntu%2022.04%2F24.04-orange.svg)](#4-технические-требования)
 [![Interface](https://img.shields.io/badge/CLI-RU%20%7C%20EN-green.svg)](#51-выбор-языка-интерфейса-русский--english)
 [![ShellCheck](https://github.com/EvgenyElizarenko/smartdns-installer/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/EvgenyElizarenko/smartdns-installer/actions)
@@ -20,7 +20,14 @@
 
 ---
 
-## Что нового в v4.0.1-stealth
+## Что нового в v4.0.2-stealth
+
+### Патч v4.0.2-stealth (Rollback, Supply-Chain и CI)
+- **Откат и права доступа:** `TRANSACTION_ACTIVE=1` активируется до `setup_users_and_dirs()`; удалены глобальные `chmod 0755 / /etc /var ...`; в `perform_rollback()` добавлена проверка `checksums.sha256`, точечное восстановление управляемых путей и контроль ошибок `ipset`/`iptables-restore`.
+- **Закрепление зависимостей:** `acme.sh` переведён с `master.tar.gz` на тег `3.1.6` с обязательной проверкой SHA-256; для `OxiDNS` введена обязательная проверка SHA-256 (эталонный хеш `v1.7.1` либо проверенный checksum-ассет).
+- **Безопасный `--test`:** предсказуемый `/tmp/bad-routing.json` заменён на временный каталог `mktemp -d /run/smartdns-test.XXXXXX` с правами `0700`.
+- **CI и автотесты:** `tests/test_nspawn_second_ip.py` переведён на актуальный `smartdns-installer.sh`, добавлен `tests/test_v402_hardening.py`, а все 5 наборов Python-тестов и `ShellCheck` подключены в `shellcheck.yml` и как обязательный гейт в `release.yml`.
+- **Документация и метаданные:** синхронизированы заголовки и docstring бота до `v4.0.2-stealth`, команды скачивания в README переведены на `releases/latest/download/SHA256SUMS.txt`.
 
 ### Патч v4.0.1-stealth (аудит и усиление)
 - **Фильтрация доменов (`custom-deny.txt`):** небезопасный `grep -vFf` заменён на точный `awk`-фильтр по домену и поддоменам (игнорирует пустые строки и комментарии `#`, исключает ложные совпадения по подстроке).
@@ -29,7 +36,7 @@
 - **Ротация логов (`logrotate`):** добавлен `/etc/logrotate.d/smartdns-stealth` (`copytruncate`, `maxsize 10M`, сжатие) для логов Xray, Nginx auth, установщика и Telegram-бота.
 - **Watchers и проверка бинарников:** устранена гонка записи `ipset-whitelist.save.tmp` через `flock` + per-PID временные файлы, расширен фильтр частных/CGNAT/ULA-сетей, добавлена проверка SHA-256 для AdGuardHome (`checksums.txt`) и OxiDNS.
 
-- **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.1-stealth"`), в тегах и релизах GitHub.
+- **Постоянное имя файла установщика (`smartdns-installer.sh`):** начиная с `v4.0.0-stealth` скрипт в репозитории и в GitHub Releases (`Latest`) всегда называется `smartdns-installer.sh`; версия фиксируется внутри скрипта (`INSTALLER_VERSION="4.0.2-stealth"`), в тегах и релизах GitHub.
 - **Опциональный Telegram-бот управления SmartDNS (`[19]` / `--install-telegram-bot`):**
   - **двухслойная изоляция без `pip`-зависимостей (Python 3 stdlib):** непривилегированный демон `smartdns-tg-bot.service` (`User=smartdns-tgbot`, исходящий HTTPS long polling, **0 входящих портов**) взаимодействует с короткоживущим root-backend `smartdns-tg-ctl.socket` строго через локальный Unix-сокет `/run/smartdns-tg-ctl/ctl.sock` (`0660`, проверка `SO_PEERCRED`, allowlist типизированных JSON-команд, без `eval` и `shell=True`);
   - **строгий доступ `Owner-Only`:** управление разрешено исключительно создателю бота (`primary_admin_id`) в приватном чате на обоих слоях (`bot.py` + `ctl.py`); любые сторонние пользователи получают отказ в авторизации;
@@ -185,9 +192,9 @@
 
 1. **Скачайте скрипт, проверьте контрольную сумму `SHA-256` и выдайте права на выполнение:**
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/EvgenyElizarenko/smartdns-installer/refs/heads/main/smartdns-installer.sh" -o smartdns-installer.sh
-   echo "9f9e36f45584bfcbd52db76885a59100095001c5a4d6e5b06b0b5b6829862d6a  smartdns-installer.sh" | sha256sum -c -
-   chmod +x smartdns-installer.sh
+   curl -fsSL "https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest/download/smartdns-installer.sh" -o smartdns-installer.sh
+   curl -fsSL "https://github.com/EvgenyElizarenko/smartdns-installer/releases/latest/download/SHA256SUMS.txt" -o SHA256SUMS.txt
+   sha256sum -c SHA256SUMS.txt && chmod +x smartdns-installer.sh
    ```
 
 2. **Запустите единое интерактивное меню:**

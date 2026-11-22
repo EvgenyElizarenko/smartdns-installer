@@ -15,8 +15,8 @@ def main() -> None:
     text = SCRIPT.read_text(encoding="utf-8")
 
     # 1. Version bump isolated to 4.0.1-stealth
-    assert 'INSTALLER_VERSION="4.0.1-stealth"' in text
-    print("PASS: Version set to 4.0.1-stealth")
+    assert 'INSTALLER_VERSION="4.0.2-stealth"' in text
+    print("PASS: Version set to 4.0.2-stealth")
 
     # 2. Xray fixes: warning loglevel, sockopt.domainStrategy, dot-backend proxyProtocol
     assert '"loglevel": "warning"' in text
@@ -61,7 +61,7 @@ def main() -> None:
 
     # 6. SHA-256 verification in AdGuardHome & OxiDNS installers
     assert "checksums.txt" in text
-    assert "expected_sha256" in text and "oxi_exp_sha" in text
+    assert "expected_sha256" in text and "OXIDNS_DEFAULT_SHA256" in text
     print("PASS: Binary SHA-256 verification present for AdGuardHome & OxiDNS")
 
     # 7. Functional test of custom-deny.txt awk filter (empty lines, comments, no substring false positives)

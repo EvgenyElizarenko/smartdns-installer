@@ -2,7 +2,7 @@
 # ==============================================================================
 # Unified SmartDNS + Transparent SNI Proxy Production Installer (Stealth Edition)
 # File: smartdns-installer.sh
-# Version: 4.0.0-stealth
+# Version: 4.0.2-stealth
 # Supported OS: Debian 12, Debian 13 (Trixie), Ubuntu 22.04 LTS, Ubuntu 24.04 LTS
 # ==============================================================================
 
@@ -11,7 +11,7 @@ umask 027
 
 # ------------------------------ Global Constants ------------------------------
 readonly SCRIPT_NAME="smartdns-installer.sh"
-INSTALLER_VERSION="4.0.1-stealth"
+INSTALLER_VERSION="4.0.2-stealth"
 
 # ------------------------------ Localization Engine (RU / EN) -----------------
 SCRIPT_LANG="${SCRIPT_LANG:-ru}"
@@ -1455,6 +1455,10 @@ readonly TIMESTAMP
 readonly OXIDNS_REPO="https://github.com/svenshi/oxidns"
 readonly OXIDNS_DEFAULT_VER="v1.7.1"
 readonly OXIDNS_DEFAULT_URL="https://github.com/svenshi/oxidns/releases/download/v1.7.1/oxidns-x86_64-unknown-linux-musl.tar.gz"
+readonly OXIDNS_DEFAULT_SHA256="6c82984e477d70d0c9259a6c7997496e248c78a384b2b7585908bba7f4af854c"
+readonly ACME_SH_VERSION="3.1.6"
+readonly ACME_SH_URL="https://github.com/acmesh-official/acme.sh/archive/refs/tags/${ACME_SH_VERSION}.tar.gz"
+readonly ACME_SH_SHA256="0d3f9000ac44a6331314742a88c475f79134e24fc991997883652adc59efc486"
 readonly XRAY_DEFAULT_VER="v26.11.9"
 GEOHIDE_REPO="https://github.com/Internet-Helper/GeoHideDNS"
 readonly GEOHIDE_RAW_URL="https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hosts/hosts"
@@ -6280,24 +6284,53 @@ perform_rollback() {
         ufw allow OpenSSH >/dev/null 2>&1 || ufw allow 22/tcp >/dev/null 2>&1 || true
     fi
 
+    if [[ -f "${target_backup}/checksums.sha256" ]]; then
+        if ! (cd "${target_backup}" && sha256sum -c checksums.sha256 >/dev/null 2>&1); then
+            printf '[%s] [ERROR] Rollback aborted: backup checksum verification failed in %s\n' "$(date -Is)" "${target_backup}" | tee -a "${LOG_DIR}/rollback.log" >&2
+            return 1
+        fi
+    fi
+
+    local restore_errors=0
     if [[ -d "${target_backup}/fs" ]]; then
-        chmod 0755 "${target_backup}/fs" "${target_backup}/fs/etc" "${target_backup}/fs/var" "${target_backup}/fs/var/lib" 2>/dev/null || true
-        cp -a "${target_backup}/fs/." /
-        chmod 0755 / /etc /var /var/lib /var/log /usr /usr/local /usr/local/bin /run /etc/ssl /etc/ssl/certs
-        chmod 0644 /etc/ssl/certs/ca-certificates.crt /etc/resolv.conf 2>/dev/null || true
+        local b_path rel_path src_path dst_parent
+        for b_path in /etc/nginx /etc/xray /etc/oxidns /etc/adguardhome /etc/ufw                       /etc/sysctl.d/90-smartdns-keepalive.conf                       /etc/systemd/system/nginx.service.d                       /etc/letsencrypt/renewal-hooks/deploy/smartdns-hostname.sh                       "${CERT_DIR}" "${STATE_DIR}/settings" "${DNS_ASSETS_DIR}" "${IPSET_SAVE_FILE}"; do
+            rel_path="${b_path#/}"
+            src_path="${target_backup}/fs/${rel_path}"
+            if [[ -e "${src_path}" || -L "${src_path}" ]]; then
+                dst_parent="$(dirname "${b_path}")"
+                mkdir -p "${dst_parent}"
+                if ! cp -a "${src_path}" "${dst_parent}/"; then
+                    printf '[%s] [ERROR] Rollback failed to restore %s\n' "$(date -Is)" "${b_path}" >> "${LOG_DIR}/rollback.log"
+                    restore_errors=$((restore_errors + 1))
+                fi
+            fi
+        done
     fi
     if [[ -d "${target_backup}/systemd" ]]; then
-        cp -a "${target_backup}/systemd/." /etc/systemd/system/
+        if ! cp -a "${target_backup}/systemd/." /etc/systemd/system/; then
+            printf '[%s] [ERROR] Rollback failed to restore systemd units\n' "$(date -Is)" >> "${LOG_DIR}/rollback.log"
+            restore_errors=$((restore_errors + 1))
+        fi
         systemctl daemon-reload || true
     fi
     if [[ -f "${target_backup}/ipset.rules" ]] && command -v ipset >/dev/null 2>&1; then
-        ipset restore -! < "${target_backup}/ipset.rules" || true
+        if ! ipset restore -! < "${target_backup}/ipset.rules" 2>>"${LOG_DIR}/rollback.log"; then
+            printf '[%s] [ERROR] Rollback: ipset restore failed\n' "$(date -Is)" >> "${LOG_DIR}/rollback.log"
+            restore_errors=$((restore_errors + 1))
+        fi
     fi
     if [[ -f "${target_backup}/iptables.v4" ]] && command -v iptables-restore >/dev/null 2>&1; then
-        iptables-restore < "${target_backup}/iptables.v4" || true
+        if ! iptables-restore < "${target_backup}/iptables.v4" 2>>"${LOG_DIR}/rollback.log"; then
+            printf '[%s] [ERROR] Rollback: iptables-restore failed\n' "$(date -Is)" >> "${LOG_DIR}/rollback.log"
+            restore_errors=$((restore_errors + 1))
+        fi
     fi
     if [[ -f "${target_backup}/iptables.v6" ]] && command -v ip6tables-restore >/dev/null 2>&1; then
-        ip6tables-restore < "${target_backup}/iptables.v6" || true
+        if ! ip6tables-restore < "${target_backup}/iptables.v6" 2>>"${LOG_DIR}/rollback.log"; then
+            printf '[%s] [ERROR] Rollback: ip6tables-restore failed\n' "$(date -Is)" >> "${LOG_DIR}/rollback.log"
+            restore_errors=$((restore_errors + 1))
+        fi
     fi
 
     local restored_engine="oxidns"
@@ -6324,6 +6357,10 @@ perform_rollback() {
     done
 
     log_info_tr "rollback.log" "M_0087" "${target_backup}" "${restored_engine}"
+    if [[ "${restore_errors}" -gt 0 ]]; then
+        printf '[%s] [WARN] Rollback completed with %d restore error(s); inspect %s/rollback.log\n' "$(date -Is)" "${restore_errors}" "${LOG_DIR}" | tee -a "${LOG_DIR}/rollback.log" >&2
+        return 1
+    fi
 }
 
 # ------------------------------ Base Dependencies -----------------------------
@@ -6380,9 +6417,6 @@ EOF
 # ------------------------------ Users & Permissions ---------------------------
 setup_users_and_dirs() {
     log_info_tr "installation.log" "M_0090"
-
-    chmod 0755 / /etc /var /var/lib /var/log /usr /usr/local /usr/local/bin /run /etc/ssl /etc/ssl/certs 2>/dev/null || true
-    chmod 0644 /etc/ssl/certs/ca-certificates.crt /etc/resolv.conf 2>/dev/null || true
 
     for usr in xray "${DNS_USER}"; do
         if ! getent group "${usr}" >/dev/null 2>&1; then
@@ -6584,6 +6618,7 @@ install_oxidns_binary() {
     local target_ver="${OXIDNS_DEFAULT_VER}"
     local target_url="${OXIDNS_DEFAULT_URL}"
     local target_sha_url=""
+    local expected_sha256="${OXIDNS_DEFAULT_SHA256}"
 
     log_info_tr "dns.log" "M_0098" "${OXIDNS_REPO}"
     local latest_json=""
@@ -6597,9 +6632,21 @@ install_oxidns_binary() {
         local latest_sha_asset
         latest_sha_asset="$(printf '%s' "${latest_json}" | jq -r '.assets[]? | select(.name | test("(x86_64.*linux.*tar\\.gz\\.sha256|checksums?\\.txt|SHA256SUMS)$"; "i")) | .browser_download_url' | sed -n '1p')"
         if [[ -n "${latest_tag}" && "${latest_pre}" == "false" && -n "${latest_asset}" ]]; then
-            target_ver="${latest_tag}"
-            target_url="${latest_asset}"
-            target_sha_url="${latest_sha_asset:-}"
+            if [[ "${latest_asset}" == "${OXIDNS_DEFAULT_URL}" ]]; then
+                target_ver="${OXIDNS_DEFAULT_VER}"
+                target_url="${OXIDNS_DEFAULT_URL}"
+                expected_sha256="${OXIDNS_DEFAULT_SHA256}"
+            elif [[ -n "${latest_sha_asset}" ]]; then
+                target_ver="${latest_tag}"
+                target_url="${latest_asset}"
+                target_sha_url="${latest_sha_asset}"
+                expected_sha256=""
+            else
+                # Never silently install an unverified newer release without checksums; stay on pinned verified version
+                target_ver="${OXIDNS_DEFAULT_VER}"
+                target_url="${OXIDNS_DEFAULT_URL}"
+                expected_sha256="${OXIDNS_DEFAULT_SHA256}"
+            fi
         fi
     fi
 
@@ -6608,18 +6655,19 @@ install_oxidns_binary() {
     log_info_tr "dns.log" "M_0099" "${target_ver}" "${target_url}"
     curl -fsSL --retry 3 --connect-timeout 15 -o "${tmp_dir}/oxidns.tar.gz" "${target_url}"
 
-    if [[ -n "${target_sha_url}" ]] && curl -fsSL --retry 2 --connect-timeout 10 -o "${tmp_dir}/oxidns.sha256" "${target_sha_url}" 2>/dev/null; then
-        local oxi_asset_name oxi_exp_sha oxi_act_sha
+    if [[ -n "${target_sha_url}" ]]; then
+        curl -fsSL --retry 3 --connect-timeout 10 -o "${tmp_dir}/oxidns.sha256" "${target_sha_url}"
+        local oxi_asset_name
         oxi_asset_name="$(basename "${target_url}")"
-        oxi_exp_sha="$(awk -v f="${oxi_asset_name}" 'NF==1 && $1 ~ /^[0-9a-fA-F]{64}$/ {print tolower($1); exit} ($2 == f || $2 == ("./" f) || $2 == ("*" f)) && $1 ~ /^[0-9a-fA-F]{64}$/ {print tolower($1); exit}' "${tmp_dir}/oxidns.sha256")"
-        if [[ -n "${oxi_exp_sha}" ]]; then
-            oxi_act_sha="$(sha256sum "${tmp_dir}/oxidns.tar.gz" | awk '{print tolower($1)}')"
-            if [[ "${oxi_exp_sha}" != "${oxi_act_sha}" ]]; then
-                rm -rf "${tmp_dir}"
-                log_error_tr "dns.log" "M_0095" "${oxi_exp_sha}" "${oxi_act_sha}"
-                exit 1
-            fi
-        fi
+        expected_sha256="$(awk -v f="${oxi_asset_name}" 'NF==1 && $1 ~ /^[0-9a-fA-F]{64}$/ {print tolower($1); exit} ($2 == f || $2 == ("./" f) || $2 == ("*" f)) && $1 ~ /^[0-9a-fA-F]{64}$/ {print tolower($1); exit}' "${tmp_dir}/oxidns.sha256")"
+    fi
+
+    local oxi_act_sha
+    oxi_act_sha="$(sha256sum "${tmp_dir}/oxidns.tar.gz" | awk '{print tolower($1)}')"
+    if [[ -z "${expected_sha256}" || "${expected_sha256}" != "${oxi_act_sha}" ]]; then
+        rm -rf "${tmp_dir}"
+        log_error_tr "dns.log" "M_0095" "${expected_sha256:-missing}" "${oxi_act_sha}"
+        exit 1
     fi
 
     if ! gzip -t "${tmp_dir}/oxidns.tar.gz" 2>/dev/null; then
@@ -7111,8 +7159,14 @@ issue_wildcard_certificate() {
     if [[ ! -x /root/.acme.sh/acme.sh ]]; then
         local tmp_acme
         tmp_acme="$(mktemp -d /tmp/acme-install.XXXXXX)"
-        local git_tar_url="https://github.com/acmesh-official/acme.sh/archive/refs/heads/master.tar.gz"
-        curl -fsSL --retry 3 -o "${tmp_acme}/acme.tar.gz" "${git_tar_url}"
+        curl -fsSL --retry 3 --connect-timeout 15 -o "${tmp_acme}/acme.tar.gz" "${ACME_SH_URL}"
+        local acme_act_sha
+        acme_act_sha="$(sha256sum "${tmp_acme}/acme.tar.gz" | awk '{print tolower($1)}')"
+        if [[ "${acme_act_sha}" != "${ACME_SH_SHA256}" ]]; then
+            rm -rf "${tmp_acme}"
+            log_error_tr "certificate.log" "M_0095" "${ACME_SH_SHA256}" "${acme_act_sha}"
+            exit 1
+        fi
         tar -xzf "${tmp_acme}/acme.tar.gz" -C "${tmp_acme}"
         pushd "${tmp_acme}"/acme.sh-* >/dev/null
         ./acme.sh --install --home /root/.acme.sh --accountemail "${ACME_EMAIL}" --nocron >/dev/null
@@ -10763,14 +10817,17 @@ run_test_suite() {
     fi
 
     # 12. Negative Test: Damaged JSON rejected by xray-safe-reload
-    local tmp_bad="/tmp/bad-routing.json"
+    local test_tmp_dir tmp_bad
+    test_tmp_dir="$(mktemp -d /run/smartdns-test.XXXXXX 2>/dev/null || mktemp -d)"
+    chmod 0700 "${test_tmp_dir}"
+    tmp_bad="${test_tmp_dir}/bad-routing.json"
     printf '{ "routing": INVALID_JSON }' > "${tmp_bad}"
     if ! /usr/local/bin/xray run -test -config "${XRAY_CONF_DIR}/00-base.json" -config "${tmp_bad}" >/dev/null 2>&1; then
         check_step "$(tr_msg "M_0256")" "PASS"
     else
         check_step "$(tr_msg "M_0256")" "FAIL"
     fi
-    rm -f "${tmp_bad}"
+    rm -rf -- "${test_tmp_dir}"
 
     # 13. Firewall & ipset status check
     if ipset list smartdns_clients >/dev/null 2>&1 && iptables -t nat -C PREROUTING -j SMARTDNS_PREROUTING 2>/dev/null; then
@@ -12060,8 +12117,8 @@ run_install() {
     init_initial_backup_store
     init_install_manifest
     create_system_backup
-    setup_users_and_dirs
     TRANSACTION_ACTIVE=1
+    setup_users_and_dirs
 
     apply_pending_custom_domains
     save_persistent_settings
@@ -13347,7 +13404,7 @@ tgbot_deploy_code() {
 
     cat > "${tmp_ctl}" <<'EOF_SMARTDNS_TGBOT_CTL_PY'
 #!/usr/bin/env python3
-"""Privileged on-demand backend for SmartDNS Telegram Bot (v4.0.0-stealth).
+"""Privileged on-demand backend for SmartDNS Telegram Bot (v4.0.2-stealth).
 Invoked via systemd socket activation (smartdns-tg-ctl.socket).
 Zero third-party dependencies (Python 3 stdlib only). No shell=True, no eval.
 """
@@ -14724,7 +14781,7 @@ EOF_SMARTDNS_TGBOT_CTL_PY
 
     cat > "${tmp_bot}" <<'EOF_SMARTDNS_TGBOT_BOT_PY'
 #!/usr/bin/env python3
-"""Unprivileged Telegram Bot daemon for SmartDNS (v4.0.0-stealth).
+"""Unprivileged Telegram Bot daemon for SmartDNS (v4.0.2-stealth).
 Runs as smartdns-tgbot with NoNewPrivileges=true.
 Uses HTTPS long polling (0 open inbound ports) and communicates with root ctl.py
 exclusively via the local Unix socket /run/smartdns-tg-ctl/ctl.sock.
